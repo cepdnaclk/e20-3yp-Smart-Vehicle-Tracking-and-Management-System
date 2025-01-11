@@ -14,9 +14,9 @@ title: Smart Vehicle Tracking and Management System
 ---
 
 ## Team
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
+-  E/20/456, B.G.L. Niroshan, [email](mailto:e20272@email.com)
+-  E/20/227, M.L. Wijesooriya, [email](mailto:e20447@email.com)
+-  E/20/456, U.P.S.D. Dulaj, [email](mailto:e20456@email.com)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
