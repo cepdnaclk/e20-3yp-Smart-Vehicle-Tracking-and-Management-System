@@ -1,0 +1,33 @@
+/* Global Styles */
+body {
+  font-family: "Arial", sans-serif;
+  background-color: #f8f9fa; /* Light gray background */
+}
+
+/* Center the login card properly */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Style for the login card */
+.login-card {
+  width: 350px;
+  padding: 20px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Input focus effect */
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button hover effect */
+.btn-primary:hover {
+  background-color: #0056b3;
+}
