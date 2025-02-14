@@ -1,7 +1,8 @@
+import React from 'react';
 import { Truck } from 'lucide-react';
 
 const VehicleCard = ({ vehicle, onClick }) => (
-  <div className="card mb-3 cursor-pointer" onClick={onClick}>
+  <div className="card mb-3 cursor-pointer" onClick={onClick} style={{ marginBottom: '10px' }}>
     <div className="card-body d-flex justify-content-between align-items-center">
       <div className="d-flex align-items-center">
         <Truck className="text-primary me-3" />
