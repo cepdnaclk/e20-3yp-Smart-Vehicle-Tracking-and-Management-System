@@ -1,16 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+const StatsCard = ({ title, value, color }) => (
+  <div className="card">
+    <div className="card-body">
+      <h6 className="text-muted mb-2">{title}</h6>
+      <h3 className={color}>{value}</h3>
+    </div>
+  </div>
+);
 
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </Router>
-  );
-}
-
-export default App;
+export default StatsCard;
