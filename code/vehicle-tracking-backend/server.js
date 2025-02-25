@@ -20,7 +20,9 @@ mongoose
 
 // Routes
 const vehicleRoutes = require("./routes/vehicleRoutes");
+const driverRoutes = require("./routes/driverRoutes");
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/drivers", driverRoutes);
 
 // Default Route
 app.get("/", (req, res) => {
