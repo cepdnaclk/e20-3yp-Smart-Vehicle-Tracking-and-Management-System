@@ -158,7 +158,16 @@ const Dashboard = () => {
           <div className="card-body">
             <h5 className="card-title">Live Vehicle Tracking</h5>
             <div className="bg-light rounded p-4 text-center" style={{ height: '400px' }}>
-              <span className="text-muted">Interactive Map Component</span>
+              <iframe
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=77.5946%2C12.9716%2C80.2707%2C13.0827&layer=mapnik"
+                style={{ border: '1px solid black' }}
+              ></iframe>
             </div>
           </div>
         </div>
