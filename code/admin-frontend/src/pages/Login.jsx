@@ -5,7 +5,6 @@ import '../styles/Signup.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLock, faEnvelope, faUserTie, faCar, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 
-
 function Login() {
   const [email, setEmail] = useState(""); // Empty by default
   const [password, setPassword] = useState(""); // Empty by default
@@ -13,9 +12,16 @@ function Login() {
   const [isLogin, setIsLogin] = useState(true); // Toggle between Login and Sign Up
   const navigate = useNavigate();
 
-  // Hardcoded admin credentials
-  const correctEmail = "admin@example.com";
-  const correctPassword = "admin123";
+  // Hardcoded admin details
+  const correctEmail = "owner@example.com";
+  const correctPassword = "owner123";
+  const ownerDetails = {
+    firstName: "John",
+    lastName: "Doe",
+    email: "owner@example.com",
+    phone: "+1234567890",
+    activationKey: "OWNER_ACTIVATION_KEY"
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -143,8 +149,10 @@ function Login() {
                 </form>
               ) : (
                 /* Registration Form */
-                <form>
-                  {/* Registration form fields can go here */}
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  navigate("/signup"); // Navigate to signup page
+                }}>
                   <div className="d-grid gap-2">
                     <button type="submit" className="btn btn-primary py-2">Register</button>
                   </div>
@@ -154,7 +162,10 @@ function Login() {
               <div className="text-center mt-4">
                 <p className="mb-0">
                   {isLogin ? "Don't have an account? " : "Already have an account? "}
-                  <a href="#" onClick={toggleForm} className="text-decoration-none">
+                  <a href="/signup" className="text-decoration-none" onClick={(e) => {
+                    e.preventDefault();
+                    setIsLogin(!isLogin); // Toggle form visibility
+                  }}>
                     {isLogin ? 'Register now' : 'Login'}
                   </a>
                 </p>
