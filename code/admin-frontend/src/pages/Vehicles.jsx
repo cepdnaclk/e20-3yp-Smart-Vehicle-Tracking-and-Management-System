@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaCar, FaIdCard, FaUserAlt, FaCalendarAlt, FaMapMarkerAlt, FaTags } from 'react-icons/fa';
+import axios from 'axios';
 
 function Vehicles() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     vehicleName: '',
@@ -28,47 +29,21 @@ function Vehicles() {
     notes: ''
   });
 
-  // Fetch vehicles on component mount
+  // Fetch vehicles from the backend
   useEffect(() => {
-    // TODO: Replace with actual API call
     const fetchVehicles = async () => {
       try {
         setIsLoading(true);
-        // Mock data - replace with actual API call
-        const mockVehicles = [
-          {
-            id: '1',
-            vehicleName: 'Delivery Van 1',
-            licensePlate: 'ABC-1234',
-            vehicleType: 'van',
-            make: 'Toyota',
-            model: 'HiAce',
-            status: 'active',
-            lastLocation: 'New York, NY',
-            driverName: 'John Doe'
-          },
-          {
-            id: '2',
-            vehicleName: 'Service Truck 2',
-            licensePlate: 'XYZ-5678',
-            vehicleType: 'truck',
-            make: 'Ford',
-            model: 'F-150',
-            status: 'inactive',
-            lastLocation: 'Boston, MA',
-            driverName: 'Jane Smith'
-          }
-        ];
-        
-        setVehicles(mockVehicles);
-        setIsLoading(false);
+        const response = await axios.get('http://localhost:5000/api/vehicles');
+        setVehicles(response.data);
       } catch (error) {
         console.error('Error fetching vehicles:', error);
-        toast.error('Failed to load vehicles');
+        toast.error(error.response?.data?.message || 'Failed to load vehicles');
+      } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchVehicles();
   }, []);
 
@@ -84,47 +59,45 @@ function Vehicles() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      
-      // TODO: Replace with actual API call
-      console.log('Submitting vehicle data:', formData);
-      
-      // Mock successful registration
-      setTimeout(() => {
-        // Add new vehicle to the list (in a real app, you'd get the ID from the API)
-        const newVehicle = {
-          id: Date.now().toString(),
-          ...formData,
-          status: 'active',
-          lastLocation: 'Not tracked yet'
-        };
-        
-        setVehicles([...vehicles, newVehicle]);
-        setFormData({
-          vehicleName: '',
-          licensePlate: '',
-          vehicleType: 'car',
-          make: '',
-          model: '',
-          year: '',
-          vin: '',
-          color: '',
-          fuelType: 'gasoline',
-          assignedDriver: '',
-          deviceId: '',
-          trackingEnabled: true,
-          sensorEnabled: true,
-          occupancyDetectionEnabled: true,
-          notes: ''
-        });
-        
-        setShowForm(false);
-        setIsLoading(false);
-        toast.success('Vehicle registered successfully!');
-      }, 1000);
-      
+
+      // Add default data for fields not provided by the user
+      const payload = {
+        ...formData,
+        status: 'active', // Default status
+        lastLocation: 'Not tracked yet', // Default location
+      };
+
+      // Submit the form data to the backend
+      const response = await axios.post('http://localhost:5000/api/vehicles', payload);
+
+      // Add the new vehicle to the list
+      setVehicles([...vehicles, response.data]);
+
+      // Reset the form
+      setFormData({
+        vehicleName: '',
+        licensePlate: '',
+        vehicleType: 'car',
+        make: '',
+        model: '',
+        year: '',
+        vin: '',
+        color: '',
+        fuelType: 'gasoline',
+        assignedDriver: '',
+        deviceId: '',
+        trackingEnabled: true,
+        sensorEnabled: true,
+        occupancyDetectionEnabled: true,
+        notes: ''
+      });
+
+      setShowForm(false);
+      toast.success('Vehicle registered successfully!');
     } catch (error) {
       console.error('Error registering vehicle:', error);
-      toast.error('Failed to register vehicle');
+      toast.error(error.response?.data?.message || 'Failed to register vehicle');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -137,8 +110,8 @@ function Vehicles() {
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1><FaCar className="me-2" />Vehicle Management</h1>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
           {showForm ? 'Cancel' : 'Add New Vehicle'}
@@ -157,7 +130,7 @@ function Vehicles() {
                 {/* Basic Info */}
                 <div className="col-md-6">
                   <h6 className="mb-3">Basic Information</h6>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">Vehicle Name/ID*</label>
                     <div className="input-group">
@@ -173,7 +146,7 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">License Plate*</label>
                     <div className="input-group">
@@ -189,7 +162,7 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">Vehicle Type</label>
                     <select
@@ -206,7 +179,7 @@ function Vehicles() {
                       <option value="other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div className="row">
                     <div className="col-md-6">
                       <div className="mb-3">
@@ -235,7 +208,7 @@ function Vehicles() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="row">
                     <div className="col-md-6">
                       <div className="mb-3">
@@ -270,11 +243,11 @@ function Vehicles() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Additional Info */}
                 <div className="col-md-6">
                   <h6 className="mb-3">Tracking & Monitoring Setup</h6>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">VIN Number</label>
                     <input
@@ -286,7 +259,7 @@ function Vehicles() {
                       placeholder="Vehicle Identification Number"
                     />
                   </div>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">Fuel Type</label>
                     <select
@@ -303,7 +276,7 @@ function Vehicles() {
                       <option value="lpg">LPG</option>
                     </select>
                   </div>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">Assigned Driver</label>
                     <div className="input-group">
@@ -318,7 +291,7 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">Tracking Device ID*</label>
                     <div className="input-group">
@@ -334,7 +307,7 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <div className="form-check form-switch">
                       <input
@@ -350,7 +323,7 @@ function Vehicles() {
                       </label>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <div className="form-check form-switch">
                       <input
@@ -366,7 +339,7 @@ function Vehicles() {
                       </label>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <div className="form-check form-switch">
                       <input
@@ -383,7 +356,7 @@ function Vehicles() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Notes */}
                 <div className="col-12">
                   <div className="mb-3">
@@ -399,18 +372,18 @@ function Vehicles() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="d-flex justify-content-end gap-2 mt-3">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
+                <button
+                  type="button"
+                  className="btn btn-secondary"
                   onClick={() => setShowForm(false)}
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-success" 
+                <button
+                  type="submit"
+                  className="btn btn-success"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Registering...' : 'Register Vehicle'}
@@ -455,7 +428,7 @@ function Vehicles() {
                 </thead>
                 <tbody>
                   {vehicles.map((vehicle) => (
-                    <tr key={vehicle.id}>
+                    <tr key={vehicle._id}>
                       <td>{vehicle.vehicleName}</td>
                       <td>{vehicle.licensePlate}</td>
                       <td>{vehicle.vehicleType}</td>
@@ -466,12 +439,12 @@ function Vehicles() {
                         </span>
                       </td>
                       <td>{vehicle.lastLocation}</td>
-                      <td>{vehicle.driverName}</td>
+                      <td>{vehicle.assignedDriver}</td>
                       <td>
                         <div className="btn-group btn-group-sm">
-                          <button 
-                            className="btn btn-primary" 
-                            onClick={() => handleViewDetails(vehicle.id)}
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => handleViewDetails(vehicle._id)}
                           >
                             View
                           </button>
