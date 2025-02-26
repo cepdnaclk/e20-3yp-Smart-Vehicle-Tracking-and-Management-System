@@ -72,19 +72,21 @@ const Dashboard = () => {
   }, []);
 
   // Fetch active drivers
+
   useEffect(() => {
     const fetchActiveDrivers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/drivers?status=active");
-        setActiveDrivers(response.data.length);
+        const response = await axios.get("http://localhost:5000/api/drivers/count/active");
+        setActiveDrivers(response.data.activeDriversCount); // Corrected this line
       } catch (error) {
-        console.error("Error fetching active drivers:", error);
+        console.error("Error fetching active drivers count:", error);
       }
     };
-
+  
     fetchActiveDrivers();
   }, []);
-
+  
+  
 
 
   const recentAlerts = [

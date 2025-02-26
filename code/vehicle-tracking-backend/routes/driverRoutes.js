@@ -124,15 +124,13 @@ router.get("/count", async (req, res) => {
   }
 });
 
-// GET active drivers
-router.get("/", async (req, res) => {
+// GET active drivers count
+router.get("/count/active", async (req, res) => {
   try {
-    let filter = {};
-    if (req.query.status === "active") {
-      filter = { status: "active" }; // Assuming drivers have a `status` field
-    }
-    const drivers = await Driver.find(filter);
-    res.json(drivers);
+    const activeDriversCount = await Driver.countDocuments({
+      employmentStatus: "active",
+    });
+    res.json({ activeDriversCount });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
