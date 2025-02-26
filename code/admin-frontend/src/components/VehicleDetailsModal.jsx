@@ -202,10 +202,40 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
             <Card>
               <Card.Header>Vehicle Location on Map</Card.Header>
               <Card.Body>
-                <div style={{ height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-                  <MapPin size={32} className="text-primary mb-3" />
-                  <p>Map display here for Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}</p>
-                </div>
+                {/* Map Container */}
+                <div style={{ height: '300px', backgroundColor: '#f5f5f5', position: 'relative' }}>
+                  {/* Map Icon */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 1,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <MapPin size={32} className="text-primary mb-2" />
+                    <p style={{ margin: 0 }}>Loading map...</p>
+                  </div>
+
+                  {/* Map Iframe */}
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        scrolling="no"
+                        marginHeight="0"
+                        marginWidth="0"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=77.5946%2C12.9716%2C80.2707%2C13.0827&layer=mapnik&marker=${sensorData.location.lat},${sensorData.location.lng}`}
+                        style={{ border: '1px solid black', position: 'relative', zIndex: 2 }}
+                      ></iframe>
+                    </div>
+
+                {/* Location Text */}
+                <p className="mt-3" style={{ textAlign: 'center' }}>
+                  Map display for Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
+                </p>
               </Card.Body>
             </Card>
           </>
