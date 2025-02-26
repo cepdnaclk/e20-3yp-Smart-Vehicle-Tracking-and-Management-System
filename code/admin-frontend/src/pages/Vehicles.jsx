@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaCar, FaIdCard, FaUserAlt, FaCalendarAlt, FaMapMarkerAlt, FaTags,FaArrowLeft  } from 'react-icons/fa';
 import axios from 'axios';
+import VehicleDetailsModal from "../components/VehicleDetailsModal";
 
 function Vehicles() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showVehicleDetails, setShowVehicleDetails] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -102,6 +105,34 @@ function Vehicles() {
     }
   };
 
+  // handel delete vehicle
+
+  const handleDelete = async (vehicleId) => {
+    if (window.confirm("Are you sure you want to delete this vehicle?")) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/vehicles/${vehicleId}`, {
+          method: "DELETE",
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to delete vehicle");
+        }
+  
+        // Update the state to remove the deleted vehicle from the UI
+        setVehicles((prevVehicles) => prevVehicles.filter((v) => v._id !== vehicleId));
+  
+        alert("Vehicle deleted successfully");
+      } catch (error) {
+        console.error("Error deleting vehicle:", error);
+        alert("Error deleting vehicle. Please try again.");
+      }
+    }
+  };
+  
+
+
+  // handel view vehicle
+
   const handleViewDetails = (vehicleId) => {
     navigate(`/vehicles/${vehicleId}`);
   };
@@ -109,6 +140,16 @@ function Vehicles() {
   const handleGoToDashboard = () => {
     navigate('/dashboard');
   };
+
+  // speed data for the vehicle details modal
+  const speedData = [
+    { time: "00:00", speed: 45 },
+    { time: "04:00", speed: 55 },
+    { time: "08:00", speed: 65 },
+    { time: "12:00", speed: 60 },
+    { time: "16:00", speed: 70 },
+    { time: "20:00", speed: 50 },
+  ];
 
   return (
     <div className="container-fluid p-4">
@@ -451,17 +492,33 @@ function Vehicles() {
                           {vehicle.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td>{vehicle.lastLocation}</td>
+                      <td>
+                        <button
+                          className="btn btn-info btn-sm"
+                          onClick={() => {
+                            setSelectedVehicle(vehicle);
+                            setShowVehicleDetails(true);
+                          }}
+                        >
+                          View
+                        </button>
+                      </td>
                       <td>{vehicle.assignedDriver}</td>
                       <td>
                         <div className="btn-group btn-group-sm">
                           <button
-                            className="btn btn-primary"
+                            className="btn btn-success"
                             onClick={() => handleViewDetails(vehicle._id)}
                           >
                             View
                           </button>
                           <button className="btn btn-outline-secondary">Edit</button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(vehicle._id)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -472,6 +529,14 @@ function Vehicles() {
           )}
         </div>
       </div>
+      {/* Vehicle Details Modal */}
+      {showVehicleDetails && selectedVehicle && (
+        <VehicleDetailsModal
+          vehicle={selectedVehicle}
+          onClose={() => setShowVehicleDetails(false)}
+          speedData={speedData}
+        />
+      )}
     </div>
   );
 }

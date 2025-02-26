@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // Import axios
+import axios from "axios";
 import { Bell, Map, Truck, Users, AlertTriangle, Settings, LogOut } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
@@ -12,7 +12,7 @@ const Dashboard = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [showVehicleDetails, setShowVehicleDetails] = useState(false);
   const [totalVehicles, setTotalVehicles] = useState(0);
-  const [activeVehicles, setActiveVehicles] = useState([]); 
+  const [activeVehicles, setActiveVehicles] = useState([]);
   const [totalDrivers, setTotalDrivers] = useState(0);
   const [activeDrivers, setActiveDrivers] = useState(0);
   const [activeAlerts, setActiveAlerts] = useState(0);
@@ -48,7 +48,7 @@ const Dashboard = () => {
     const fetchActiveVehicles = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/vehicles?status=active");
-        setActiveVehicles(response.data); // Set the active vehicles array
+        setActiveVehicles(response.data);
       } catch (error) {
         console.error("Error fetching active vehicles:", error);
       }
@@ -72,22 +72,18 @@ const Dashboard = () => {
   }, []);
 
   // Fetch active drivers
-
   useEffect(() => {
     const fetchActiveDrivers = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/drivers/count/active");
-        setActiveDrivers(response.data.activeDriversCount); // Corrected this line
+        setActiveDrivers(response.data.activeDriversCount);
       } catch (error) {
         console.error("Error fetching active drivers count:", error);
       }
     };
-  
+
     fetchActiveDrivers();
   }, []);
-  
-  
-
 
   const recentAlerts = [
     {
@@ -126,6 +122,7 @@ const Dashboard = () => {
     <div className="min-vh-100 bg-light" style={{ paddingLeft: "250px" }}>
       <Sidebar handleLogout={handleLogout} />
       <div style={{ padding: "2rem" }}>
+        {/* Header Section */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>Dashboard Overview</h2>
           <div className="d-flex align-items-center gap-3">
@@ -146,13 +143,14 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Live Vehicle Tracking Map */}
         <div className="card mb-4">
           <div className="card-body">
             <h5 className="card-title">Live Vehicle Tracking</h5>
-            <div className="bg-light rounded p-4 text-center" style={{ height: "400px" }}>
+            <div className="bg-light rounded p-4">
               <iframe
                 width="100%"
-                height="100%"
+                height="400px"
                 frameBorder="0"
                 scrolling="no"
                 marginHeight="0"
@@ -164,6 +162,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Stats Cards */}
         <div className="row mb-4">
           <div className="col-md-2">
             <StatsCard title="Total Vehicles" value={totalVehicles} />
@@ -182,22 +181,23 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Recent Alerts and Active Vehicles */}
         <div className="row">
           <div className="col-lg-6 mb-4">
-            <div className="card">
+            <div className="card h-100">
               <div className="card-body">
                 <h5 className="card-title mb-4">Recent Alerts</h5>
                 <div style={{ maxHeight: "370px", overflowY: "auto" }}>
-                {recentAlerts.map((alert) => (
-                  <AlertCard key={alert.id} alert={alert} />
-                ))}
+                  {recentAlerts.map((alert) => (
+                    <AlertCard key={alert.id} alert={alert} />
+                  ))}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="col-lg-6 mb-4">
-            <div className="card">
+            <div className="card h-100">
               <div className="card-body">
                 <h5 className="card-title mb-4">Active Vehicles</h5>
                 <div style={{ maxHeight: "370px", overflowY: "auto" }}>
@@ -218,6 +218,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Vehicle Details Modal */}
       {showVehicleDetails && selectedVehicle && (
         <VehicleDetailsModal
           vehicle={selectedVehicle}
