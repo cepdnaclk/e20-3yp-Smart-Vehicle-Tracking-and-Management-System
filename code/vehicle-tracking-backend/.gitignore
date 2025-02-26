@@ -19,3 +19,8 @@ Thumbs.db
 # Ignore build files (if applicable)
 dist/
 build/
+
+# Ignore only JPG images inside uploads directory
+uploads/*.jpg
+uploads/*.PNG
+uploads/*.jpeg

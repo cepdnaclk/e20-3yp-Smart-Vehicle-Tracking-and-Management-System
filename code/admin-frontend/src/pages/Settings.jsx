@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaShieldAlt, FaBell, FaCar, FaCog, FaSave } from 'react-icons/fa';
+import { FaUser, FaShieldAlt, FaBell, FaCar, FaCog, FaSave, FaArrowLeft } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 function Settings() {
@@ -53,10 +53,16 @@ function Settings() {
 
   return (
     <div className="container-fluid p-4">
-      <h1 className="mb-4">
-        <FaCog className="me-2" />
-        Settings
-      </h1>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+          <FaCog className="me-2" />
+          Settings
+        </h1>
+        <button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
+          <FaArrowLeft className="me-2" />
+          Back to Dashboard
+        </button>
+      </div>
 
       {/* User Profile Section */}
       <div className="card shadow-sm mb-4">

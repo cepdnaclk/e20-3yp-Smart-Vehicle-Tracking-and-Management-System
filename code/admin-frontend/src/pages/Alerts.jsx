@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaExclamationTriangle, FaThermometerHalf, FaTint, FaMapMarkerAlt, FaCarCrash, FaShieldAlt } from 'react-icons/fa';
+import { FaExclamationTriangle, FaThermometerHalf, FaTint, FaMapMarkerAlt, FaCarCrash, FaShieldAlt,FaArrowLeft } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 function Alert() {
@@ -91,12 +91,21 @@ function Alert() {
     // navigate(`/alert-details/${alert.id}`);
   };
 
+  const handleDashboardRedirect = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="container-fluid p-4">
-      <h1 className="mb-4">
-        <FaExclamationTriangle className="me-2" />
-        Alerts
-      </h1>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+          <FaExclamationTriangle className="me-2" />
+          Alerts
+        </h1>
+        <button className="btn btn-secondary me-2" onClick={handleDashboardRedirect}>
+           <FaArrowLeft className="me-1" /> Back to Dashboard
+        </button>
+      </div>
 
       <div className="card shadow-sm">
         <div className="card-header bg-light">
