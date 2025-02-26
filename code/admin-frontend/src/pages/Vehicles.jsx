@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaCar, FaIdCard, FaUserAlt, FaCalendarAlt, FaMapMarkerAlt, FaTags,FaArrowLeft  } from 'react-icons/fa';
 import axios from 'axios';
+import VehicleDetailsModal from "../components/VehicleDetailsModal";
 
 function Vehicles() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showVehicleDetails, setShowVehicleDetails] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -128,6 +131,7 @@ function Vehicles() {
   
 
 
+  // handel view vehicle
 
   const handleViewDetails = (vehicleId) => {
     navigate(`/vehicles/${vehicleId}`);
@@ -136,6 +140,16 @@ function Vehicles() {
   const handleGoToDashboard = () => {
     navigate('/dashboard');
   };
+
+  // speed data for the vehicle details modal
+  const speedData = [
+    { time: "00:00", speed: 45 },
+    { time: "04:00", speed: 55 },
+    { time: "08:00", speed: 65 },
+    { time: "12:00", speed: 60 },
+    { time: "16:00", speed: 70 },
+    { time: "20:00", speed: 50 },
+  ];
 
   return (
     <div className="container-fluid p-4">
@@ -478,12 +492,22 @@ function Vehicles() {
                           {vehicle.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td>{vehicle.lastLocation}</td>
+                      <td>
+                        <button
+                          className="btn btn-info btn-sm"
+                          onClick={() => {
+                            setSelectedVehicle(vehicle);
+                            setShowVehicleDetails(true);
+                          }}
+                        >
+                          View
+                        </button>
+                      </td>
                       <td>{vehicle.assignedDriver}</td>
                       <td>
                         <div className="btn-group btn-group-sm">
                           <button
-                            className="btn btn-primary"
+                            className="btn btn-success"
                             onClick={() => handleViewDetails(vehicle._id)}
                           >
                             View
@@ -505,6 +529,14 @@ function Vehicles() {
           )}
         </div>
       </div>
+      {/* Vehicle Details Modal */}
+      {showVehicleDetails && selectedVehicle && (
+        <VehicleDetailsModal
+          vehicle={selectedVehicle}
+          onClose={() => setShowVehicleDetails(false)}
+          speedData={speedData}
+        />
+      )}
     </div>
   );
 }
