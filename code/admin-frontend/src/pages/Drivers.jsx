@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaCalendarAlt, FaMapMarkerAlt, FaCar, FaFileAlt, FaCamera, FaUserCircle, FaChartLine, FaFileUpload, FaCheck, FaTimes, FaUserEdit, FaExclamationTriangle } from 'react-icons/fa';
+import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaCalendarAlt, FaMapMarkerAlt, FaCar, FaFileAlt, FaCamera, FaUserCircle, FaChartLine, FaFileUpload, FaCheck, FaTimes, FaUserEdit, FaExclamationTriangle, FaArrowLeft } from 'react-icons/fa';
 import axios from 'axios';
 
 function Drivers() {
@@ -113,16 +113,28 @@ function Drivers() {
     navigate(`/drivers/${driverId}`);
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1><FaUser className="me-2" />Driver Management</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? 'Cancel' : 'Add New Driver'}
-        </button>
+        <div>
+          <button
+            className="btn btn-secondary me-2"
+            onClick={handleBackToDashboard}
+          >
+            <FaArrowLeft className="me-1" /> Back to Dashboard
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? 'Cancel' : 'Add New Driver'}
+          </button>
+        </div>
       </div>
 
       {/* Registration Form */}

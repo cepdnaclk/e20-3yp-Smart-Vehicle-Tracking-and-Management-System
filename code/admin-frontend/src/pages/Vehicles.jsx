@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaCar, FaIdCard, FaUserAlt, FaCalendarAlt, FaMapMarkerAlt, FaTags } from 'react-icons/fa';
+import { FaCar, FaIdCard, FaUserAlt, FaCalendarAlt, FaMapMarkerAlt, FaTags,FaArrowLeft  } from 'react-icons/fa';
 import axios from 'axios';
 
 function Vehicles() {
@@ -106,16 +106,29 @@ function Vehicles() {
     navigate(`/vehicles/${vehicleId}`);
   };
 
+  const handleGoToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1><FaCar className="me-2" />Vehicle Management</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? 'Cancel' : 'Add New Vehicle'}
-        </button>
+        <div>
+          <button
+            className="btn btn-secondary me-2"
+            onClick={handleGoToDashboard}
+          >
+          <FaArrowLeft className="me-2" />
+            Back to Dashboard
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? 'Cancel' : 'Add New Vehicle'}
+          </button>
+        </div>
       </div>
 
       {/* Registration Form */}
