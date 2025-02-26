@@ -13,7 +13,19 @@ const VehicleCard = ({ vehicle, onClick }) => (
         </div>
       </div>
       <div className="text-end">
-        <span className={`badge ${vehicle.status === 'Moving' ? 'bg-success' : 'bg-warning'}`}>
+        <span
+          className={`badge ${
+              vehicle.status === 'active'
+              ? 'bg-success' // Green for "Active"
+              : vehicle.status === 'Idle'
+              ? 'bg-secondary' // Grey for "Idle"
+              : vehicle.status === 'Stopped Temporarily'
+              ? 'bg-warning' // Yellow for "Stopped Temporarily"
+              : vehicle.status === 'Emergency'
+              ? 'bg-danger' // Red for "Emergency"
+              : 'bg-light' // Default color if none match
+          }`}
+        >
           {vehicle.status}
         </span>
         <div className="mt-2 small text-muted">

@@ -187,9 +187,11 @@ const Dashboard = () => {
             <div className="card">
               <div className="card-body">
                 <h5 className="card-title mb-4">Recent Alerts</h5>
+                <div style={{ maxHeight: "370px", overflowY: "auto" }}>
                 {recentAlerts.map((alert) => (
                   <AlertCard key={alert.id} alert={alert} />
                 ))}
+                </div>
               </div>
             </div>
           </div>
@@ -198,7 +200,7 @@ const Dashboard = () => {
             <div className="card">
               <div className="card-body">
                 <h5 className="card-title mb-4">Active Vehicles</h5>
-                <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+                <div style={{ maxHeight: "370px", overflowY: "auto" }}>
                   {activeVehicles.map((vehicle) => (
                     <VehicleCard
                       key={vehicle._id}

@@ -1,82 +1,223 @@
-import { User, Battery, Fuel, Clock, Info } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, Alert, Card, Row, Col, Spinner } from 'react-bootstrap';
+import { X, Truck, AlertTriangle, Activity, Thermometer, Droplets, MapPin } from 'lucide-react';
+import SpeedChart from './SpeedChart';
+import TemperatureChart from './TemperatureChart';  // Import the TemperatureChart component
+import HumidityChart from './HumidityChart';      // Import the HumidityChart component
 
-const VehicleDetailsModal = ({ vehicle, onClose, speedData }) => (
-  <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1050 }}>
-    <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5 className="modal-title">Vehicle Details: {vehicle.number}</h5>
-          <button type="button" className="btn-close" onClick={onClose}></button>
-        </div>
-        <div className="modal-body">
-          <div className="row mb-4">
-            <div className="col-md-6">
-              <div className="card">
-                <div className="card-body">
-                  <div className="mb-3">
-                    <User className="me-2 text-primary" />
-                    <span className="fw-medium">Driver: {vehicle.driver}</span>
-                  </div>
-                  <div className="mb-3">
-                    <Battery className="me-2 text-success" />
-                    <span>Battery: {vehicle.battery}%</span>
-                  </div>
-                  <div>
-                    <Fuel className="me-2 text-warning" />
-                    <span>Fuel Level: {vehicle.fuel}%</span>
-                  </div>
+const VehicleDetailsModal = ({ vehicle, onClose }) => {
+  const [sensorData, setSensorData] = useState({
+    temperature: 0,
+    humidity: 0,
+    speed: 0,
+    location: { lat: 0, lng: 0 },
+    accelerometer: { x: 0, y: 0, z: 0 },
+    status: 'Idle',
+    connected: true, // Initially set to true for demonstration
+    tampering: false, // Set tampering status
+    speedHistory: [], // History of speeds
+    temperatureHistory: [], // Temperature history
+    humidityHistory: [] // Humidity history
+  });
+  
+  const [loading, setLoading] = useState(true);
+
+  // Fetch sensor data when the vehicle is selected
+  useEffect(() => {
+    if (vehicle) {
+      fetchSensorData(vehicle.id);
+    }
+  }, [vehicle]);
+
+  // Simulate fetching sensor data for the active vehicle
+  const fetchSensorData = async (vehicleId) => {
+    try {
+      setLoading(true);
+      const response = await new Promise((resolve) =>
+        setTimeout(() => {
+          resolve({
+            temperature: Math.random() * 40, // Random temperature for example
+            humidity: Math.random() * 100,   // Random humidity
+            speed: Math.random() * 100,      // Random speed
+            location: { lat: Math.random() * 180 - 90, lng: Math.random() * 360 - 180 }, // Random location
+            accelerometer: { x: Math.random() * 10, y: Math.random() * 10, z: Math.random() * 10 }, // Random accelerometer values
+            status: 'Moving',  // Simulated status
+            tampering: Math.random() > 0.9, // Simulate a 10% chance of tampering
+            speedHistory: generateMockSpeedHistory(), // Simulate speed history
+            temperatureHistory: generateMockTemperatureHistory(), // Simulate temperature history
+            humidityHistory: generateMockHumidityHistory() // Simulate humidity history
+          });
+        }, 1000)
+      );
+      setSensorData(response);
+    } catch (error) {
+      console.error('Error fetching sensor data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generate mock speed history
+  const generateMockSpeedHistory = () => {
+    const now = new Date();
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
+      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), speed: Math.random() * 100 });
+    }
+    return data;
+  };
+
+  // Generate mock temperature history
+  const generateMockTemperatureHistory = () => {
+    const now = new Date();
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
+      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), temperature: Math.random() * 40 });
+    }
+    return data;
+  };
+
+  // Generate mock humidity history
+  const generateMockHumidityHistory = () => {
+    const now = new Date();
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
+      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), humidity: Math.random() * 100 });
+    }
+    return data;
+  };
+
+  return (
+    <Modal show={true} onHide={onClose} size="lg">
+      <Modal.Header closeButton>
+        <Modal.Title className="d-flex align-items-center">
+          <Truck className="me-2" /> Vehicle Details: {vehicle.number}
+        </Modal.Title>
+      </Modal.Header>
+      
+      <Modal.Body>
+        {loading ? (
+          <div className="text-center">
+            <Spinner animation="border" variant="primary" />
+            <p>Loading data...</p>
+          </div>
+        ) : (
+          <>
+            {/* Connection Alert */}
+            {!sensorData.connected && (
+              <Alert variant="warning" className="mb-4">
+                <AlertTriangle className="me-2" />
+                <strong>Warning:</strong> Device not connected! Unable to fetch sensor data.
+              </Alert>
+            )}
+
+            {/* Tampering Alert */}
+            {sensorData.tampering && (
+              <Alert variant="danger" className="mb-4">
+                <AlertTriangle className="me-2" />
+                <strong>ALERT:</strong> Tampering detected!
+              </Alert>
+            )}
+
+            {/* Vehicle Information */}
+            <Row className="mb-4">
+              <Col md={6}>
+                <Card>
+                  <Card.Header>Vehicle Information</Card.Header>
+                  <Card.Body>
+                    <table className="table table-borderless">
+                      <tbody>
+                        <tr><th>Driver:</th><td>{vehicle.driver}</td></tr>
+                        <tr><th>Status:</th><td>{sensorData.status}</td></tr>
+                        <tr><th>License Plate:</th><td>{vehicle.number}</td></tr>
+                      </tbody>
+                    </table>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={6}>
+                <Card>
+                  <Card.Header>Sensor Readings</Card.Header>
+                  <Card.Body>
+                    <div className="mb-3">
+                      <Thermometer className="text-danger me-2" />
+                      <strong>Temperature:</strong> {sensorData.temperature} °C
+                    </div>
+                    <div className="mb-3">
+                      <Droplets className="text-primary me-2" />
+                      <strong>Humidity:</strong> {sensorData.humidity} %
+                    </div>
+                    <div className="mb-3">
+                      <Activity className="text-success me-2" />
+                      <strong>Accelerometer:</strong> X: {sensorData.accelerometer.x}, Y: {sensorData.accelerometer.y}, Z: {sensorData.accelerometer.z}
+                    </div>
+                    <div>
+                      <MapPin className="text-warning me-2" />
+                      <strong>Location:</strong> Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Speed, Temperature, and Humidity History Charts */}
+            <Card className="mb-4">
+              <Card.Header>Speed History</Card.Header>
+              <Card.Body>
+                {sensorData.speedHistory.length > 0 ? (
+                  <SpeedChart data={sensorData.speedHistory} />
+                ) : (
+                  <div className="text-center">No speed history available</div>
+                )}
+              </Card.Body>
+            </Card>
+
+            <Card className="mb-4">
+              <Card.Header>Temperature History</Card.Header>
+              <Card.Body>
+                {sensorData.temperatureHistory.length > 0 ? (
+                  <TemperatureChart data={sensorData.temperatureHistory} />
+                ) : (
+                  <div className="text-center">No temperature history available</div>
+                )}
+              </Card.Body>
+            </Card>
+
+            <Card className="mb-4">
+              <Card.Header>Humidity History</Card.Header>
+              <Card.Body>
+                {sensorData.humidityHistory.length > 0 ? (
+                  <HumidityChart data={sensorData.humidityHistory} />
+                ) : (
+                  <div className="text-center">No humidity history available</div>
+                )}
+              </Card.Body>
+            </Card>
+
+            {/* Map (Placeholder) */}
+            <Card>
+              <Card.Header>Vehicle Location on Map</Card.Header>
+              <Card.Body>
+                <div style={{ height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
+                  <MapPin size={32} className="text-primary mb-3" />
+                  <p>Map display here for Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}</p>
                 </div>
-              </div>
-            </div>
-
-            <div className="col-md-6">
-              <div className="card">
-                <div className="card-body">
-                  <div className="mb-3">
-                    <Clock className="me-2 text-purple" />
-                    <span>Last Maintenance: {vehicle.lastMaintenance}</span>
-                  </div>
-                  <div className="mb-3">
-                    <Info className="me-2 text-primary" />
-                    <span>Engine Status: {vehicle.engineStatus}</span>
-                  </div>
-                  <div>
-                    <User className="me-2 text-success" />
-                    <span>Occupancy: {vehicle.occupancy ? 'Occupied' : 'Empty'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h5 className="mb-3">Speed History</h5>
-            <div style={{ height: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={speedData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="speed" stroke="#0d6efd" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Live Location</h5>
-              <div className="bg-light rounded p-4 text-center" style={{ height: '300px' }}>
-                <span className="text-muted">Map showing vehicle at {vehicle.location.lat}, {vehicle.location.lng}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+              </Card.Body>
+            </Card>
+          </>
+        )}
+      </Modal.Body>
+      
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onClose}>Close</Button>
+        <Button variant="primary" onClick={() => fetchSensorData(vehicle.id)}>Refresh Data</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
 
 export default VehicleDetailsModal;
