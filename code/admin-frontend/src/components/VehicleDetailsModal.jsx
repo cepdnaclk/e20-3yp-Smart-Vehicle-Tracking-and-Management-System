@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Card, Row, Col, Spinner } from 'react-bootstrap';
 import { X, Truck, AlertTriangle, Activity, Thermometer, Droplets, MapPin } from 'lucide-react';
 import SpeedChart from './SpeedChart';
+import TemperatureChart from './TemperatureChart';  // Import the TemperatureChart component
+import HumidityChart from './HumidityChart';      // Import the HumidityChart component
 
 const VehicleDetailsModal = ({ vehicle, onClose }) => {
   const [sensorData, setSensorData] = useState({
@@ -13,7 +15,9 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
     status: 'Idle',
     connected: true, // Initially set to true for demonstration
     tampering: false, // Set tampering status
-    speedHistory: [] // History of speeds
+    speedHistory: [], // History of speeds
+    temperatureHistory: [], // Temperature history
+    humidityHistory: [] // Humidity history
   });
   
   const [loading, setLoading] = useState(true);
@@ -39,7 +43,9 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
             accelerometer: { x: Math.random() * 10, y: Math.random() * 10, z: Math.random() * 10 }, // Random accelerometer values
             status: 'Moving',  // Simulated status
             tampering: Math.random() > 0.9, // Simulate a 10% chance of tampering
-            speedHistory: generateMockSpeedHistory() // Simulate speed history
+            speedHistory: generateMockSpeedHistory(), // Simulate speed history
+            temperatureHistory: generateMockTemperatureHistory(), // Simulate temperature history
+            humidityHistory: generateMockHumidityHistory() // Simulate humidity history
           });
         }, 1000)
       );
@@ -58,6 +64,28 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
     for (let i = 0; i < 7; i++) {
       const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
       data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), speed: Math.random() * 100 });
+    }
+    return data;
+  };
+
+  // Generate mock temperature history
+  const generateMockTemperatureHistory = () => {
+    const now = new Date();
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
+      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), temperature: Math.random() * 40 });
+    }
+    return data;
+  };
+
+  // Generate mock humidity history
+  const generateMockHumidityHistory = () => {
+    const now = new Date();
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
+      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), humidity: Math.random() * 100 });
     }
     return data;
   };
@@ -136,7 +164,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
               </Col>
             </Row>
 
-            {/* Speed History Chart */}
+            {/* Speed, Temperature, and Humidity History Charts */}
             <Card className="mb-4">
               <Card.Header>Speed History</Card.Header>
               <Card.Body>
@@ -144,6 +172,28 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                   <SpeedChart data={sensorData.speedHistory} />
                 ) : (
                   <div className="text-center">No speed history available</div>
+                )}
+              </Card.Body>
+            </Card>
+
+            <Card className="mb-4">
+              <Card.Header>Temperature History</Card.Header>
+              <Card.Body>
+                {sensorData.temperatureHistory.length > 0 ? (
+                  <TemperatureChart data={sensorData.temperatureHistory} />
+                ) : (
+                  <div className="text-center">No temperature history available</div>
+                )}
+              </Card.Body>
+            </Card>
+
+            <Card className="mb-4">
+              <Card.Header>Humidity History</Card.Header>
+              <Card.Body>
+                {sensorData.humidityHistory.length > 0 ? (
+                  <HumidityChart data={sensorData.humidityHistory} />
+                ) : (
+                  <div className="text-center">No humidity history available</div>
                 )}
               </Card.Body>
             </Card>
