@@ -114,4 +114,28 @@ router.post(
   }
 );
 
+// GET total number of drivers
+router.get("/count", async (req, res) => {
+  try {
+    const totalDrivers = await Driver.countDocuments();
+    res.json({ totalDrivers });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET active drivers
+router.get("/", async (req, res) => {
+  try {
+    let filter = {};
+    if (req.query.status === "active") {
+      filter = { status: "active" }; // Assuming drivers have a `status` field
+    }
+    const drivers = await Driver.find(filter);
+    res.json(drivers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

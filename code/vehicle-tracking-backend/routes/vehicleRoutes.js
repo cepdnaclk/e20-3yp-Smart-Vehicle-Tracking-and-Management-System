@@ -58,4 +58,28 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET total number of vehicles
+router.get("/count", async (req, res) => {
+  try {
+    const totalVehicles = await Vehicle.countDocuments();
+    res.json({ totalVehicles });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET active vehicles
+router.get("/", async (req, res) => {
+  try {
+    let filter = {};
+    if (req.query.status === "active") {
+      filter = { status: "active" }; // Assuming vehicles have a `status` field
+    }
+    const vehicles = await Vehicle.find(filter);
+    res.json(vehicles);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
