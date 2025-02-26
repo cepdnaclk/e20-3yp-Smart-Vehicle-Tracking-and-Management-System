@@ -102,6 +102,33 @@ function Vehicles() {
     }
   };
 
+  // handel delete vehicle
+
+  const handleDelete = async (vehicleId) => {
+    if (window.confirm("Are you sure you want to delete this vehicle?")) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/vehicles/${vehicleId}`, {
+          method: "DELETE",
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to delete vehicle");
+        }
+  
+        // Update the state to remove the deleted vehicle from the UI
+        setVehicles((prevVehicles) => prevVehicles.filter((v) => v._id !== vehicleId));
+  
+        alert("Vehicle deleted successfully");
+      } catch (error) {
+        console.error("Error deleting vehicle:", error);
+        alert("Error deleting vehicle. Please try again.");
+      }
+    }
+  };
+  
+
+
+
   const handleViewDetails = (vehicleId) => {
     navigate(`/vehicles/${vehicleId}`);
   };
@@ -462,6 +489,12 @@ function Vehicles() {
                             View
                           </button>
                           <button className="btn btn-outline-secondary">Edit</button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(vehicle._id)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
