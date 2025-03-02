@@ -121,28 +121,32 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                 </Card>
               </Col>
 
-              <Col md={6}>
-                <Card>
-                  <Card.Header>Sensor Readings</Card.Header>
-                  <Card.Body>
-                    <div className="mb-3">
-                      <Thermometer className="text-danger me-2" />
-                      <strong>Temperature:</strong> {sensorData.temperature} °C
-                    </div>
-                    <div className="mb-3">
-                      <Droplets className="text-primary me-2" />
-                      <strong>Humidity:</strong> {sensorData.humidity} %
-                    </div>
-                    <div>
-                      <MapPin className="text-warning me-2" />
-                      <strong>Location:</strong> Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
+                    <Col md={6}>
+                    <Card>
+                      <Card.Header>Sensor Readings</Card.Header>
+                      <Card.Body>
+                      <div className="mb-3">
+                        <Thermometer className="text-danger me-2" />
+                        <strong>Temperature:</strong> {sensorData.temperature} °C
+                      </div>
+                      <div className="mb-3">
+                        <Droplets className="text-primary me-2" />
+                        <strong>Humidity:</strong> {sensorData.humidity} %
+                      </div>
+                      <div className="mb-3">
+                        <MapPin className="text-warning me-2" />
+                        <strong>Location:</strong> Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
+                      </div>
+                      <div>
+                        <Truck className="text-success me-2" />
+                        <strong>Speed:</strong> {sensorData.speed} km/h
+                      </div>
+                      </Card.Body>
+                    </Card>
+                    </Col>
+                  </Row>
 
-            {/* History Charts */}
+                  {/* History Charts */}
             <Card className="mb-4">
               <Card.Header>Speed History</Card.Header>
               <Card.Body>
