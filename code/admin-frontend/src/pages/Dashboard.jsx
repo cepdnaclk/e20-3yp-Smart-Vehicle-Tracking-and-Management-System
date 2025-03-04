@@ -166,16 +166,17 @@ const Dashboard = () => {
             <button className="btn btn-light position-relative">
               <Bell />
               <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                3
+                1
               </span>
             </button>
             <div className="d-flex align-items-center">
+              {/*
               <img
                 src="/api/placeholder/32/32"
                 alt="Profile"
                 className="rounded-circle me-2"
-              />
-              <span className="fw-medium">Admin User</span>
+              />*/}
+              <span className="fw-medium">Admin</span>
             </div>
           </div>
         </div>
