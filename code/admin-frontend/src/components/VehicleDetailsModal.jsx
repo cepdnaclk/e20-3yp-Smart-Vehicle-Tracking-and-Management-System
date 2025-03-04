@@ -1,100 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Card, Row, Col, Spinner } from 'react-bootstrap';
-import { X, Truck, AlertTriangle, Activity, Thermometer, Droplets, MapPin } from 'lucide-react';
+import { Truck, AlertTriangle, Thermometer, Droplets, MapPin } from 'lucide-react';
 import SpeedChart from './SpeedChart';
-import TemperatureChart from './TemperatureChart';  // Import the TemperatureChart component
-import HumidityChart from './HumidityChart';      // Import the HumidityChart component
+import TemperatureChart from './TemperatureChart';
+import HumidityChart from './HumidityChart';
+import { database } from "../lib/firebase";
+import { ref, onValue } from "firebase/database";
 
 const VehicleDetailsModal = ({ vehicle, onClose }) => {
+  // Initial state for sensor data
   const [sensorData, setSensorData] = useState({
     temperature: 0,
     humidity: 0,
     speed: 0,
     location: { lat: 0, lng: 0 },
-    accelerometer: { x: 0, y: 0, z: 0 },
     status: 'Idle',
-    connected: true, // Initially set to true for demonstration
-    tampering: false, // Set tampering status
-    speedHistory: [], // History of speeds
-    temperatureHistory: [], // Temperature history
-    humidityHistory: [] // Humidity history
+    tampering: false,
+    speedHistory: [],
+    temperatureHistory: [],
+    humidityHistory: []
   });
   
   const [loading, setLoading] = useState(true);
 
-  // Fetch sensor data when the vehicle is selected
   useEffect(() => {
-    if (vehicle) {
-      fetchSensorData(vehicle.id);
-    }
-  }, [vehicle]);
+    // If your Firebase structure is global (like your working HTML example), fetch from root "/"
+    const rootRef = ref(database, "/");
 
-  // Simulate fetching sensor data for the active vehicle
-  const fetchSensorData = async (vehicleId) => {
-    try {
-      setLoading(true);
-      const response = await new Promise((resolve) =>
-        setTimeout(() => {
-          resolve({
-            temperature: Math.random() * 40, // Random temperature for example
-            humidity: Math.random() * 100,   // Random humidity
-            speed: Math.random() * 100,      // Random speed
-            location: { lat: Math.random() * 180 - 90, lng: Math.random() * 360 - 180 }, // Random location
-            accelerometer: { x: Math.random() * 10, y: Math.random() * 10, z: Math.random() * 10 }, // Random accelerometer values
-            status: 'Moving',  // Simulated status
-            tampering: Math.random() > 0.9, // Simulate a 10% chance of tampering
-            speedHistory: generateMockSpeedHistory(), // Simulate speed history
-            temperatureHistory: generateMockTemperatureHistory(), // Simulate temperature history
-            humidityHistory: generateMockHumidityHistory() // Simulate humidity history
-          });
-        }, 1000)
-      );
-      setSensorData(response);
-    } catch (error) {
-      console.error('Error fetching sensor data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const unsubscribe = onValue(
+      rootRef,
+      (snapshot) => {
+        console.log("Fetched Data from Firebase:", snapshot.val());
+        if (snapshot.exists()) {
+          const data = snapshot.val();
 
-  // Generate mock speed history
-  const generateMockSpeedHistory = () => {
-    const now = new Date();
-    const data = [];
-    for (let i = 0; i < 7; i++) {
-      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
-      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), speed: Math.random() * 100 });
-    }
-    return data;
-  };
+          // Extract data from the root JSON structure:
+          // {
+          //   "gps": { "latitude": ..., "longitude": ..., "speed_kmh": ... },
+          //   "sensor": { "temperature_C": ..., "humidity": ... }
+          // }
+          const temperature = data.sensor?.temperature_C || 0;
+          const humidity = data.sensor?.humidity || 0;
+          const speed = data.gps?.speed_kmh || 0;
+          const location = {
+            lat: data.gps?.latitude || 0,
+            lng: data.gps?.longitude || 0
+          };
 
-  // Generate mock temperature history
-  const generateMockTemperatureHistory = () => {
-    const now = new Date();
-    const data = [];
-    for (let i = 0; i < 7; i++) {
-      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
-      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), temperature: Math.random() * 40 });
-    }
-    return data;
-  };
+          setSensorData((prev) => ({
+            ...prev,
+            temperature,
+            humidity,
+            speed,
+            location,
+            // Append new data to history arrays (keeping only the last 7 entries)
+            speedHistory: [...prev.speedHistory.slice(-6), { time: new Date().toLocaleTimeString(), speed }],
+            temperatureHistory: [...prev.temperatureHistory.slice(-6), { time: new Date().toLocaleTimeString(), temperature }],
+            humidityHistory: [...prev.humidityHistory.slice(-6), { time: new Date().toLocaleTimeString(), humidity }]
+          }));
+        } else {
+          console.error("No data found at the root of the database.");
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    );
 
-  // Generate mock humidity history
-  const generateMockHumidityHistory = () => {
-    const now = new Date();
-    const data = [];
-    for (let i = 0; i < 7; i++) {
-      const time = new Date(now - i * 10 * 60000); // Simulate 10 min intervals
-      data.push({ time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), humidity: Math.random() * 100 });
-    }
-    return data;
-  };
+    // Clean up listener on unmount
+    return () => unsubscribe();
+  }, []); // Empty dependency array because data is global
 
   return (
     <Modal show={true} onHide={onClose} size="lg">
       <Modal.Header closeButton>
         <Modal.Title className="d-flex align-items-center">
-          <Truck className="me-2" /> Vehicle Details: {vehicle.number}
+          <Truck className="me-2" /> Vehicle Details: {vehicle?.number || "N/A"}
         </Modal.Title>
       </Modal.Header>
       
@@ -106,11 +89,10 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
           </div>
         ) : (
           <>
-            {/* Connection Alert */}
-            {!sensorData.connected && (
-              <Alert variant="warning" className="mb-4">
-                <AlertTriangle className="me-2" />
-                <strong>Warning:</strong> Device not connected! Unable to fetch sensor data.
+            {/* If no sensor data is present, show an info alert */}
+            {(!sensorData.temperature && !sensorData.humidity && !sensorData.speed) && (
+              <Alert variant="info">
+                No sensor data available. Please check your Firebase database path and data.
               </Alert>
             )}
 
@@ -130,112 +112,89 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                   <Card.Body>
                     <table className="table table-borderless">
                       <tbody>
-                        <tr><th>Driver:</th><td>{vehicle.driver}</td></tr>
+                        <tr><th>Driver:</th><td>{vehicle?.driver || "Unknown"}</td></tr>
                         <tr><th>Status:</th><td>{sensorData.status}</td></tr>
-                        <tr><th>License Plate:</th><td>{vehicle.number}</td></tr>
+                        <tr><th>License Plate:</th><td>{vehicle?.number || "Unknown"}</td></tr>
                       </tbody>
                     </table>
                   </Card.Body>
                 </Card>
               </Col>
 
-              <Col md={6}>
-                <Card>
-                  <Card.Header>Sensor Readings</Card.Header>
-                  <Card.Body>
-                    <div className="mb-3">
-                      <Thermometer className="text-danger me-2" />
-                      <strong>Temperature:</strong> {sensorData.temperature} °C
-                    </div>
-                    <div className="mb-3">
-                      <Droplets className="text-primary me-2" />
-                      <strong>Humidity:</strong> {sensorData.humidity} %
-                    </div>
-                    <div className="mb-3">
-                      <Activity className="text-success me-2" />
-                      <strong>Accelerometer:</strong> X: {sensorData.accelerometer.x}, Y: {sensorData.accelerometer.y}, Z: {sensorData.accelerometer.z}
-                    </div>
-                    <div>
-                      <MapPin className="text-warning me-2" />
-                      <strong>Location:</strong> Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
+                    <Col md={6}>
+                    <Card>
+                      <Card.Header>Sensor Readings</Card.Header>
+                      <Card.Body>
+                      <div className="mb-3">
+                        <Thermometer className="text-danger me-2" />
+                        <strong>Temperature:</strong> {sensorData.temperature} °C
+                      </div>
+                      <div className="mb-3">
+                        <Droplets className="text-primary me-2" />
+                        <strong>Humidity:</strong> {sensorData.humidity} %
+                      </div>
+                      <div className="mb-3">
+                        <MapPin className="text-warning me-2" />
+                        <strong>Location:</strong> Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
+                      </div>
+                      <div>
+                        <Truck className="text-success me-2" />
+                        <strong>Speed:</strong> {sensorData.speed} km/h
+                      </div>
+                      </Card.Body>
+                    </Card>
+                    </Col>
+                  </Row>
 
-            {/* Speed, Temperature, and Humidity History Charts */}
+                  {/* History Charts */}
             <Card className="mb-4">
               <Card.Header>Speed History</Card.Header>
               <Card.Body>
-                {sensorData.speedHistory.length > 0 ? (
-                  <SpeedChart data={sensorData.speedHistory} />
-                ) : (
-                  <div className="text-center">No speed history available</div>
-                )}
+                <SpeedChart data={sensorData.speedHistory} />
               </Card.Body>
             </Card>
 
             <Card className="mb-4">
               <Card.Header>Temperature History</Card.Header>
               <Card.Body>
-                {sensorData.temperatureHistory.length > 0 ? (
-                  <TemperatureChart data={sensorData.temperatureHistory} />
-                ) : (
-                  <div className="text-center">No temperature history available</div>
-                )}
+                <TemperatureChart data={sensorData.temperatureHistory} />
               </Card.Body>
             </Card>
 
             <Card className="mb-4">
               <Card.Header>Humidity History</Card.Header>
               <Card.Body>
-                {sensorData.humidityHistory.length > 0 ? (
-                  <HumidityChart data={sensorData.humidityHistory} />
-                ) : (
-                  <div className="text-center">No humidity history available</div>
-                )}
+                <HumidityChart data={sensorData.humidityHistory} />
               </Card.Body>
             </Card>
 
-            {/* Map (Placeholder) */}
+            {/* Map */}
             <Card>
               <Card.Header>Vehicle Location on Map</Card.Header>
               <Card.Body>
-                {/* Map Container */}
                 <div style={{ height: '300px', backgroundColor: '#f5f5f5', position: 'relative' }}>
-                  {/* Map Icon */}
-                  <div
-                    style={{
+                  <div style={{
                       position: 'absolute',
                       top: '50%',
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
                       zIndex: 1,
                       textAlign: 'center',
-                    }}
-                  >
+                    }}>
                     <MapPin size={32} className="text-primary mb-2" />
-                    <p style={{ margin: 0 }}>Loading map...</p>
+                    <p>Loading map...</p>
                   </div>
-
-                  {/* Map Iframe */}
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        scrolling="no"
-                        marginHeight="0"
-                        marginWidth="0"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=77.5946%2C12.9716%2C80.2707%2C13.0827&layer=mapnik&marker=${sensorData.location.lat},${sensorData.location.lng}`}
-                        style={{ border: '1px solid black', position: 'relative', zIndex: 2 }}
-                      ></iframe>
-                    </div>
-
-                {/* Location Text */}
-                <p className="mt-3" style={{ textAlign: 'center' }}>
-                  Map display for Lat: {sensorData.location.lat}, Lng: {sensorData.location.lng}
-                </p>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    scrolling="no"
+                    marginHeight="0"
+                    marginWidth="0"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${sensorData.location.lng}%2C${sensorData.location.lat}%2C${sensorData.location.lng+0.01}%2C${sensorData.location.lat+0.01}&layer=mapnik&marker=${sensorData.location.lat},${sensorData.location.lng}`}
+                    style={{ border: '1px solid black', position: 'relative', zIndex: 2 }}
+                  ></iframe>
+                </div>
               </Card.Body>
             </Card>
           </>
@@ -244,7 +203,6 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
       
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>Close</Button>
-        <Button variant="primary" onClick={() => fetchSensorData(vehicle.id)}>Refresh Data</Button>
       </Modal.Footer>
     </Modal>
   );
