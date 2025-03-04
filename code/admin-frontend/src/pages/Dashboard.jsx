@@ -7,6 +7,9 @@ import StatsCard from "../components/StatsCard";
 import AlertCard from "../components/AlertCard";
 import VehicleCard from "../components/VehicleCard";
 import SpeedChart from "../components/SpeedChart";
+import { getSensorsData } from "../services/getSensorsData";
+import LeafletMap from "../components/LeafletMap";
+import { getAlerts } from "../services/getAlerts";
 
 const Dashboard = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -16,6 +19,7 @@ const Dashboard = () => {
   const [totalDrivers, setTotalDrivers] = useState(0);
   const [activeDrivers, setActiveDrivers] = useState(0);
   const [activeAlerts, setActiveAlerts] = useState(0);
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -85,6 +89,39 @@ const Dashboard = () => {
     fetchActiveDrivers();
   }, []);
 
+  //Fetch sensors
+  useEffect(() => {
+    const fetchSensors = async () => {
+      try {
+        const sensorsData = await getSensorsData();
+        console.log('This is sensorsData', sensorsData) //Feed this sensors data to the dashboard
+      } catch (error) {
+        console.error("Error fetching invoice:", error);
+      }
+    }
+
+    fetchSensors();
+  }, [])
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const alertsData = await getAlerts();
+        const alert = {
+          type: 'Tamper',
+          vehicle: "CAM-8086",
+          time: alertsData.tampering_timestamp.split(" ")[1],
+          location: `${alertsData.tampering_latitude}° N, ${alertsData.tampering_longitude}° E`,
+        }
+        setAlert(alert)
+      } catch (error) {
+        console.error("Error fetching invoice:", error);
+      }
+    }
+
+    fetchAlerts();
+  }, [])
+
   const recentAlerts = [
     {
       id: 1,
@@ -144,23 +181,7 @@ const Dashboard = () => {
         </div>
 
         {/* Live Vehicle Tracking Map */}
-        <div className="card mb-4">
-          <div className="card-body">
-            <h5 className="card-title">Live Vehicle Tracking</h5>
-            <div className="bg-light rounded p-4">
-              <iframe
-                width="100%"
-                height="400px"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight="0"
-                marginWidth="0"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=77.5946%2C12.9716%2C80.2707%2C13.0827&layer=mapnik"
-                style={{ border: "1px solid black" }}
-              ></iframe>
-            </div>
-          </div>
-        </div>
+        <LeafletMap />
 
         {/* Stats Cards */}
         <div className="row mb-4">
@@ -188,9 +209,10 @@ const Dashboard = () => {
               <div className="card-body">
                 <h5 className="card-title mb-4">Recent Alerts</h5>
                 <div style={{ maxHeight: "370px", overflowY: "auto" }}>
-                  {recentAlerts.map((alert) => (
+                  {/* {recentAlerts.map((alert) => (
                     <AlertCard key={alert.id} alert={alert} />
-                  ))}
+                  ))} */}
+                  {alert !== null && <AlertCard alert={alert} />}
                 </div>
               </div>
             </div>
