@@ -9,7 +9,7 @@ const SpeedChart = ({ data }) => (
         <XAxis dataKey="time" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey="speed" stroke="#0d6efd" />
+        <Line type="monotone" dataKey="speed" stroke="#00FF00" />
       </LineChart>
     </ResponsiveContainer>
   </div>

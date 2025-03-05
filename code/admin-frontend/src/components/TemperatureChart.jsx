@@ -8,7 +8,7 @@ const TemperatureChart = ({ data }) => (
         <XAxis dataKey="time" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey="temperature" stroke="#f8d7da" />
+        <Line type="monotone" dataKey="temperature" stroke="#FF0000" />
       </LineChart>
     </ResponsiveContainer>
   </div>

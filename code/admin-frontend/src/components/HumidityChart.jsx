@@ -8,7 +8,7 @@ const HumidityChart = ({ data }) => (
         <XAxis dataKey="time" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey="humidity" stroke="#0dcaf0" />
+        <Line type="monotone" dataKey="humidity" stroke="#0000FF" />
       </LineChart>
     </ResponsiveContainer>
   </div>
