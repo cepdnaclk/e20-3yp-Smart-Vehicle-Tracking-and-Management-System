@@ -1,5 +1,16 @@
 const mongoose = require("mongoose");
 
+const taskSchema = new mongoose.Schema(
+  {
+    cargoType: { type: String, required: true },
+    weight: { type: Number, required: true },
+    pickup: { type: String, required: true },
+    delivery: { type: String, required: true },
+    expectedDelivery: { type: Date, required: true },
+  },
+  { timestamps: true }
+);
+
 const driverSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: true },
@@ -9,7 +20,6 @@ const driverSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     licenseNumber: { type: String, required: true, unique: true },
     licenseExpiry: { type: Date, required: true },
-    licenseImage: { type: String }, // Store file path or URL
     address: { type: String },
     city: { type: String },
     state: { type: String },
@@ -20,12 +30,13 @@ const driverSchema = new mongoose.Schema(
       default: "active",
     },
     joiningDate: { type: Date },
-    emergencyContact: { type: String },
-    emergencyPhone: { type: String },
-    driverNotes: { type: String },
     profileImage: { type: String }, // Store file path or URL
+    tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Driver", driverSchema);
+const Driver = mongoose.model("Driver", driverSchema);
+const Task = mongoose.model("Task", taskSchema);
+
+module.exports = { Driver, Task };

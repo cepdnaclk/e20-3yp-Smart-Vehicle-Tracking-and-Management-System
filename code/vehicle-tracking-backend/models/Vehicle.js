@@ -22,19 +22,9 @@ const vehicleSchema = new mongoose.Schema(
     make: { type: String, default: "" },
     model: { type: String, default: "" },
     year: { type: Number, min: 1900, max: 2100 },
-    vin: { type: String, default: "" },
     color: { type: String, default: "" },
-    fuelType: {
-      type: String,
-      enum: ["gasoline", "diesel", "electric", "hybrid", "cng", "lpg"],
-      default: "gasoline",
-    },
-    assignedDriver: { type: String, default: "" },
     deviceId: { type: String, required: true },
     trackingEnabled: { type: Boolean, default: true },
-    sensorEnabled: { type: Boolean, default: true },
-    occupancyDetectionEnabled: { type: Boolean, default: true },
-    notes: { type: String, default: "" },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     lastLocation: { type: String, default: "Not tracked yet" },
   },
@@ -45,12 +35,12 @@ const vehicleSchema = new mongoose.Schema(
 vehicleSchema.pre("save", function (next) {
   const doc = this;
   Counter.findByIdAndUpdate(
-    { _id: "vehicleId" }, // The ID to track the sequence
-    { $inc: { seq: 1 } }, // Increment the sequence by 1
-    { new: true, upsert: true } // Create the document if it doesn't exist
+    { _id: "vehicleId" },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
   )
     .then((counter) => {
-      doc.vehicleId = counter.seq; // Set the vehicleId to the incremented value
+      doc.vehicleId = counter.seq;
       next();
     })
     .catch((error) => {

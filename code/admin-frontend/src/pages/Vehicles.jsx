@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaCar, FaIdCard, FaUserAlt, FaCalendarAlt, FaMapMarkerAlt, FaTags,FaArrowLeft  } from 'react-icons/fa';
+import { FaCar, FaIdCard, FaCalendarAlt, FaMapMarkerAlt, FaArrowLeft } from 'react-icons/fa';
 import axios from 'axios';
-import VehicleDetailsModal from "../components/VehicleDetailsModal";
 
 function Vehicles() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [showVehicleDetails, setShowVehicleDetails] = useState(false);
+  const [editVehicle, setEditVehicle] = useState(null);
+  const [viewVehicle, setViewVehicle] = useState(null);
 
-  // Form state
+  // Form state for adding/editing vehicles
   const [formData, setFormData] = useState({
     vehicleName: '',
     licensePlate: '',
@@ -21,15 +20,9 @@ function Vehicles() {
     make: '',
     model: '',
     year: '',
-    vin: '',
     color: '',
-    fuelType: 'gasoline',
-    assignedDriver: '',
     deviceId: '',
     trackingEnabled: true,
-    sensorEnabled: true,
-    occupancyDetectionEnabled: true,
-    notes: ''
   });
 
   // Fetch vehicles from the backend
@@ -54,7 +47,7 @@ function Vehicles() {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
@@ -62,21 +55,26 @@ function Vehicles() {
     e.preventDefault();
     try {
       setIsLoading(true);
-
-      // Add default data for fields not provided by the user
       const payload = {
         ...formData,
         status: 'active', // Default status
         lastLocation: 'Not tracked yet', // Default location
       };
 
-      // Submit the form data to the backend
-      const response = await axios.post('http://localhost:5000/api/vehicles', payload);
+      let response;
+      if (editVehicle) {
+        // Update existing vehicle
+        response = await axios.put(`http://localhost:5000/api/vehicles/${editVehicle._id}`, payload);
+        setVehicles(vehicles.map((v) => (v._id === editVehicle._id ? response.data : v)));
+        toast.success('Vehicle updated successfully!');
+      } else {
+        // Create new vehicle
+        response = await axios.post('http://localhost:5000/api/vehicles', payload);
+        setVehicles([...vehicles, response.data]);
+        toast.success('Vehicle registered successfully!');
+      }
 
-      // Add the new vehicle to the list
-      setVehicles([...vehicles, response.data]);
-
-      // Reset the form
+      // Reset form
       setFormData({
         vehicleName: '',
         licensePlate: '',
@@ -84,107 +82,102 @@ function Vehicles() {
         make: '',
         model: '',
         year: '',
-        vin: '',
         color: '',
-        fuelType: 'gasoline',
-        assignedDriver: '',
         deviceId: '',
         trackingEnabled: true,
-        sensorEnabled: true,
-        occupancyDetectionEnabled: true,
-        notes: ''
       });
-
       setShowForm(false);
-      toast.success('Vehicle registered successfully!');
+      setEditVehicle(null);
     } catch (error) {
-      console.error('Error registering vehicle:', error);
-      toast.error(error.response?.data?.message || 'Failed to register vehicle');
+      console.error('Error saving vehicle:', error);
+      toast.error(error.response?.data?.message || 'Failed to save vehicle');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // handel delete vehicle
+  const handleViewDetails = (vehicle) => {
+    setViewVehicle(vehicle);
+  };
+
+  const handleEdit = (vehicle) => {
+    setEditVehicle(vehicle);
+    setFormData({
+      vehicleName: vehicle.vehicleName,
+      licensePlate: vehicle.licensePlate,
+      vehicleType: vehicle.vehicleType,
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year ? vehicle.year.toString() : '',
+      color: vehicle.color,
+      deviceId: vehicle.deviceId,
+      trackingEnabled: vehicle.trackingEnabled,
+    });
+    setShowForm(true);
+  };
 
   const handleDelete = async (vehicleId) => {
-    if (window.confirm("Are you sure you want to delete this vehicle?")) {
-      try {
-        const response = await fetch(`http://localhost:5000/api/vehicles/${vehicleId}`, {
-          method: "DELETE",
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to delete vehicle");
+    if (window.confirm('Are you sure you want to delete this vehicle?')) {
+      if (window.confirm('Please confirm again to delete this vehicle.')) {
+        try {
+          await axios.delete(`http://localhost:5000/api/vehicles/${vehicleId}`);
+          setVehicles(vehicles.filter((v) => v._id !== vehicleId));
+          toast.success('Vehicle deleted successfully!');
+        } catch (error) {
+          console.error('Error deleting vehicle:', error);
+          toast.error(error.response?.data?.message || 'Failed to delete vehicle');
         }
-  
-        // Update the state to remove the deleted vehicle from the UI
-        setVehicles((prevVehicles) => prevVehicles.filter((v) => v._id !== vehicleId));
-  
-        alert("Vehicle deleted successfully");
-      } catch (error) {
-        console.error("Error deleting vehicle:", error);
-        alert("Error deleting vehicle. Please try again.");
       }
     }
-  };
-  
-
-
-  // handel view vehicle
-
-  const handleViewDetails = (vehicleId) => {
-    navigate(`/vehicles/${vehicleId}`);
   };
 
   const handleGoToDashboard = () => {
     navigate('/dashboard');
   };
 
-  // speed data for the vehicle details modal
-  const speedData = [
-    { time: "00:00", speed: 45 },
-    { time: "04:00", speed: 55 },
-    { time: "08:00", speed: 65 },
-    { time: "12:00", speed: 60 },
-    { time: "16:00", speed: 70 },
-    { time: "20:00", speed: 50 },
-  ];
+  const closeViewModal = () => {
+    setViewVehicle(null);
+  };
 
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1><FaCar className="me-2" />Vehicle Management</h1>
         <div>
-          <button
-            className="btn btn-secondary me-2"
-            onClick={handleGoToDashboard}
-          >
-          <FaArrowLeft className="me-2" />
-            Back to Dashboard
+          <button className="btn btn-secondary me-2" onClick={handleGoToDashboard}>
+            <FaArrowLeft className="me-1" /> Back to Dashboard
           </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowForm(!showForm)}
-          >
+          <button className="btn btn-primary" onClick={() => {
+            setEditVehicle(null);
+            setFormData({
+              vehicleName: '',
+              licensePlate: '',
+              vehicleType: 'car',
+              make: '',
+              model: '',
+              year: '',
+              color: '',
+              deviceId: '',
+              trackingEnabled: true,
+            });
+            setShowForm(!showForm);
+          }}>
             {showForm ? 'Cancel' : 'Add New Vehicle'}
           </button>
         </div>
       </div>
 
-      {/* Registration Form */}
+      {/* Registration/Edit Form */}
       {showForm && (
         <div className="card mb-4 shadow-sm">
           <div className="card-header bg-primary text-white">
-            <h5 className="mb-0">Register New Vehicle</h5>
+            <h5 className="mb-0">{editVehicle ? 'Edit Vehicle' : 'Register New Vehicle'}</h5>
           </div>
           <div className="card-body">
             <form onSubmit={handleSubmit}>
               <div className="row">
-                {/* Basic Info */}
                 <div className="col-md-6">
                   <h6 className="mb-3">Basic Information</h6>
-
                   <div className="mb-3">
                     <label className="form-label">Vehicle Name/ID*</label>
                     <div className="input-group">
@@ -200,7 +193,6 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-
                   <div className="mb-3">
                     <label className="form-label">License Plate*</label>
                     <div className="input-group">
@@ -216,7 +208,6 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-
                   <div className="mb-3">
                     <label className="form-label">Vehicle Type</label>
                     <select
@@ -233,7 +224,6 @@ function Vehicles() {
                       <option value="other">Other</option>
                     </select>
                   </div>
-
                   <div className="row">
                     <div className="col-md-6">
                       <div className="mb-3">
@@ -262,7 +252,9 @@ function Vehicles() {
                       </div>
                     </div>
                   </div>
-
+                </div>
+                <div className="col-md-6">
+                  <h6 className="mb-3">Additional Information</h6>
                   <div className="row">
                     <div className="col-md-6">
                       <div className="mb-3">
@@ -280,7 +272,7 @@ function Vehicles() {
                             max="2100"
                           />
                         </div>
-                      </div>
+                    </div>
                     </div>
                     <div className="col-md-6">
                       <div className="mb-3">
@@ -296,56 +288,6 @@ function Vehicles() {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Additional Info */}
-                <div className="col-md-6">
-                  <h6 className="mb-3">Tracking & Monitoring Setup</h6>
-
-                  <div className="mb-3">
-                    <label className="form-label">VIN Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="vin"
-                      value={formData.vin}
-                      onChange={handleInputChange}
-                      placeholder="Vehicle Identification Number"
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Fuel Type</label>
-                    <select
-                      className="form-select"
-                      name="fuelType"
-                      value={formData.fuelType}
-                      onChange={handleInputChange}
-                    >
-                      <option value="gasoline">Gasoline</option>
-                      <option value="diesel">Diesel</option>
-                      <option value="electric">Electric</option>
-                      <option value="hybrid">Hybrid</option>
-                      <option value="cng">CNG</option>
-                      <option value="lpg">LPG</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Assigned Driver</label>
-                    <div className="input-group">
-                      <span className="input-group-text"><FaUserAlt /></span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="assignedDriver"
-                        value={formData.assignedDriver}
-                        onChange={handleInputChange}
-                        placeholder="Name of assigned driver"
-                      />
-                    </div>
-                  </div>
-
                   <div className="mb-3">
                     <label className="form-label">Tracking Device ID*</label>
                     <div className="input-group">
@@ -361,7 +303,6 @@ function Vehicles() {
                       />
                     </div>
                   </div>
-
                   <div className="mb-3">
                     <div className="form-check form-switch">
                       <input
@@ -377,61 +318,16 @@ function Vehicles() {
                       </label>
                     </div>
                   </div>
-
-                  <div className="mb-3">
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        name="sensorEnabled"
-                        checked={formData.sensorEnabled}
-                        onChange={handleInputChange}
-                        id="sensorEnabled"
-                      />
-                      <label className="form-check-label" htmlFor="sensorEnabled">
-                        Enable Accident/Tamper Detection
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        name="occupancyDetectionEnabled"
-                        checked={formData.occupancyDetectionEnabled}
-                        onChange={handleInputChange}
-                        id="occupancyDetectionEnabled"
-                      />
-                      <label className="form-check-label" htmlFor="occupancyDetectionEnabled">
-                        Enable Human Occupancy Detection
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div className="col-12">
-                  <div className="mb-3">
-                    <label className="form-label">Additional Notes</label>
-                    <textarea
-                      className="form-control"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      rows="3"
-                      placeholder="Any additional information about the vehicle"
-                    ></textarea>
-                  </div>
                 </div>
               </div>
-
               <div className="d-flex justify-content-end gap-2 mt-3">
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditVehicle(null);
+                  }}
                 >
                   Cancel
                 </button>
@@ -440,7 +336,7 @@ function Vehicles() {
                   className="btn btn-success"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Registering...' : 'Register Vehicle'}
+                  {isLoading ? 'Saving...' : editVehicle ? 'Update Vehicle' : 'Register Vehicle'}
                 </button>
               </div>
             </form>
@@ -473,10 +369,8 @@ function Vehicles() {
                     <th>Vehicle Name</th>
                     <th>License Plate</th>
                     <th>Type</th>
-                    <th>Make & Model</th>
                     <th>Status</th>
                     <th>Last Location</th>
-                    <th>Driver</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -486,37 +380,21 @@ function Vehicles() {
                       <td>{vehicle.vehicleName}</td>
                       <td>{vehicle.licensePlate}</td>
                       <td>{vehicle.vehicleType}</td>
-                      <td>{`${vehicle.make} ${vehicle.model}`}</td>
                       <td>
                         <span className={`badge ${vehicle.status === 'active' ? 'bg-success' : 'bg-secondary'}`}>
                           {vehicle.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td>
-                        <button
-                          className="btn btn-info btn-sm"
-                          onClick={() => {
-                            setSelectedVehicle(vehicle);
-                            setShowVehicleDetails(true);
-                          }}
-                        >
-                          View
-                        </button>
-                      </td>
-                      <td>{vehicle.assignedDriver}</td>
+                      <td>{vehicle.lastLocation}</td>
                       <td>
                         <div className="btn-group btn-group-sm">
-                          <button
-                            className="btn btn-success"
-                            onClick={() => handleViewDetails(vehicle._id)}
-                          >
+                          <button className="btn btn-primary" onClick={() => handleViewDetails(vehicle)}>
                             View
                           </button>
-                          <button className="btn btn-outline-secondary">Edit</button>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(vehicle._id)}
-                          >
+                          <button className="btn btn-outline-secondary" onClick={() => handleEdit(vehicle)}>
+                            Edit
+                          </button>
+                          <button className="btn btn-danger" onClick={() => handleDelete(vehicle._id)}>
                             Delete
                           </button>
                         </div>
@@ -529,13 +407,59 @@ function Vehicles() {
           )}
         </div>
       </div>
-      {/* Vehicle Details Modal */}
-      {showVehicleDetails && selectedVehicle && (
-        <VehicleDetailsModal
-          vehicle={selectedVehicle}
-          onClose={() => setShowVehicleDetails(false)}
-          speedData={speedData}
-        />
+
+      {/* View Vehicle Modal */}
+      {viewVehicle && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">Vehicle Details</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={closeViewModal}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <strong>Vehicle Name/ID:</strong> {viewVehicle.vehicleName}
+                </div>
+                <div className="mb-3">
+                  <strong>License Plate:</strong> {viewVehicle.licensePlate}
+                </div>
+                <div className="mb-3">
+                  <strong>Vehicle Type:</strong> {viewVehicle.vehicleType}
+                </div>
+                <div className="mb-3">
+                  <strong>Make:</strong> {viewVehicle.make}
+                </div>
+                <div className="mb-3">
+                  <strong>Model:</strong> {viewVehicle.model}
+                </div>
+                <div className="mb-3">
+                  <strong>Year:</strong> {viewVehicle.year || 'N/A'}
+                </div>
+                <div className="mb-3">
+                  <strong>Color:</strong> {viewVehicle.color || 'N/A'}
+                </div>
+                <div className="mb-3">
+                  <strong>Tracking Device ID:</strong> {viewVehicle.deviceId}
+                </div>
+                <div className="mb-3">
+                  <strong>Real-time Tracking:</strong> {viewVehicle.trackingEnabled ? 'Enabled' : 'Disabled'}
+                </div>
+                <div className="mb-3">
+                  <strong>Status:</strong> {viewVehicle.status === 'active' ? 'Active' : 'Inactive'}
+                </div>
+                <div className="mb-3">
+                  <strong>Last Location:</strong> {viewVehicle.lastLocation}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeViewModal}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
