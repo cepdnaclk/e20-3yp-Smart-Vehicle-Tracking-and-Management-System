@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaCalendarAlt, FaMapMarkerAlt, FaCamera, FaUserCircle, FaArrowLeft, FaTasks, FaBox, FaTrash, FaEye, FaEdit, FaFileDownload, FaFilter } from 'react-icons/fa';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable'; // Import autoTable explicitly
 
 function Drivers() {
   const navigate = useNavigate();
@@ -401,34 +401,37 @@ function Drivers() {
   };
 
   const generatePDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('Driver Task Report', 20, 20);
-    doc.setFontSize(12);
-    doc.text(`Driver ID: ${selectedDriverId}`, 20, 30);
-    doc.text(`Date Range: Last ${dateRange} days`, 20, 40);
-    doc.text(`Statuses: ${selectedStatuses.join(', ')}`, 20, 50);
+    try {
+      const doc = new jsPDF();
+      // Apply autoTable to jsPDF instance
+      autoTable(doc, {
+        head: [['Task Number', 'Cargo Type', 'Pick Up', 'Delivery', 'Expected Delivery', 'Status']],
+        body: reportData.map((item) => [
+          item.taskNum,
+          item.cargoType,
+          item.pickup,
+          item.delivery,
+          new Date(item.expectedDelivery).toLocaleDateString(),
+          item.status,
+        ]),
+        startY: 60,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [0, 123, 255] },
+      });
 
-    const headers = [['Task Number', 'Cargo Type', 'Pick Up', 'Delivery', 'Expected Delivery', 'Status']];
-    const data = reportData.map((item) => [
-      item.taskNum,
-      item.cargoType,
-      item.pickup,
-      item.delivery,
-      new Date(item.expectedDelivery).toLocaleDateString(),
-      item.status,
-    ]);
+      doc.setFontSize(16);
+      doc.text('Driver Task Report', 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Driver ID: ${selectedDriverId}`, 20, 30);
+      doc.text(`Date Range: Last ${dateRange} days`, 20, 40);
+      doc.text(`Statuses: ${selectedStatuses.join(', ')}`, 20, 50);
 
-    doc.autoTable({
-      head: headers,
-      body: data,
-      startY: 60,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [0, 123, 255] },
-    });
-
-    doc.save(`driver_report_${selectedDriverId}.pdf`);
+      doc.save(`driver_report_${selectedDriverId}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF: ' + error.message);
+    }
   };
 
   return (
