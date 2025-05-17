@@ -315,4 +315,25 @@ router.delete("/:driverId/tasks/:taskId", async (req, res) => {
   }
 });
 
+router.get("/:driverId/tasks/:taskId", async (req, res) => {
+  try {
+    const driver = await Driver.findById(req.params.driverId).populate("tasks");
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    const task = driver.tasks.find(
+      (task) => task._id.toString() === req.params.taskId
+    );
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    res.json(task);
+  } catch (err) {
+    console.error("Error fetching task:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
