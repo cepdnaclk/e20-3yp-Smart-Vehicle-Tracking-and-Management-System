@@ -1,7 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useAppContext } from "../App";
 import { styles } from "../styles/styles";
+import axios from "axios";
 
 const DashboardScreen = () => {
   const {
@@ -12,15 +20,54 @@ const DashboardScreen = () => {
     completedTasks,
   } = useAppContext();
   const [inputVehicle, setInputVehicle] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmitVehicle = () => {
+  const handleSubmitVehicle = async () => {
     if (!inputVehicle.trim()) {
       Alert.alert("Invalid Input", "Please enter a valid vehicle number.");
       return;
     }
-    setVehicleNumber(inputVehicle.trim());
-    setInputVehicle("");
-    Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/vehicles?licensePlate=${inputVehicle.trim()}`
+      );
+      if (response.data.length === 0) {
+        Alert.alert("Error", "The vehicle is not registered.");
+        setLoading(false);
+        return;
+      }
+
+      const vehicle = response.data[0];
+      const driverResponse = await axios.get(
+        `http://localhost:5000/api/drivers?vehicleNumber=${inputVehicle.trim()}`
+      );
+      if (
+        driverResponse.data.length > 0 &&
+        driverResponse.data[0]._id !== "6823449d5b6c280259c1a5aa"
+      ) {
+        Alert.alert(
+          "Error",
+          "The vehicle is already occupied by another driver."
+        );
+        setLoading(false);
+        return;
+      }
+
+      await axios.put(
+        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa`,
+        { vehicleNumber: inputVehicle.trim() }
+      );
+      setVehicleNumber(inputVehicle.trim());
+      setInputVehicle("");
+      Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);
+    } catch (error) {
+      console.error("Error setting vehicle:", error);
+      Alert.alert("Error", "Failed to set vehicle. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const pendingCount = tasks.filter(
@@ -67,8 +114,13 @@ const DashboardScreen = () => {
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmitVehicle}
+          disabled={loading}
         >
-          <Text style={styles.submitButtonText}>Set Vehicle Number</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.submitButtonText}>Set Vehicle Number</Text>
+          )}
         </TouchableOpacity>
       </View>
       {vehicleNumber && (

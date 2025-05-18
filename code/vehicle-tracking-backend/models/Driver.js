@@ -7,7 +7,12 @@ const taskSchema = new mongoose.Schema(
     pickup: { type: String },
     delivery: { type: String },
     expectedDelivery: { type: Date },
-    status: { type: String, default: "Pending" },
+    status: {
+      type: String,
+      enum: ["Pending", "In Progress", "Completed", "Cancelled"],
+      default: "Pending",
+    },
+    vehicle: { type: String },
   },
   { timestamps: true }
 );
@@ -21,8 +26,7 @@ const driverSchema = new mongoose.Schema(
     email: { type: String },
     licenseNumber: { type: String },
     licenseExpiry: { type: Date },
-    vehicleId: { type: String },
-    lastLocation: { type: String },
+    vehicleNumber: { type: String },
     address: { type: String },
     city: { type: String },
     state: { type: String },

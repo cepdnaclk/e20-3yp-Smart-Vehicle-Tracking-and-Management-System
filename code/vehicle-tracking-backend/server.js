@@ -2,25 +2,31 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
+
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-// Temporary testing configuration - allows ALL origins
 app.use(
   cors({
-    origin: "*", // Allows all domains
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "Uploads")));
 
-// MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI;
 mongoose
   .connect(MONGO_URI, {
@@ -30,29 +36,29 @@ mongoose
   .then(() => console.log("MongoDB Atlas Connected"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// Routes
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 const vehicleRoutes = require("./routes/vehicleRoutes");
 const driverRoutes = require("./routes/driverRoutes");
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/drivers", driverRoutes);
 
-// Default Route
 app.get("/", (req, res) => {
   res.send("Vehicle Tracking Backend");
 });
 
-// Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong!" });
 });
 
-// Start Server
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Graceful Shutdown
 process.on("SIGTERM", () => {
   console.log("SIGTERM received. Shutting down gracefully...");
   server.close(() => {

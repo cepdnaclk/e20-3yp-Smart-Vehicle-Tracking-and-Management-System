@@ -169,7 +169,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   actionButton: {
-    backgroundColor: "#4DA6FF",
     padding: 15,
     borderRadius: 5,
     width: "90%",

@@ -10,12 +10,11 @@ import SettingsScreen from "./screens/SettingsScreen";
 import { TaskScreen, TaskDetailsScreen } from "./screens/TaskScreen";
 import Icon from "./screens/Icon";
 import { fetchTasks } from "./services/api";
+import { io } from "socket.io-client";
 
-// --- CONTEXT FOR GLOBAL STATE ---
 const AppContext = createContext();
 export const useAppContext = () => useContext(AppContext);
 
-// --- NAVIGATION ---
 const Tab = createBottomTabNavigator();
 const MainTabs = () => (
   <Tab.Navigator
@@ -71,15 +70,23 @@ const App = () => {
   const [completedTasks, setCompletedTasks] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [activeTaskId, setActiveTaskId] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(true);
 
-  // Driver ID and API URL
-  const driverId = "6823449d5b6c280259c1a5aa";
+  const driverId = "682a45ab697561ca8270846b";
   const API_URL = "http://localhost:5000/api/drivers";
+  const socket = io("http://localhost:5000");
 
   const getTasks = async () => {
     try {
       const response = await fetchTasks(driverId);
       setTasks(response.data);
+      const activeTask = response.data.find(
+        (task) => task.status === "In Progress"
+      );
+      setActiveTaskId(activeTask ? activeTask._id : null);
     } catch (error) {
       console.error("Error fetching tasks:", error);
       Alert.alert("Error", "Failed to fetch tasks. Please try again.");
@@ -92,6 +99,25 @@ const App = () => {
     getTasks();
     const interval = setInterval(getTasks, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    socket.on("taskNotification", (notification) => {
+      if (notification.driverId === driverId) {
+        setNotifications((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            title: notification.title,
+            message: notification.message,
+            time: new Date().toLocaleTimeString(),
+          },
+        ]);
+        getTasks();
+      }
+    });
+
+    return () => socket.off("taskNotification");
   }, []);
 
   const removeVehicle = () => {
@@ -112,6 +138,13 @@ const App = () => {
         removeVehicle,
         tasks,
         loading,
+        notifications,
+        activeTaskId,
+        setActiveTaskId,
+        darkMode,
+        setDarkMode,
+        pushNotifications,
+        setPushNotifications,
       }}
     >
       <NavigationContainer>

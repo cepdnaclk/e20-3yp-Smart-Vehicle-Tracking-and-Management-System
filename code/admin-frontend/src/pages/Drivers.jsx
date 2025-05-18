@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaCalendarAlt, FaMapMarkerAlt, FaCamera, FaUserCircle, FaArrowLeft, FaTasks, FaBox, FaTrash, FaEye, FaEdit, FaFileDownload, FaFilter } from 'react-icons/fa';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable'; // Import autoTable explicitly
+import autoTable from 'jspdf-autotable';
 
 function Drivers() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ function Drivers() {
   const [viewTask, setViewTask] = useState(null);
   const [editTask, setEditTask] = useState(null);
   const [dateRange, setDateRange] = useState('7');
-  const [selectedStatuses, setSelectedStatuses] = useState(['Pending', 'In Progress', 'Completed']);
+  const [selectedStatuses, setSelectedStatuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
   const [reportData, setReportData] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -32,8 +32,6 @@ function Drivers() {
     email: '',
     licenseNumber: '',
     licenseExpiry: '',
-    vehicleId: '',
-    lastLocation: '',
     address: '',
     city: '',
     state: '',
@@ -49,7 +47,7 @@ function Drivers() {
     pickup: '',
     delivery: '',
     expectedDelivery: '',
-    status: 'Pending',
+    vehicle: '',
   });
 
   useEffect(() => {
@@ -109,8 +107,6 @@ function Drivers() {
       payload.append('email', formData.email);
       payload.append('licenseNumber', formData.licenseNumber);
       payload.append('licenseExpiry', formData.licenseExpiry ? new Date(formData.licenseExpiry).toISOString() : '');
-      payload.append('vehicleId', formData.vehicleId);
-      payload.append('lastLocation', formData.lastLocation);
       payload.append('employmentStatus', formData.employmentStatus);
       if (formData.dateOfBirth) payload.append('dateOfBirth', new Date(formData.dateOfBirth).toISOString());
       if (formData.address.trim()) payload.append('address', formData.address);
@@ -143,8 +139,6 @@ function Drivers() {
         email: '',
         licenseNumber: '',
         licenseExpiry: '',
-        vehicleId: '',
-        lastLocation: '',
         address: '',
         city: '',
         state: '',
@@ -173,20 +167,23 @@ function Drivers() {
         pickup: taskFormData.pickup,
         delivery: taskFormData.delivery,
         expectedDelivery: taskFormData.expectedDelivery ? new Date(taskFormData.expectedDelivery).toISOString() : new Date().toISOString(),
-        status: taskFormData.status,
+        vehicle: taskFormData.vehicle,
       };
+
+      // Validate vehicle registration
+      const vehicleResponse = await axios.get(`http://localhost:5000/api/vehicles?licensePlate=${taskFormData.vehicle}`);
+      if (vehicleResponse.data.length === 0) {
+        toast.error('Vehicle is not registered.');
+        return;
+      }
 
       let response;
       if (editTask) {
-        response = await axios.put(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/${editTask._id}`, payload, {
-          headers: { 'Content-Type': 'application/json' },
-        });
+        response = await axios.put(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/${editTask._id}`, payload);
         setTasks(tasks.map((t) => (t._id === editTask._id ? response.data : t)));
         toast.success('Task updated successfully!');
       } else {
-        response = await axios.post(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks`, payload, {
-          headers: { 'Content-Type': 'application/json' },
-        });
+        response = await axios.post(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks`, payload);
         setTasks([...tasks, response.data]);
         toast.success('Task assigned successfully!');
       }
@@ -197,7 +194,7 @@ function Drivers() {
         pickup: '',
         delivery: '',
         expectedDelivery: '',
-        status: 'Pending',
+        vehicle: '',
       });
       setShowAssignTaskForm(false);
       setEditTask(null);
@@ -218,19 +215,17 @@ function Drivers() {
     setFormData({
       firstName: driver.firstName,
       lastName: driver.lastName,
-      dateOfBirth: driver.dateOfBirth ? driver.dateOfBirth.split('T')[0] : '',
+      dateOfBirth: driver.dateOfBirth ? new Date(driver.dateOfBirth).toISOString().split('T')[0] : '',
       phoneNumber: driver.phoneNumber,
       email: driver.email,
       licenseNumber: driver.licenseNumber,
-      licenseExpiry: driver.licenseExpiry ? driver.licenseExpiry.split('T')[0] : '',
-      vehicleId: driver.vehicleId || '',
-      lastLocation: driver.lastLocation || '',
+      licenseExpiry: driver.licenseExpiry ? new Date(driver.licenseExpiry).toISOString().split('T')[0] : '',
       address: driver.address || '',
       city: driver.city || '',
       state: driver.state || '',
       zipCode: driver.zipCode || '',
       employmentStatus: driver.employmentStatus,
-      joiningDate: driver.joiningDate ? driver.joiningDate.split('T')[0] : '',
+      joiningDate: driver.joiningDate ? new Date(driver.joiningDate).toISOString().split('T')[0] : '',
       profileImage: null,
     });
     setShowForm(true);
@@ -262,8 +257,8 @@ function Drivers() {
       weight: task.weight.toString(),
       pickup: task.pickup,
       delivery: task.delivery,
-      expectedDelivery: task.expectedDelivery ? task.expectedDelivery.split('T')[0] : '',
-      status: task.status,
+      expectedDelivery: task.expectedDelivery ? new Date(task.expectedDelivery).toISOString().split('T')[0] : '',
+      vehicle: task.vehicle,
     });
     setShowAssignTaskForm(true);
   };
@@ -308,7 +303,7 @@ function Drivers() {
       pickup: '',
       delivery: '',
       expectedDelivery: '',
-      status: 'Pending',
+      vehicle: '',
     });
     setShowAssignTaskForm(true);
   };
@@ -324,7 +319,7 @@ function Drivers() {
   const openReportModal = (driverId) => {
     setSelectedDriverId(driverId);
     setDateRange('7');
-    setSelectedStatuses(['Pending', 'In Progress', 'Completed']);
+    setSelectedStatuses(['Pending', 'In Progress', 'Completed', 'Cancelled']);
     setReportData([]);
     setShowReportModal(true);
   };
@@ -333,8 +328,6 @@ function Drivers() {
     setShowReportModal(false);
     setSelectedDriverId(null);
     setReportData([]);
-    setDateRange('7');
-    setSelectedStatuses(['Pending', 'In Progress', 'Completed']);
   };
 
   const handleDateRangeChange = (e) => {
@@ -355,16 +348,20 @@ function Drivers() {
   const fetchReportData = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/report`, {
-        params: {
-          dateRange,
-          statuses: selectedStatuses.join(','),
-        },
-      });
-      const tasksWithNum = response.data.map((task, index) => ({
-        ...task,
-        taskNum: `TSK${String(index + 1).padStart(4, '0')}`,
-      }));
+      const response = await axios.get(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks`);
+      const tasksWithNum = response.data
+        .filter((task) => selectedStatuses.includes(task.status))
+        .filter((task) => {
+          if (dateRange === 'all') return true;
+          const taskDate = new Date(task.createdAt);
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
+          return taskDate >= cutoffDate;
+        })
+        .map((task, index) => ({
+          ...task,
+          taskNum: `TSK${String(index + 1).padStart(4, '0')}`,
+        }));
       setReportData(tasksWithNum);
       if (tasksWithNum.length === 0) {
         toast.info('No tasks found for the selected filters');
@@ -403,7 +400,6 @@ function Drivers() {
   const generatePDF = () => {
     try {
       const doc = new jsPDF();
-      // Apply autoTable to jsPDF instance
       autoTable(doc, {
         head: [['Task Number', 'Cargo Type', 'Pick Up', 'Delivery', 'Expected Delivery', 'Status']],
         body: reportData.map((item) => [
@@ -430,7 +426,7 @@ function Drivers() {
       doc.save(`driver_report_${selectedDriverId}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF: ' + error.message);
+      toast.error('Failed to generate PDF');
     }
   };
 
@@ -454,8 +450,6 @@ function Drivers() {
                   email: '',
                   licenseNumber: '',
                   licenseExpiry: '',
-                  vehicleId: '',
-                  lastLocation: '',
                   address: '',
                   city: '',
                   state: '',
@@ -536,6 +530,7 @@ function Drivers() {
                               name="firstName"
                               value={formData.firstName}
                               onChange={handleInputChange}
+                              required
                             />
                           </div>
                         </div>
@@ -548,6 +543,7 @@ function Drivers() {
                               name="lastName"
                               value={formData.lastName}
                               onChange={handleInputChange}
+                              required
                             />
                           </div>
                         </div>
@@ -575,12 +571,12 @@ function Drivers() {
                             name="phoneNumber"
                             value={formData.phoneNumber}
                             onChange={handleInputChange}
-                            placeholder="e.g., 555-123-4567"
+                            required
                           />
                         </div>
                       </div>
                       <div className="mb-3">
-                        <label className="form-label">Email Address</label>
+                        <label className="form-label">Email</label>
                         <div className="input-group">
                           <span className="input-group-text"><FaEnvelope /></span>
                           <input
@@ -589,15 +585,15 @@ function Drivers() {
                             name="email"
                             value={formData.email}
                             onChange={handleInputChange}
-                            placeholder="e.g., driver@example.com"
+                            required
                           />
                         </div>
                       </div>
                     </div>
                     <div className="col-md-6">
-                      <h6 className="mb-3">License Information & Address</h6>
+                      <h6 className="mb-3">License & Address</h6>
                       <div className="mb-3">
-                        <label className="form-label">Driver's License Number</label>
+                        <label className="form-label">License Number</label>
                         <div className="input-group">
                           <span className="input-group-text"><FaIdCard /></span>
                           <input
@@ -606,12 +602,12 @@ function Drivers() {
                             name="licenseNumber"
                             value={formData.licenseNumber}
                             onChange={handleInputChange}
-                            placeholder="e.g., DL-123456789"
+                            required
                           />
                         </div>
                       </div>
                       <div className="mb-3">
-                        <label className="form-label">License Expiry Date</label>
+                        <label className="form-label">License Expiry</label>
                         <div className="input-group">
                           <span className="input-group-text"><FaCalendarAlt /></span>
                           <input
@@ -620,97 +616,115 @@ function Drivers() {
                             name="licenseExpiry"
                             value={formData.licenseExpiry}
                             onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Vehicle ID</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaIdCard /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="vehicleId"
-                            value={formData.vehicleId}
-                            onChange={handleInputChange}
-                            placeholder="e.g., VEH-1234"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Last Location</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaMapMarkerAlt /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="lastLocation"
-                            value={formData.lastLocation}
-                            onChange={handleInputChange}
-                            placeholder="e.g., New York, NY"
+                            required
                           />
                         </div>
                       </div>
                       <div className="mb-3">
                         <label className="form-label">Address</label>
-                        <input
-                          type="text"
-                          className="form-control mb-2"
-                          name="address"
-                          value={formData.address}
-                          onChange={handleInputChange}
-                          placeholder="Street Address"
-                        />
-                        <div className="row">
-                          <div className="col-md-6">
+                        <div className="input-group">
+                          <span className="input-group-text"><FaMapMarkerAlt /></span>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">City</label>
                             <input
                               type="text"
-                              className="form-control mb-2"
+                              className="form-control"
                               name="city"
                               value={formData.city}
                               onChange={handleInputChange}
-                              placeholder="City"
-                            />
-                          </div>
-                          <div className="col-md-6">
-                            <input
-                              type="text"
-                              className="form-control mb-2"
-                              name="state"
-                              value={formData.state}
-                              onChange={handleInputChange}
-                              placeholder="State/Province"
                             />
                           </div>
                         </div>
+                        <div className="col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">State</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Zip Code</label>
                         <input
                           type="text"
                           className="form-control"
                           name="zipCode"
                           value={formData.zipCode}
                           onChange={handleInputChange}
-                          placeholder="ZIP/Postal Code"
                         />
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Employment Status</label>
+                        <select
+                          className="form-control"
+                          name="employmentStatus"
+                          value={formData.employmentStatus}
+                          onChange={handleInputChange}
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Joining Date</label>
+                        <div className="input-group">
+                          <span className="input-group-text"><FaCalendarAlt /></span>
+                          <input
+                            type="date"
+                            className="form-control"
+                            name="joiningDate"
+                            value={formData.joiningDate}
+                            onChange={handleInputChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="d-flex justify-content-end gap-2 mt-3">
+                  <div className="mt-4">
+                    <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                      {isLoading ? 'Saving...' : (editDriver ? 'Update Driver' : 'Register Driver')}
+                    </button>
                     <button
                       type="button"
-                      className="btn btn-secondary"
+                      className="btn btn-secondary ms-2"
                       onClick={() => {
                         setShowForm(false);
                         setEditDriver(null);
+                        setFormData({
+                          firstName: '',
+                          lastName: '',
+                          dateOfBirth: '',
+                          phoneNumber: '',
+                          email: '',
+                          licenseNumber: '',
+                          licenseExpiry: '',
+                          address: '',
+                          city: '',
+                          state: '',
+                          zipCode: '',
+                          employmentStatus: 'active',
+                          joiningDate: '',
+                          profileImage: null,
+                        });
                       }}
                     >
                       Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-success"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : editDriver ? 'Update Driver' : 'Register Driver'}
                     </button>
                   </div>
                 </form>
@@ -718,146 +732,79 @@ function Drivers() {
             </div>
           )}
 
-          <div className="card shadow-sm">
-            <div className="card-header bg-light">
-              <h5 className="mb-0">Registered Drivers</h5>
+          {isLoading ? (
+            <div className="text-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
             </div>
-            <div className="card-body">
-              {isLoading ? (
-                <div className="text-center py-4">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <p className="mt-2">Loading drivers...</p>
-                </div>
-              ) : drivers.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="mb-0">No drivers registered yet.</p>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Register Number</th>
-                        <th>Vehicle Number</th>
-                        <th>Status</th>
-                        <th>Location</th>
-                        <th>Assign Task</th>
-                        <th>Generate Report</th>
-                        <th>Action</th>
+          ) : (
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Vehicle Number</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drivers.map((driver) => (
+                      <tr key={driver._id}>
+                        <td>{`${driver.firstName} ${driver.lastName}`}</td>
+                        <td>{driver.email}</td>
+                        <td>{driver.phoneNumber}</td>
+                        <td>{driver.vehicleNumber || 'N/A'}</td>
+                        <td>
+                          <span className={`badge ${driver.employmentStatus === 'active' ? 'bg-success' : 'bg-danger'}`}>
+                            {driver.employmentStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-outline-primary me-1"
+                            onClick={() => handleViewDetails(driver)}
+                            title="View Details"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-warning me-1"
+                            onClick={() => handleEdit(driver)}
+                            title="Edit Driver"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger me-1"
+                            onClick={() => handleDeleteDriver(driver._id)}
+                            title="Delete Driver"
+                          >
+                            <FaTrash />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-info me-1"
+                            onClick={() => handleAssignTask(driver._id)}
+                            title="Manage Tasks"
+                          >
+                            <FaTasks />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => openReportModal(driver._id)}
+                            title="Generate Report"
+                          >
+                            <FaFileDownload />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {drivers.map((driver) => (
-                        <tr key={driver._id}>
-                          <td>{driver.licenseNumber}</td>
-                          <td>{driver.vehicleId || 'N/A'}</td>
-                          <td>
-                            <span className={`badge ${driver.employmentStatus === 'active' ? 'bg-success' : 'bg-secondary'}`}>
-                              {driver.employmentStatus.charAt(0).toUpperCase() + driver.employmentStatus.slice(1)}
-                            </span>
-                          </td>
-                          <td>{driver.lastLocation || 'N/A'}</td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-success"
-                              onClick={() => handleAssignTask(driver._id)}
-                            >
-                              <FaTasks className="me-1" /> Assign
-                            </button>
-                          </td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-info"
-                              onClick={() => openReportModal(driver._id)}
-                            >
-                              <FaFileDownload className="me-1" /> Generate
-                            </button>
-                          </td>
-                          <td>
-                            <div className="btn-group btn-group-sm">
-                              <button className="btn btn-primary" onClick={() => handleViewDetails(driver)}>
-                                <FaEye className="me-1" /> View
-                              </button>
-                              <button className="btn btn-outline-secondary" onClick={() => handleEdit(driver)}>
-                                <FaEdit className="me-1" /> Edit
-                              </button>
-                              <button className="btn btn-danger" onClick={() => handleDeleteDriver(driver._id)}>
-                                <FaTrash className="me-1" /> Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {viewDriver && (
-            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content">
-                  <div className="modal-header bg-primary text-white">
-                    <h5 className="modal-title">Driver Details</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={closeViewModal}></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3 text-center">
-                      {viewDriver.profileImage ? (
-                        <img
-                          src={`http://localhost:5000/${viewDriver.profileImage}`}
-                          alt="Profile"
-                          className="rounded-circle border"
-                          style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <FaUserCircle size={80} className="text-secondary" />
-                      )}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Name:</strong> {viewDriver.firstName} {viewDriver.lastName}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Date of Birth:</strong> {viewDriver.dateOfBirth ? new Date(viewDriver.dateOfBirth).toLocaleDateString() : 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Phone Number:</strong> {viewDriver.phoneNumber}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Email:</strong> {viewDriver.email}
-                    </div>
-                    <div className="mb-3">
-                      <strong>License Number:</strong> {viewDriver.licenseNumber}
-                    </div>
-                    <div className="mb-3">
-                      <strong>License Expiry:</strong> {viewDriver.licenseExpiry ? new Date(viewDriver.licenseExpiry).toLocaleDateString() : 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Vehicle ID:</strong> {viewDriver.vehicleId || 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Last Location:</strong> {viewDriver.lastLocation || 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Address:</strong> {viewDriver.address || 'N/A'}, {viewDriver.city || 'N/A'}, {viewDriver.state || 'N/A'} {viewDriver.zipCode || 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Employment Status:</strong> {viewDriver.employmentStatus}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Joining Date:</strong> {viewDriver.joiningDate ? new Date(viewDriver.joiningDate).toLocaleDateString() : 'N/A'}
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={closeViewModal}>
-                      Close
-                    </button>
-                  </div>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -865,84 +812,19 @@ function Drivers() {
       ) : (
         <>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1><FaTasks className="me-2" />Tasks for Driver</h1>
-            <button className="btn btn-secondary" onClick={handleBackToDrivers}>
-              <FaArrowLeft className="me-1" /> Back to Drivers
-            </button>
+            <h1><FaTasks className="me-2" />Manage Tasks for Driver</h1>
+            <div>
+              <button className="btn btn-secondary me-2" onClick={handleBackToDrivers}>
+                <FaArrowLeft className="me-1" /> Back to Drivers
+              </button>
+              <button className="btn btn-primary" onClick={handleShowTaskForm}>
+                Assign New Task
+              </button>
+            </div>
           </div>
 
-          {!showAssignTaskForm ? (
-            <>
-              <div className="card shadow-sm mb-4">
-                <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">Assigned Tasks</h5>
-                  <button className="btn btn-primary btn-sm" onClick={handleShowTaskForm}>
-                    Add New Task
-                  </button>
-                </div>
-                <div className="card-body">
-                  {isLoading ? (
-                    <div className="text-center py-4">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading tasks...</p>
-                    </div>
-                  ) : tasks.length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="mb-0">No tasks assigned yet.</p>
-                    </div>
-                  ) : (
-                    <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead className="table-light">
-                          <tr>
-                            <th>Task Num</th>
-                            <th>Cargo Type</th>
-                            <th>Pick Up</th>
-                            <th>Delivery</th>
-                            <th>Expected Delivery</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tasks.map((task, index) => (
-                            <tr key={task._id}>
-                              <td>TSK{String(index + 1).padStart(4, '0')}</td>
-                              <td>{task.cargoType}</td>
-                              <td>{task.pickup}</td>
-                              <td>{task.delivery}</td>
-                              <td>{new Date(task.expectedDelivery).toLocaleDateString()}</td>
-                              <td>
-                                <span className={`badge ${task.status === 'Completed' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning' : 'bg-secondary'}`}>
-                                  {task.status}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="btn-group btn-group-sm">
-                                  <button className="btn btn-primary" onClick={() => handleViewTask(task)}>
-                                    <FaEye className="me-1" /> View
-                                  </button>
-                                  <button className="btn btn-outline-secondary" onClick={() => handleEditTask(task)}>
-                                    <FaEdit className="me-1" /> Edit
-                                  </button>
-                                  <button className="btn btn-danger" onClick={() => handleDeleteTask(task._id)}>
-                                    <FaTrash className="me-1" /> Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="card shadow-sm">
+          {showAssignTaskForm && (
+            <div className="card mb-4 shadow-sm">
               <div className="card-header bg-primary text-white">
                 <h5 className="mb-0">{editTask ? 'Edit Task' : 'Assign New Task'}</h5>
               </div>
@@ -952,111 +834,95 @@ function Drivers() {
                     <div className="col-md-6">
                       <div className="mb-3">
                         <label className="form-label">Cargo Type</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaBox /></span>
-                          <select
-                            className="form-select"
-                            name="cargoType"
-                            value={taskFormData.cargoType}
-                            onChange={handleTaskInputChange}
-                          >
-                            <option value="">Select Cargo Type</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Furniture">Furniture</option>
-                            <option value="Perishables">Perishables</option>
-                            <option value="Machinery">Machinery</option>
-                            <option value="Textiles">Textiles</option>
-                          </select>
-                        </div>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="cargoType"
+                          value={taskFormData.cargoType}
+                          onChange={handleTaskInputChange}
+                          required
+                        />
                       </div>
                       <div className="mb-3">
                         <label className="form-label">Weight (kg)</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaBox /></span>
-                          <input
-                            type="number"
-                            className="form-control"
-                            name="weight"
-                            value={taskFormData.weight}
-                            onChange={handleTaskInputChange}
-                            placeholder="Enter weight in kg"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
+                        <input
+                          type="number"
+                          className="form-control"
+                          name="weight"
+                          value={taskFormData.weight}
+                          onChange={handleTaskInputChange}
+                          required
+                        />
                       </div>
                       <div className="mb-3">
                         <label className="form-label">Pickup Location</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaMapMarkerAlt /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="pickup"
-                            value={taskFormData.pickup}
-                            onChange={handleTaskInputChange}
-                            placeholder="Enter pickup location"
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="pickup"
+                          value={taskFormData.pickup}
+                          onChange={handleTaskInputChange}
+                          required
+                        />
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="mb-3">
                         <label className="form-label">Delivery Location</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaMapMarkerAlt /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="delivery"
-                            value={taskFormData.delivery}
-                            onChange={handleTaskInputChange}
-                            placeholder="Enter delivery location"
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="delivery"
+                          value={taskFormData.delivery}
+                          onChange={handleTaskInputChange}
+                          required
+                        />
                       </div>
                       <div className="mb-3">
                         <label className="form-label">Expected Delivery Date</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaCalendarAlt /></span>
-                          <input
-                            type="date"
-                            className="form-control"
-                            name="expectedDelivery"
-                            value={taskFormData.expectedDelivery}
-                            onChange={handleTaskInputChange}
-                          />
-                        </div>
+                        <input
+                          type="date"
+                          className="form-control"
+                          name="expectedDelivery"
+                          value={taskFormData.expectedDelivery}
+                          onChange={handleTaskInputChange}
+                          required
+                        />
                       </div>
                       <div className="mb-3">
-                        <label className="form-label">Status</label>
-                        <select
-                          className="form-select"
-                          name="status"
-                          value={taskFormData.status}
+                        <label className="form-label">Vehicle Number</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="vehicle"
+                          value={taskFormData.vehicle}
                           onChange={handleTaskInputChange}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                        </select>
+                          required
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="d-flex justify-content-end gap-2 mt-3">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setShowAssignTaskForm(false)}
-                    >
-                      Cancel
+                  <div className="mt-4">
+                    <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                      {isLoading ? 'Saving...' : (editTask ? 'Update Task' : 'Assign Task')}
                     </button>
                     <button
-                      type="submit"
-                      className="btn btn-success"
-                      disabled={isLoading}
+                      type="button"
+                      className="btn btn-secondary ms-2"
+                      onClick={() => {
+                        setShowAssignTaskForm(false);
+                        setEditTask(null);
+                        setTaskFormData({
+                          cargoType: '',
+                          weight: '',
+                          pickup: '',
+                          delivery: '',
+                          expectedDelivery: '',
+                          vehicle: '',
+                        });
+                      }}
                     >
-                      {isLoading ? 'Processing...' : editTask ? 'Update Task' : 'Assign Task'}
+                      Cancel
                     </button>
                   </div>
                 </form>
@@ -1064,149 +930,219 @@ function Drivers() {
             </div>
           )}
 
-          {viewTask && (
-            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content">
-                  <div className="modal-header bg-primary text-white">
-                    <h5 className="modal-title">Task Details</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={closeTaskViewModal}></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <strong>Task Number:</strong> TSK{String(tasks.findIndex(t => t._id === viewTask._id) + 1).padStart(4, '0')}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Cargo Type:</strong> {viewTask.cargoType}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Weight (kg):</strong> {viewTask.weight}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Pickup Location:</strong> {viewTask.pickup}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Delivery Location:</strong> {viewTask.delivery}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Expected Delivery:</strong> {new Date(viewTask.expectedDelivery).toLocaleDateString()}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Status:</strong> {viewTask.status}
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={closeTaskViewModal}>
-                      Close
-                    </button>
-                  </div>
-                </div>
+          {isLoading ? (
+            <div className="text-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Cargo Type</th>
+                      <th>Pickup</th>
+                      <th>Delivery</th>
+                      <th>Vehicle</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tasks.map((task) => (
+                      <tr key={task._id}>
+                        <td>{task.cargoType}</td>
+                        <td>{task.pickup}</td>
+                        <td>{task.delivery}</td>
+                        <td>{task.vehicle}</td>
+                        <td>
+                          <span className={`badge ${task.status === 'Completed' ? 'bg-success' : task.status === 'Pending' ? 'bg-warning' : task.status === 'In Progress' ? 'bg-info' : 'bg-danger'}`}>
+                            {task.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-outline-primary me-1"
+                            onClick={() => handleViewTask(task)}
+                            title="View Task"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-warning me-1"
+                            onClick={() => handleEditTask(task)}
+                            title="Edit Task"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDeleteTask(task._id)}
+                            title="Delete Task"
+                          >
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
         </>
       )}
 
+      {viewDriver && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">Driver Details</h5>
+                <button type="button" className="btn-close" onClick={closeViewModal}></button>
+              </div>
+              <div className="modal-body">
+                <div className="text-center mb-4">
+                  {viewDriver.profileImage ? (
+                    <img
+                      src={`http://localhost:5000/${viewDriver.profileImage}`}
+                      alt="Profile"
+                      className="rounded-circle border"
+                      style={{ width: '150px', height: '150px', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <FaUserCircle size={150} className="text-secondary" />
+                  )}
+                </div>
+                <div className="row">
+                  <div className="col-md-6">
+                    <p><strong>Name:</strong> {`${viewDriver.firstName} ${viewDriver.lastName}`}</p>
+                    <p><strong>Email:</strong> {viewDriver.email}</p>
+                    <p><strong>Phone:</strong> {viewDriver.phoneNumber}</p>
+                    <p><strong>Date of Birth:</strong> {viewDriver.dateOfBirth ? new Date(viewDriver.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                    <p><strong>Vehicle Number:</strong> {viewDriver.vehicleNumber || 'N/A'}</p>
+                  </div>
+                  <div className="col-md-6">
+                    <p><strong>License Number:</strong> {viewDriver.licenseNumber}</p>
+                    <p><strong>License Expiry:</strong> {viewDriver.licenseExpiry ? new Date(viewDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</p>
+                    <p><strong>Address:</strong> {viewDriver.address || 'N/A'}</p>
+                    <p><strong>City:</strong> {viewDriver.city || 'N/A'}, {viewDriver.state || 'N/A'} {viewDriver.zipCode || ''}</p>
+                    <p><strong>Status:</strong> {viewDriver.employmentStatus}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeViewModal}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewTask && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">Task Details</h5>
+                <button type="button" className="btn-close" onClick={closeTaskViewModal}></button>
+              </div>
+              <div className="modal-body">
+                <p><strong>Cargo Type:</strong> {viewTask.cargoType}</p>
+                <p><strong>Weight:</strong> {viewTask.weight} kg</p>
+                <p><strong>Pickup:</strong> {viewTask.pickup}</p>
+                <p><strong>Delivery:</strong> {viewTask.delivery}</p>
+                <p><strong>Vehicle:</strong> {viewTask.vehicle}</p>
+                <p><strong>Expected Delivery:</strong> {new Date(viewTask.expectedDelivery).toLocaleDateString()}</p>
+                <p><strong>Status:</strong> {viewTask.status}</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeTaskViewModal}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showReportModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title">Generate Task Report</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={closeReportModal}></button>
+                <button type="button" className="btn-close" onClick={closeReportModal}></button>
               </div>
               <div className="modal-body">
-                <div className="row mb-4">
+                <div className="row mb-3">
                   <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label className="form-label fw-bold">Date Range</label>
-                      <div className="input-group">
-                        <span className="input-group-text"><FaCalendarAlt /></span>
-                        <select
-                          className="form-select"
-                          value={dateRange}
-                          onChange={handleDateRangeChange}
-                        >
-                          <option value="1">Last 1 Day</option>
-                          <option value="7">Last 7 Days</option>
-                          <option value="30">Last 30 Days</option>
-                        </select>
-                      </div>
-                    </div>
+                    <label className="form-label">Date Range</label>
+                    <select className="form-control" value={dateRange} onChange={handleDateRangeChange}>
+                      <option value="7">Last 7 Days</option>
+                      <option value="30">Last 30 Days</option>
+                      <option value="90">Last 90 Days</option>
+                      <option value="all">All Time</option>
+                    </select>
                   </div>
                   <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label className="form-label fw-bold">Task Status</label>
-                      <div className="input-group">
-                        <span className="input-group-text"><FaFilter /></span>
-                        <select
-                          className="form-select"
-                          multiple
-                          value={selectedStatuses}
-                          onChange={handleStatusChange}
-                          style={{ height: '100px' }}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </div>
-                      <small className="form-text text-muted">Hold Ctrl/Cmd to select multiple statuses</small>
-                    </div>
+                    <label className="form-label">Task Status</label>
+                    <select
+                      className="form-control"
+                      multiple
+                      value={selectedStatuses}
+                      onChange={handleStatusChange}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
                   </div>
                 </div>
                 <button
-                  className="btn btn-primary w-100 mb-4"
+                  className="btn btn-primary mb-3"
                   onClick={fetchReportData}
                   disabled={isLoading}
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Fetching Data...
-                    </>
-                  ) : (
-                    'Fetch Report Data'
-                  )}
+                  <FaFilter className="me-1" /> {isLoading ? 'Filtering...' : 'Apply Filters'}
                 </button>
                 {reportData.length > 0 && (
                   <>
-                    <div className="table-responsive mb-4">
-                      <table className="table table-bordered table-hover">
-                        <thead className="table-primary">
-                          <tr>
-                            <th>Task Number</th>
-                            <th>Cargo Type</th>
-                            <th>Pick Up</th>
-                            <th>Delivery</th>
-                            <th>Expected Delivery</th>
-                            <th>Status</th>
+                    <table className="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>Task Number</th>
+                          <th>Cargo Type</th>
+                          <th>Pickup</th>
+                          <th>Delivery</th>
+                          <th>Expected Delivery</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportData.map((item) => (
+                          <tr key={item._id}>
+                            <td>{item.taskNum}</td>
+                            <td>{item.cargoType}</td>
+                            <td>{item.pickup}</td>
+                            <td>{item.delivery}</td>
+                            <td>{new Date(item.expectedDelivery).toLocaleDateString()}</td>
+                            <td>{item.status}</td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {reportData.map((item) => (
-                            <tr key={item._id}>
-                              <td>{item.taskNum}</td>
-                              <td>{item.cargoType}</td>
-                              <td>{item.pickup}</td>
-                              <td>{item.delivery}</td>
-                              <td>{new Date(item.expectedDelivery).toLocaleDateString()}</td>
-                              <td>
-                                <span className={`badge ${item.status === 'Completed' ? 'bg-success' : item.status === 'In Progress' ? 'bg-warning' : 'bg-secondary'}`}>
-                                  {item.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="d-flex gap-2">
-                      <button className="btn btn-success w-50" onClick={generateCSV}>
-                        <FaFileDownload className="me-2" />Download CSV
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="d-flex justify-content-end">
+                      <button className="btn btn-success me-2" onClick={generateCSV}>
+                        <FaFileDownload className="me-1" /> Download CSV
                       </button>
-                      <button className="btn btn-danger w-50" onClick={generatePDF}>
-                        <FaFileDownload className="me-2" />Download PDF
+                      <button className="btn btn-danger" onClick={generatePDF}>
+                        <FaFileDownload className="me-1" /> Download PDF
                       </button>
                     </div>
                   </>

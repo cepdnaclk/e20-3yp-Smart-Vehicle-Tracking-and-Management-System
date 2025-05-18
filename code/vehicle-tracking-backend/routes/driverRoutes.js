@@ -24,6 +24,28 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/count", async (req, res) => {
+  try {
+    const totalDrivers = await Driver.countDocuments();
+    res.json({ totalDrivers });
+  } catch (err) {
+    console.error("Error counting drivers:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/count/active", async (req, res) => {
+  try {
+    const activeDriversCount = await Driver.countDocuments({
+      employmentStatus: "active",
+    });
+    res.json({ activeDriversCount });
+  } catch (err) {
+    console.error("Error counting active drivers:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post(
   "/",
   upload.fields([{ name: "profileImage", maxCount: 1 }]),
@@ -37,8 +59,6 @@ router.post(
         email,
         licenseNumber,
         licenseExpiry,
-        vehicleId,
-        lastLocation,
         address,
         city,
         state,
@@ -55,8 +75,6 @@ router.post(
         email,
         licenseNumber,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : undefined,
-        vehicleId,
-        lastLocation,
         address,
         city,
         state,
@@ -95,8 +113,7 @@ router.put(
         email,
         licenseNumber,
         licenseExpiry,
-        vehicleId,
-        lastLocation,
+        vehicleNumber,
         address,
         city,
         state,
@@ -116,8 +133,7 @@ router.put(
       driver.licenseExpiry = licenseExpiry
         ? new Date(licenseExpiry)
         : driver.licenseExpiry;
-      driver.vehicleId = vehicleId || driver.vehicleId;
-      driver.lastLocation = lastLocation || driver.lastLocation;
+      driver.vehicleNumber = vehicleNumber || driver.vehicleNumber;
       driver.address = address || driver.address;
       driver.city = city || driver.city;
       driver.state = state || driver.state;
@@ -155,28 +171,6 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.get("/count", async (req, res) => {
-  try {
-    const totalDrivers = await Driver.countDocuments();
-    res.json({ totalDrivers });
-  } catch (err) {
-    console.error("Error counting drivers:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/count/active", async (req, res) => {
-  try {
-    const activeDriversCount = await Driver.countDocuments({
-      employmentStatus: "active",
-    });
-    res.json({ activeDriversCount });
-  } catch (err) {
-    console.error("Error counting active drivers:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
 router.get("/:driverId/tasks", async (req, res) => {
   try {
     const driver = await Driver.findById(req.params.driverId).populate("tasks");
@@ -190,43 +184,23 @@ router.get("/:driverId/tasks", async (req, res) => {
   }
 });
 
-router.get("/:driverId/tasks/report", async (req, res) => {
+router.get("/:driverId/tasks/:taskId", async (req, res) => {
   try {
     const driver = await Driver.findById(req.params.driverId).populate("tasks");
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
     }
 
-    const dateRange = parseInt(req.query.dateRange) || 7;
-    const statuses = req.query.statuses ? req.query.statuses.split(",") : null;
-
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - dateRange);
-
-    let filteredTasks = driver.tasks.filter((task) => {
-      const taskDate = new Date(task.expectedDelivery);
-      return taskDate >= startDate && taskDate <= endDate;
-    });
-
-    if (statuses) {
-      filteredTasks = filteredTasks.filter((task) =>
-        statuses.includes(task.status)
-      );
+    const task = driver.tasks.find(
+      (task) => task._id.toString() === req.params.taskId
+    );
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
     }
 
-    const tasks = filteredTasks.map((task) => ({
-      _id: task._id,
-      cargoType: task.cargoType,
-      pickup: task.pickup,
-      delivery: task.delivery,
-      expectedDelivery: task.expectedDelivery,
-      status: task.status,
-    }));
-
-    res.json(tasks);
+    res.json(task);
   } catch (err) {
-    console.error("Error fetching report:", err);
+    console.error("Error fetching task:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -238,7 +212,7 @@ router.post("/:driverId/tasks", async (req, res) => {
       return res.status(404).json({ message: "Driver not found" });
     }
 
-    const { cargoType, weight, pickup, delivery, expectedDelivery, status } =
+    const { cargoType, weight, pickup, delivery, expectedDelivery, vehicle } =
       req.body;
 
     const newTask = new Task({
@@ -249,12 +223,19 @@ router.post("/:driverId/tasks", async (req, res) => {
       expectedDelivery: expectedDelivery
         ? new Date(expectedDelivery)
         : undefined,
-      status,
+      vehicle,
+      status: "Pending",
     });
 
     const savedTask = await newTask.save();
     driver.tasks.push(savedTask._id);
     await driver.save();
+
+    req.io.emit("taskNotification", {
+      driverId: req.params.driverId,
+      title: "New Task Assigned",
+      message: `A new task (${cargoType}) has been assigned to you for vehicle ${vehicle}.`,
+    });
 
     res.status(201).json(savedTask);
   } catch (err) {
@@ -270,7 +251,7 @@ router.put("/:driverId/tasks/:taskId", async (req, res) => {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    const { cargoType, weight, pickup, delivery, expectedDelivery, status } =
+    const { cargoType, weight, pickup, delivery, expectedDelivery, vehicle } =
       req.body;
 
     task.cargoType = cargoType || task.cargoType;
@@ -280,9 +261,16 @@ router.put("/:driverId/tasks/:taskId", async (req, res) => {
     task.expectedDelivery = expectedDelivery
       ? new Date(expectedDelivery)
       : task.expectedDelivery;
-    task.status = status || task.status;
+    task.vehicle = vehicle || task.vehicle;
 
     const updatedTask = await task.save();
+
+    req.io.emit("taskNotification", {
+      driverId: req.params.driverId,
+      title: "Task Updated",
+      message: `Your task (${task.cargoType}) has been updated.`,
+    });
+
     res.json(updatedTask);
   } catch (err) {
     console.error("Error updating task:", err);
@@ -315,23 +303,85 @@ router.delete("/:driverId/tasks/:taskId", async (req, res) => {
   }
 });
 
-router.get("/:driverId/tasks/:taskId", async (req, res) => {
+router.put("/:driverId/tasks/:taskId/start", async (req, res) => {
   try {
     const driver = await Driver.findById(req.params.driverId).populate("tasks");
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
     }
 
-    const task = driver.tasks.find(
-      (task) => task._id.toString() === req.params.taskId
-    );
+    const task = await Task.findById(req.params.taskId);
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
+    const activeTask = driver.tasks.find(
+      (t) => t.status === "In Progress" && t._id.toString() !== task._id
+    );
+    if (activeTask) {
+      return res
+        .status(400)
+        .json({ message: "Another task is already in progress." });
+    }
+
+    task.status = "In Progress";
+    await task.save();
+
+    req.io.emit("taskNotification", {
+      driverId: req.params.driverId,
+      title: "Task Started",
+      message: `Task (${task.cargoType}) has been started.`,
+    });
+
     res.json(task);
   } catch (err) {
-    console.error("Error fetching task:", err);
+    console.error("Error starting task:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/:driverId/tasks/:taskId/complete", async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    task.status = "Completed";
+    await task.save();
+
+    req.io.emit("taskNotification", {
+      driverId: req.params.driverId,
+      title: "Task Completed",
+      message: `Task (${task.cargoType}) has been completed.`,
+    });
+
+    res.json(task);
+  } catch (err) {
+    console.error("Error completing task:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/:driverId/tasks/:taskId/cancel", async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    task.status = "Cancelled";
+    await task.save();
+
+    req.io.emit("taskNotification", {
+      driverId: req.params.driverId,
+      title: "Task Cancelled",
+      message: `Task (${task.cargoType}) has been cancelled.`,
+    });
+
+    res.json(task);
+  } catch (err) {
+    console.error("Error cancelling task:", err);
     res.status(500).json({ message: err.message });
   }
 });

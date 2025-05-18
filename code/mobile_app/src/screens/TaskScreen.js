@@ -8,11 +8,24 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import axios from "axios";
 import { useAppContext } from "../App";
 import { styles } from "../styles/styles";
 
 export const TaskScreen = ({ navigation }) => {
-  const { tasks, completedTasks, loading } = useAppContext();
+  const { tasks, completedTasks, loading, vehicleNumber } = useAppContext();
+
+  const handleTaskPress = (taskId) => {
+    if (!vehicleNumber) {
+      Alert.alert(
+        "Vehicle Number Required",
+        "Please enter a vehicle number in the Dashboard before viewing tasks.",
+        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
+      );
+      return;
+    }
+    navigation.navigate("TaskDetails", { taskId });
+  };
 
   const renderItem = ({ item }) => {
     const isCompleted = completedTasks.includes(item._id);
@@ -20,7 +33,7 @@ export const TaskScreen = ({ navigation }) => {
     return (
       <TouchableOpacity
         style={[styles.taskItem, isCompleted ? styles.completedTask : null]}
-        onPress={() => navigation.navigate("TaskDetails", { taskId: item._id })}
+        onPress={() => handleTaskPress(item._id)}
       >
         <View style={styles.taskHeader}>
           <Text style={styles.vehicleText}>Vehicle: {item.vehicle}</Text>
@@ -70,12 +83,19 @@ export const TaskScreen = ({ navigation }) => {
 
 export const TaskDetailsScreen = ({ route, navigation }) => {
   const { taskId } = route.params;
-  const { vehicleNumber, completedTasks, setCompletedTasks, tasks } =
-    useAppContext();
+  const {
+    vehicleNumber,
+    completedTasks,
+    setCompletedTasks,
+    tasks,
+    activeTaskId,
+    setActiveTaskId,
+  } = useAppContext();
   const task = tasks.find((t) => t._id === taskId);
   const [status, setStatus] = useState(
-    completedTasks.includes(task._id) ? "finished" : task.status
+    completedTasks.includes(task._id) ? "Completed" : task.status
   );
+  const [loading, setLoading] = useState(false);
 
   if (!task) {
     return (
@@ -96,35 +116,85 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
       );
       return false;
     }
-    return true;
-  };
-
-  const handleStart = () => {
-    if (!checkVehicleNumber()) return;
-
     if (!hasCorrectVehicle) {
       Alert.alert(
         "Wrong Vehicle",
         `This task requires vehicle ${task.vehicle}, but you have entered ${vehicleNumber}.`,
         [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
       );
+      return false;
+    }
+    return true;
+  };
+
+  const handleStart = async () => {
+    if (!checkVehicleNumber()) return;
+    if (activeTaskId && activeTaskId !== task._id) {
+      Alert.alert(
+        "Active Task",
+        "You must complete or cancel the current task before starting a new one."
+      );
       return;
     }
 
+    setLoading(true);
+    try {
+      await axios.put(
+        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa/tasks/${task._id}/start`
+      );
+      setStatus("In Progress");
+      setActiveTaskId(task._id);
+      Alert.alert("Task Started", "The task has been started successfully.");
+    } catch (error) {
+      console.error("Error starting task:", error);
+      Alert.alert("Error", "Failed to start task. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (!checkVehicleNumber()) return;
+
     Alert.alert(
-      "Start Task",
-      `Are you sure you are in vehicle ${task.vehicle} and want to start this task?`,
+      "Complete Task",
+      `Are you sure you have completed the delivery for vehicle ${task.vehicle}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Yes, Start",
+          text: "Yes, Complete",
           onPress: () => {
             Alert.alert(
               "Double Confirm",
-              "Please confirm again to start the task.",
+              "Please confirm again to complete the task.",
               [
                 { text: "Cancel", style: "cancel" },
-                { text: "Start", onPress: () => setStatus("started") },
+                {
+                  text: "Complete",
+                  onPress: async () => {
+                    setLoading(true);
+                    try {
+                      await axios.put(
+                        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa/tasks/${task._id}/complete`
+                      );
+                      setStatus("Completed");
+                      setCompletedTasks((prev) => [...prev, task._id]);
+                      setActiveTaskId(null);
+                      Alert.alert(
+                        "Task Completed",
+                        "The task has been completed successfully."
+                      );
+                    } catch (error) {
+                      console.error("Error completing task:", error);
+                      Alert.alert(
+                        "Error",
+                        "Failed to complete task. Please try again."
+                      );
+                    } finally {
+                      setLoading(false);
+                    }
+                  },
+                },
               ]
             );
           },
@@ -133,36 +203,45 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
     );
   };
 
-  const handleFinish = () => {
+  const handleCancel = async () => {
     if (!checkVehicleNumber()) return;
 
-    if (!hasCorrectVehicle) {
-      Alert.alert(
-        "Wrong Vehicle",
-        `This task requires vehicle ${task.vehicle}, but you have entered ${vehicleNumber}.`,
-        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
-      );
-      return;
-    }
-
     Alert.alert(
-      "Finish Task",
-      `Are you sure you have completed the delivery for vehicle ${task.vehicle}?`,
+      "Cancel Task",
+      `Are you sure you want to cancel the task for vehicle ${task.vehicle}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Yes, Finish",
+          text: "Yes, Cancel",
           onPress: () => {
             Alert.alert(
               "Double Confirm",
-              "Please confirm again to finish the task.",
+              "Please confirm again to cancel the task.",
               [
                 { text: "Cancel", style: "cancel" },
                 {
-                  text: "Finish",
-                  onPress: () => {
-                    setStatus("finished");
-                    setCompletedTasks((prev) => [...prev, task._id]);
+                  text: "Cancel Task",
+                  onPress: async () => {
+                    setLoading(true);
+                    try {
+                      await axios.put(
+                        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa/tasks/${task._id}/cancel`
+                      );
+                      setStatus("Cancelled");
+                      setActiveTaskId(null);
+                      Alert.alert(
+                        "Task Cancelled",
+                        "The task has been cancelled successfully."
+                      );
+                    } catch (error) {
+                      console.error("Error cancelling task:", error);
+                      Alert.alert(
+                        "Error",
+                        "Failed to cancel task. Please try again."
+                      );
+                    } finally {
+                      setLoading(false);
+                    }
                   },
                 },
               ]
@@ -203,14 +282,7 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.vehicleNumber}>Vehicle: {task.vehicle}</Text>
-        <Text style={styles.statusText}>
-          Status:{" "}
-          {status === "pending"
-            ? "Ready to Start"
-            : status === "started"
-            ? "In Progress"
-            : "Completed"}
-        </Text>
+        <Text style={styles.statusText}>Status: {status}</Text>
       </View>
       <View style={styles.detailsContainer}>
         <Text style={styles.sectionTitle}>Cargo Details</Text>
@@ -238,24 +310,61 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
         </View>
       </View>
       <View style={styles.actionContainer}>
-        {status === "pending" && (
-          <TouchableOpacity style={styles.actionButton} onPress={handleStart}>
-            <Text style={styles.actionButtonText}>Start Delivery</Text>
-          </TouchableOpacity>
-        )}
-        {status === "started" && (
+        {status === "Pending" && (
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
-            onPress={handleFinish}
+            style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
+            onPress={handleStart}
+            disabled={loading}
           >
-            <Text style={styles.actionButtonText}>Finish Delivery</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.actionButtonText}>Start Task</Text>
+            )}
           </TouchableOpacity>
         )}
-        {status === "finished" && (
+        {status === "In Progress" && (
+          <>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: "#FF0000" }]}
+              onPress={handleComplete}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.actionButtonText}>Complete Task</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: "#FFA500" }]}
+              onPress={handleCancel}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.actionButtonText}>Cancel Task</Text>
+              )}
+            </TouchableOpacity>
+          </>
+        )}
+        {status === "Completed" && (
           <View style={styles.completionContainer}>
             <Text style={styles.completionText}>
               Delivery completed successfully!
             </Text>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
+              onPress={() => navigation.navigate("Tasks")}
+            >
+              <Text style={styles.actionButtonText}>Return to Tasks</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        {status === "Cancelled" && (
+          <View style={styles.completionContainer}>
+            <Text style={styles.completionText}>Task has been cancelled.</Text>
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
               onPress={() => navigation.navigate("Tasks")}
