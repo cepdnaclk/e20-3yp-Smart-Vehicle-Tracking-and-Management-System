@@ -8,13 +8,15 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+// Temporary testing configuration - allows ALL origins
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*", // Restrict to your frontend URL in production
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "*", // Allows all domains
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
