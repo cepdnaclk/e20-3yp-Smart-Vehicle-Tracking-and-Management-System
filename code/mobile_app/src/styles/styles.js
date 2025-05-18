@@ -24,6 +24,8 @@ export const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 15,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   loginButton: {
     backgroundColor: "#4DA6FF",
@@ -93,30 +95,43 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#4DA6FF",
   },
-  scanButton: {
-    backgroundColor: "#4DA6FF",
+  vehicleInputContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 5,
     padding: 15,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  vehicleInput: {
+    backgroundColor: "#f9f9f9",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  submitButton: {
+    backgroundColor: "#4DA6FF",
+    padding: 12,
     borderRadius: 5,
     alignItems: "center",
-    marginTop: 20,
   },
-  scanButtonText: {
+  submitButtonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
-  centerText: {
-    fontSize: 18,
-    padding: 32,
-    color: "#777",
-    textAlign: "center",
+  removeButton: {
+    backgroundColor: "#FF6B6B",
+    padding: 12,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 10,
   },
-  buttonTouchable: {
-    padding: 16,
-  },
-  buttonText: {
+  removeButtonText: {
+    color: "white",
+    fontWeight: "bold",
     fontSize: 16,
-    color: "#4DA6FF",
   },
   header: {
     backgroundColor: "#4DA6FF",
@@ -312,7 +327,7 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  wrongVehicleContainer: {
+  noVehicleContainer: {
     margin: 20,
     padding: 20,
     backgroundColor: "#FFF",
@@ -320,36 +335,15 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 3,
   },
-  wrongVehicleTitle: {
+  noVehicleTitle: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#FF6B6B",
     marginBottom: 15,
   },
-  wrongVehicleText: {
+  noVehicleText: {
     fontSize: 16,
     textAlign: "center",
-    marginBottom: 10,
-  },
-  currentVehicleText: {
-    fontSize: 14,
-    color: "#666",
     marginBottom: 20,
-  },
-  requiredVehicleContainer: {
-    backgroundColor: "#E6F4FF",
-    padding: 10,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#4DA6FF",
-  },
-  requiredVehicleText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  requiredVehicleNumber: {
-    fontWeight: "bold",
-    color: "#4DA6FF",
-    fontSize: 18,
   },
 });

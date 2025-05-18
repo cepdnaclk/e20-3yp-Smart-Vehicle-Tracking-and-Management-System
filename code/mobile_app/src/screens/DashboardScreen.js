@@ -1,11 +1,27 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useAppContext } from "../App";
 import { styles } from "../styles/styles";
 
-const DashboardScreen = ({ navigation }) => {
-  const { scannedVehicle, removeVehicle, tasks, completedTasks } =
-    useAppContext();
+const DashboardScreen = () => {
+  const {
+    vehicleNumber,
+    setVehicleNumber,
+    removeVehicle,
+    tasks,
+    completedTasks,
+  } = useAppContext();
+  const [inputVehicle, setInputVehicle] = useState("");
+
+  const handleSubmitVehicle = () => {
+    if (!inputVehicle.trim()) {
+      Alert.alert("Invalid Input", "Please enter a valid vehicle number.");
+      return;
+    }
+    setVehicleNumber(inputVehicle.trim());
+    setInputVehicle("");
+    Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);
+  };
 
   const pendingCount = tasks.filter(
     (task) => !completedTasks.includes(task._id)
@@ -38,28 +54,26 @@ const DashboardScreen = ({ navigation }) => {
       <Text style={styles.sectionTitle}>Current Vehicle</Text>
       <View style={styles.vehicleInfoBox}>
         <Text style={styles.vehicleInfoText}>
-          {scannedVehicle || "No vehicle scanned"}
+          {vehicleNumber || "No vehicle entered"}
         </Text>
       </View>
-      <TouchableOpacity
-        style={styles.scanButton}
-        onPress={() => navigation.navigate("Scan QR")}
-      >
-        <Text style={styles.scanButtonText}>
-          {scannedVehicle
-            ? "Change Vehicle (Scan New QR)"
-            : "Scan Vehicle QR Code"}
-        </Text>
-      </TouchableOpacity>
-      {scannedVehicle && (
+      <View style={styles.vehicleInputContainer}>
+        <TextInput
+          style={styles.vehicleInput}
+          placeholder="Enter Vehicle Number (e.g., TN-01-AB-1234)"
+          value={inputVehicle}
+          onChangeText={setInputVehicle}
+        />
         <TouchableOpacity
-          style={[
-            styles.scanButton,
-            { backgroundColor: "#FF6B6B", marginTop: 10 },
-          ]}
-          onPress={removeVehicle}
+          style={styles.submitButton}
+          onPress={handleSubmitVehicle}
         >
-          <Text style={styles.scanButtonText}>Remove Current Vehicle</Text>
+          <Text style={styles.submitButtonText}>Set Vehicle Number</Text>
+        </TouchableOpacity>
+      </View>
+      {vehicleNumber && (
+        <TouchableOpacity style={styles.removeButton} onPress={removeVehicle}>
+          <Text style={styles.removeButtonText}>Remove Current Vehicle</Text>
         </TouchableOpacity>
       )}
     </View>

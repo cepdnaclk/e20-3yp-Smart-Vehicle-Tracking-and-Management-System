@@ -8,7 +8,7 @@ const SettingsScreen = ({ navigation }) => {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [locationTracking, setLocationTracking] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const { scannedVehicle, removeVehicle } = useAppContext();
+  const { vehicleNumber, removeVehicle } = useAppContext();
 
   return (
     <ScrollView style={styles.container}>
@@ -17,17 +17,11 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={styles.profileName}>John Driver</Text>
         <Text style={styles.profileInfo}>ID: DRV12345</Text>
         <Text style={styles.profileInfo}>
-          Vehicle: {scannedVehicle || "None"}
+          Vehicle: {vehicleNumber || "None"}
         </Text>
-        {scannedVehicle && (
-          <TouchableOpacity
-            style={[
-              styles.scanButton,
-              { backgroundColor: "#FF6B6B", marginTop: 10 },
-            ]}
-            onPress={removeVehicle}
-          >
-            <Text style={styles.scanButtonText}>Remove Current Vehicle</Text>
+        {vehicleNumber && (
+          <TouchableOpacity style={styles.removeButton} onPress={removeVehicle}>
+            <Text style={styles.removeButtonText}>Remove Current Vehicle</Text>
           </TouchableOpacity>
         )}
       </View>

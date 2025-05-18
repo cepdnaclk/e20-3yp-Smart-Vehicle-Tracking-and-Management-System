@@ -47,8 +47,8 @@ export const TaskScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Text style={styles.headerText}>Your Delivery Tasks</Text>
       <Text style={styles.taskInstructions}>
-        Select a task to view details. You must scan the correct vehicle QR code
-        before starting each task.
+        Select a task to view details. You must enter a vehicle number in the
+        Dashboard before starting a task.
       </Text>
       {loading ? (
         <ActivityIndicator
@@ -70,7 +70,7 @@ export const TaskScreen = ({ navigation }) => {
 
 export const TaskDetailsScreen = ({ route, navigation }) => {
   const { taskId } = route.params;
-  const { scannedVehicle, completedTasks, setCompletedTasks, tasks } =
+  const { vehicleNumber, completedTasks, setCompletedTasks, tasks } =
     useAppContext();
   const task = tasks.find((t) => t._id === taskId);
   const [status, setStatus] = useState(
@@ -85,9 +85,32 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
     );
   }
 
-  const hasCorrectVehicle = scannedVehicle === task.vehicle;
+  const hasCorrectVehicle = vehicleNumber === task.vehicle;
+
+  const checkVehicleNumber = (action) => {
+    if (!vehicleNumber) {
+      Alert.alert(
+        "Vehicle Number Required",
+        "Please enter the vehicle number in the Dashboard before proceeding.",
+        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
+      );
+      return false;
+    }
+    return true;
+  };
 
   const handleStart = () => {
+    if (!checkVehicleNumber()) return;
+
+    if (!hasCorrectVehicle) {
+      Alert.alert(
+        "Wrong Vehicle",
+        `This task requires vehicle ${task.vehicle}, but you have entered ${vehicleNumber}.`,
+        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
+      );
+      return;
+    }
+
     Alert.alert(
       "Start Task",
       `Are you sure you are in vehicle ${task.vehicle} and want to start this task?`,
@@ -111,6 +134,17 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
   };
 
   const handleFinish = () => {
+    if (!checkVehicleNumber()) return;
+
+    if (!hasCorrectVehicle) {
+      Alert.alert(
+        "Wrong Vehicle",
+        `This task requires vehicle ${task.vehicle}, but you have entered ${vehicleNumber}.`,
+        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
+      );
+      return;
+    }
+
     Alert.alert(
       "Finish Task",
       `Are you sure you have completed the delivery for vehicle ${task.vehicle}?`,
@@ -139,29 +173,25 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
     );
   };
 
-  if (!hasCorrectVehicle) {
+  if (!hasCorrectVehicle && vehicleNumber) {
     return (
       <View style={styles.container}>
-        <View style={styles.wrongVehicleContainer}>
-          <Text style={styles.wrongVehicleTitle}>Wrong Vehicle</Text>
-          <Text style={styles.wrongVehicleText}>
+        <View style={styles.noVehicleContainer}>
+          <Text style={styles.noVehicleTitle}>Wrong Vehicle</Text>
+          <Text style={styles.noVehicleText}>
             This task requires vehicle:{" "}
-            <Text style={styles.requiredVehicleNumber}>{task.vehicle}</Text>
+            <Text style={{ fontWeight: "bold" }}>{task.vehicle}</Text>
           </Text>
-          {scannedVehicle && (
-            <Text style={styles.currentVehicleText}>
-              Currently scanned:{" "}
-              <Text style={{ fontWeight: "bold" }}>{scannedVehicle}</Text>
-            </Text>
-          )}
+          <Text style={styles.noVehicleText}>
+            Currently entered:{" "}
+            <Text style={{ fontWeight: "bold" }}>{vehicleNumber}</Text>
+          </Text>
           <TouchableOpacity
-            style={styles.scanButton}
-            onPress={() =>
-              navigation.navigate("Scan QR", { requiredVehicle: task.vehicle })
-            }
+            style={styles.submitButton}
+            onPress={() => navigation.navigate("Dashboard")}
           >
-            <Text style={styles.scanButtonText}>
-              Scan {task.vehicle} QR Code
+            <Text style={styles.submitButtonText}>
+              Enter Correct Vehicle Number
             </Text>
           </TouchableOpacity>
         </View>
@@ -228,7 +258,7 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
             </Text>
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
-              onPress={() => navigation.navigate("To-Do")}
+              onPress={() => navigation.navigate("Tasks")}
             >
               <Text style={styles.actionButtonText}>Return to Tasks</Text>
             </TouchableOpacity>

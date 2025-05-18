@@ -6,7 +6,6 @@ import { Alert } from "react-native";
 import DashboardScreen from "./screens/DashboardScreen";
 import LoginScreen from "./screens/LoginScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
-import QRScannerScreen from "./screens/QRScannerScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import { TaskScreen, TaskDetailsScreen } from "./screens/TaskScreen";
 import Icon from "./screens/Icon";
@@ -36,16 +35,7 @@ const MainTabs = () => (
       }}
     />
     <Tab.Screen
-      name="Scan QR"
-      component={QRScannerScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <Icon name="qrcode-scan" color={color} size={size} />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="To-Do"
+      name="Tasks"
       component={TaskScreen}
       options={{
         tabBarIcon: ({ color, size }) => (
@@ -77,7 +67,7 @@ const MainTabs = () => (
 const Stack = createStackNavigator();
 
 const App = () => {
-  const [scannedVehicle, setScannedVehicle] = useState(null);
+  const [vehicleNumber, setVehicleNumber] = useState(null);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +82,7 @@ const App = () => {
       setTasks(response.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      Alert.alert("Error", "Failed to fetch tasks. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -104,18 +95,18 @@ const App = () => {
   }, []);
 
   const removeVehicle = () => {
-    setScannedVehicle(null);
+    setVehicleNumber(null);
     Alert.alert(
       "Vehicle Removed",
-      "Previous scanned vehicle removed. Please scan a new vehicle QR code."
+      "Vehicle number removed. Please enter a new vehicle number."
     );
   };
 
   return (
     <AppContext.Provider
       value={{
-        scannedVehicle,
-        setScannedVehicle,
+        vehicleNumber,
+        setVehicleNumber,
         completedTasks,
         setCompletedTasks,
         removeVehicle,
