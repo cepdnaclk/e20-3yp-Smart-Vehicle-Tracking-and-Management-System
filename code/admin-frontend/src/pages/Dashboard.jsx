@@ -10,6 +10,7 @@ import SpeedChart from "../components/SpeedChart";
 import { getSensorsData } from "../services/getSensorsData";
 import LeafletMap from "../components/LeafletMap";
 import { getAlerts } from "../services/getAlerts";
+import { api } from "../services/api";
 
 const Dashboard = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -37,7 +38,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchTotalVehicles = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/vehicles/count");
+        const response = await api.get("/api/vehicles/count");
         setTotalVehicles(response.data.totalVehicles);
       } catch (error) {
         console.error("Error fetching total vehicles:", error);
@@ -51,7 +52,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchActiveVehicles = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/vehicles?status=active");
+        const response = await api.get("/api/vehicles?status=active");
         setActiveVehicles(response.data);
       } catch (error) {
         console.error("Error fetching active vehicles:", error);
@@ -65,7 +66,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchTotalDrivers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/drivers/count");
+        const response = await api.get("/api/drivers/count");
         setTotalDrivers(response.data.totalDrivers);
       } catch (error) {
         console.error("Error fetching total drivers:", error);
@@ -79,7 +80,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchActiveDrivers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/drivers/count/active");
+        const response = await api.get("/api/drivers/count/active");
         setActiveDrivers(response.data.activeDriversCount);
       } catch (error) {
         console.error("Error fetching active drivers count:", error);
