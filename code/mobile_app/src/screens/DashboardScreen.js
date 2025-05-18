@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useAppContext } from "../App";
+import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import axios from "axios";
 
@@ -45,7 +45,7 @@ const DashboardScreen = () => {
       );
       if (
         driverResponse.data.length > 0 &&
-        driverResponse.data[0]._id !== "6823449d5b6c280259c1a5aa"
+        driverResponse.data[0]._id !== "682a45ab697561ca8270846b"
       ) {
         Alert.alert(
           "Error",
@@ -55,16 +55,28 @@ const DashboardScreen = () => {
         return;
       }
 
+      // Create FormData for the PUT request
+      const formData = new FormData();
+      formData.append("vehicleNumber", inputVehicle.trim());
+
       await axios.put(
-        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa`,
-        { vehicleNumber: inputVehicle.trim() }
+        `http://localhost:5000/api/drivers/682a45ab697561ca8270846b`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
       setVehicleNumber(inputVehicle.trim());
       setInputVehicle("");
       Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);
     } catch (error) {
       console.error("Error setting vehicle:", error);
-      Alert.alert("Error", "Failed to set vehicle. Please try again.");
+      console.log("Server response:", error.response?.data);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message ||
+          "Failed to set vehicle. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -107,7 +119,7 @@ const DashboardScreen = () => {
       <View style={styles.vehicleInputContainer}>
         <TextInput
           style={styles.vehicleInput}
-          placeholder="Enter Vehicle Number (e.g., TN-01-AB-1234)"
+          placeholder="Enter Vehicle Number"
           value={inputVehicle}
           onChangeText={setInputVehicle}
         />

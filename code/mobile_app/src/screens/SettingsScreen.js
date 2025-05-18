@@ -1,7 +1,7 @@
 import React from "react";
 import { ScrollView, View, Text, TouchableOpacity, Switch } from "react-native";
 import Icon from "./Icon";
-import { useAppContext } from "../App";
+import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 
 const SettingsScreen = ({ navigation }) => {

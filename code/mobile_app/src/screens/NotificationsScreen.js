@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, FlatList } from "react-native";
-import { useAppContext } from "../App";
+import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 
 const NotificationsScreen = () => {

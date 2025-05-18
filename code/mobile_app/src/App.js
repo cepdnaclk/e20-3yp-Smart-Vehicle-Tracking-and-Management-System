@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -11,9 +11,7 @@ import { TaskScreen, TaskDetailsScreen } from "./screens/TaskScreen";
 import Icon from "./screens/Icon";
 import { fetchTasks } from "./services/api";
 import { io } from "socket.io-client";
-
-const AppContext = createContext();
-export const useAppContext = () => useContext(AppContext);
+import AppContext from "./context/AppContext";
 
 const Tab = createBottomTabNavigator();
 const MainTabs = () => (

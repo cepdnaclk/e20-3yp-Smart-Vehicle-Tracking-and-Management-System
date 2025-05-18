@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import axios from "axios";
-import { useAppContext } from "../App";
+import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 
 export const TaskScreen = ({ navigation }) => {
