@@ -11,6 +11,7 @@ import {
 import axios from "axios";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
+import { startTask } from "../services/api";
 
 export const TaskScreen = ({ navigation }) => {
   const { tasks, completedTasks, loading, vehicleNumber } = useAppContext();
@@ -90,10 +91,11 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
     tasks,
     activeTaskId,
     setActiveTaskId,
+    driverId, // Add driverId from context
   } = useAppContext();
   const task = tasks.find((t) => t._id === taskId);
   const [status, setStatus] = useState(
-    completedTasks.includes(task._id) ? "Completed" : task.status
+    completedTasks.includes(taskId) ? "Completed" : task?.status || "Pending"
   );
   const [loading, setLoading] = useState(false);
 
@@ -107,7 +109,7 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
 
   const hasCorrectVehicle = vehicleNumber === task.vehicle;
 
-  const checkVehicleNumber = (action) => {
+  const checkVehicleNumber = () => {
     if (!vehicleNumber) {
       Alert.alert(
         "Vehicle Number Required",
@@ -139,15 +141,18 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
 
     setLoading(true);
     try {
-      await axios.put(
-        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa/tasks/${task._id}/start`
-      );
+      await startTask(driverId, task._id); // Use startTask from api.js
       setStatus("In Progress");
       setActiveTaskId(task._id);
       Alert.alert("Task Started", "The task has been started successfully.");
     } catch (error) {
       console.error("Error starting task:", error);
-      Alert.alert("Error", "Failed to start task. Please try again.");
+      console.log("Server response:", error.response?.data);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message ||
+          "Failed to start task. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -175,7 +180,7 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
                     setLoading(true);
                     try {
                       await axios.put(
-                        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa/tasks/${task._id}/complete`
+                        `http://localhost:5000/api/drivers/${driverId}/tasks/${task._id}/complete`
                       );
                       setStatus("Completed");
                       setCompletedTasks((prev) => [...prev, task._id]);
@@ -186,9 +191,11 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
                       );
                     } catch (error) {
                       console.error("Error completing task:", error);
+                      console.log("Server response:", error.response?.data);
                       Alert.alert(
                         "Error",
-                        "Failed to complete task. Please try again."
+                        error.response?.data?.message ||
+                          "Failed to complete task. Please try again."
                       );
                     } finally {
                       setLoading(false);
@@ -225,7 +232,7 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
                     setLoading(true);
                     try {
                       await axios.put(
-                        `http://localhost:5000/api/drivers/6823449d5b6c280259c1a5aa/tasks/${task._id}/cancel`
+                        `http://localhost:5000/api/drivers/${driverId}/tasks/${task._id}/cancel`
                       );
                       setStatus("Cancelled");
                       setActiveTaskId(null);
@@ -235,9 +242,11 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
                       );
                     } catch (error) {
                       console.error("Error cancelling task:", error);
+                      console.log("Server response:", error.response?.data);
                       Alert.alert(
                         "Error",
-                        "Failed to cancel task. Please try again."
+                        error.response?.data?.message ||
+                          "Failed to cancel task. Please try again."
                       );
                     } finally {
                       setLoading(false);
