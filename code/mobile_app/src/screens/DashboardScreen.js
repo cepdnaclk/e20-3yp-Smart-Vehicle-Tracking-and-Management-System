@@ -30,22 +30,24 @@ const DashboardScreen = () => {
 
     setLoading(true);
     try {
+      // Check if vehicle exists
       const response = await api.get(
-        `/api/vehicles?licensePlate=${inputVehicle.trim()}`
+        `/api/vehicles/check?licensePlate=${inputVehicle.trim()}`
       );
-      if (response.data.length === 0) {
+
+      if (!response.data.exists) {
         Alert.alert("Error", "The vehicle is not registered.");
         setLoading(false);
         return;
       }
 
-      const vehicle = response.data[0];
+      // Continue with driver check
       const driverResponse = await api.get(
         `/api/drivers?vehicleNumber=${inputVehicle.trim()}`
       );
       if (
         driverResponse.data.length > 0 &&
-        driverResponse.data[0]._id !== "682a45ab697561ca8270846b"
+        driverResponse.data[0]._id !== "682b34a386b8b6354fd1da0b"
       ) {
         Alert.alert(
           "Error",
@@ -59,7 +61,7 @@ const DashboardScreen = () => {
       const formData = new FormData();
       formData.append("vehicleNumber", inputVehicle.trim());
 
-      await api.put(`/api/drivers/682a45ab697561ca8270846b`, formData, {
+      await api.put(`/api/drivers/682b34a386b8b6354fd1da0b`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setVehicleNumber(inputVehicle.trim());

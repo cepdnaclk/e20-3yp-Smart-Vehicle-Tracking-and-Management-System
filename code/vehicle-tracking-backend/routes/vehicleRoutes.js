@@ -13,12 +13,57 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET vehicle by license plate
+router.get("/check", async (req, res) => {
+  const { licensePlate } = req.query;
+
+  if (!licensePlate) {
+    return res.status(400).json({ message: "License plate is required" });
+  }
+
+  try {
+    const vehicle = await Vehicle.findOne({
+      licensePlate: licensePlate.trim().toUpperCase(),
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        message: "Vehicle not found",
+        exists: false,
+      });
+    }
+
+    res.json({
+      exists: true,
+      vehicle: {
+        _id: vehicle._id,
+        licensePlate: vehicle.licensePlate,
+        vehicleName: vehicle.vehicleName,
+        vehicleType: vehicle.vehicleType,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // POST a new vehicle
 router.post(
   "/",
   [
     body("vehicleName").notEmpty().withMessage("Vehicle name is required"),
-    body("licensePlate").notEmpty().withMessage("License plate is required"),
+    body("licensePlate")
+      .notEmpty()
+      .withMessage("License plate is required")
+      .custom(async (value) => {
+        const vehicle = await Vehicle.findOne({
+          licensePlate: value.trim().toUpperCase(),
+        });
+        if (vehicle) {
+          throw new Error("License plate already exists");
+        }
+        return true;
+      }),
     body("vehicleType")
       .isIn(["car", "truck", "van", "bus", "motorcycle", "other"])
       .withMessage("Invalid vehicle type"),
@@ -55,7 +100,7 @@ router.post(
     try {
       const newVehicle = new Vehicle({
         vehicleName,
-        licensePlate,
+        licensePlate: licensePlate.trim().toUpperCase(),
         vehicleType,
         make,
         model,
@@ -80,7 +125,19 @@ router.put(
   "/:id",
   [
     body("vehicleName").notEmpty().withMessage("Vehicle name is required"),
-    body("licensePlate").notEmpty().withMessage("License plate is required"),
+    body("licensePlate")
+      .notEmpty()
+      .withMessage("License plate is required")
+      .custom(async (value, { req }) => {
+        const vehicle = await Vehicle.findOne({
+          licensePlate: value.trim().toUpperCase(),
+          _id: { $ne: req.params.id },
+        });
+        if (vehicle) {
+          throw new Error("License plate already exists");
+        }
+        return true;
+      }),
     body("vehicleType")
       .isIn(["car", "truck", "van", "bus", "motorcycle", "other"])
       .withMessage("Invalid vehicle type"),
