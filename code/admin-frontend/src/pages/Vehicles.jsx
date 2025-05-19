@@ -58,7 +58,7 @@ function Vehicles() {
       setIsLoading(true);
       const payload = {
         ...formData,
-        status: 'active', // Default status
+        status: formData.trackingEnabled ? 'active' : 'inactive', // Set status based on trackingEnabled
         lastLocation: 'Not tracked yet', // Default location
       };
 
@@ -273,7 +273,7 @@ function Vehicles() {
                             max="2100"
                           />
                         </div>
-                    </div>
+                      </div>
                     </div>
                     <div className="col-md-6">
                       <div className="mb-3">
@@ -382,7 +382,7 @@ function Vehicles() {
                       <td>{vehicle.licensePlate}</td>
                       <td>{vehicle.vehicleType}</td>
                       <td>
-                        <span className={`badge ${vehicle.status === 'active' ? 'bg-success' : 'bg-secondary'}`}>
+                        <span className={`badge ${vehicle.status === 'active' ? 'bg-success' : 'bg-danger'}`}>
                           {vehicle.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
