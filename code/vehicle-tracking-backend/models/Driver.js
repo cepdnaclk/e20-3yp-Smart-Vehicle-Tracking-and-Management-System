@@ -19,7 +19,6 @@ const taskSchema = new mongoose.Schema(
 
 const driverSchema = new mongoose.Schema(
   {
-    driverId: { type: String, required: true, unique: true }, // New manual driverId field
     firstName: { type: String },
     lastName: { type: String },
     dateOfBirth: { type: Date },
