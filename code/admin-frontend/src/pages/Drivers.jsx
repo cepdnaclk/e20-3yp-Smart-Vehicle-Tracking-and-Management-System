@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaCalendarAlt, FaMapMarkerAlt, FaCamera, FaUserCircle, FaArrowLeft, FaTasks, FaBox, FaTrash, FaEye, FaEdit, FaFileDownload, FaFilter } from 'react-icons/fa';
-import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { api } from "../services/api";
 
 function Drivers() {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ function Drivers() {
     const fetchDrivers = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get('http://localhost:5000/api/drivers');
+        const response = await api.get('/api/drivers');
         setDrivers(response.data);
       } catch (error) {
         console.error('Error fetching drivers:', error);
@@ -70,7 +70,7 @@ function Drivers() {
   const fetchTasks = async (driverId) => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/drivers/${driverId}/tasks`);
+      const response = await api.get(`/api/drivers/${driverId}/tasks`);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -118,13 +118,13 @@ function Drivers() {
 
       let response;
       if (editDriver) {
-        response = await axios.put(`http://localhost:5000/api/drivers/${editDriver._id}`, payload, {
+        response = await api.put(`/api/drivers/${editDriver._id}`, payload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setDrivers(drivers.map((d) => (d._id === editDriver._id ? response.data : d)));
         toast.success('Driver updated successfully!');
       } else {
-        response = await axios.post('http://localhost:5000/api/drivers', payload, {
+        response = await api.post('/api/drivers', payload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setDrivers([...drivers, response.data]);
@@ -171,7 +171,7 @@ function Drivers() {
       };
 
       // Validate vehicle registration
-      const vehicleResponse = await axios.get(`http://localhost:5000/api/vehicles?licensePlate=${taskFormData.vehicle}`);
+      const vehicleResponse = await api.get(`/api/vehicles?licensePlate=${taskFormData.vehicle}`);
       if (vehicleResponse.data.length === 0) {
         toast.error('Vehicle is not registered.');
         return;
@@ -179,11 +179,11 @@ function Drivers() {
 
       let response;
       if (editTask) {
-        response = await axios.put(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/${editTask._id}`, payload);
+        response = await api.put(`/api/drivers/${selectedDriverId}/tasks/${editTask._id}`, payload);
         setTasks(tasks.map((t) => (t._id === editTask._id ? response.data : t)));
         toast.success('Task updated successfully!');
       } else {
-        response = await axios.post(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks`, payload);
+        response = await api.post(`/api/drivers/${selectedDriverId}/tasks`, payload);
         setTasks([...tasks, response.data]);
         toast.success('Task assigned successfully!');
       }
@@ -235,7 +235,7 @@ function Drivers() {
     if (window.confirm('Are you sure you want to delete this driver?')) {
       if (window.confirm('Please confirm again to delete this driver.')) {
         try {
-          await axios.delete(`http://localhost:5000/api/drivers/${driverId}`);
+          await api.delete(`/api/drivers/${driverId}`);
           setDrivers(drivers.filter((d) => d._id !== driverId));
           toast.success('Driver deleted successfully!');
         } catch (error) {
@@ -267,7 +267,7 @@ function Drivers() {
     if (window.confirm('Are you sure you want to delete this task?')) {
       if (window.confirm('Please confirm again to delete this task.')) {
         try {
-          await axios.delete(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/${taskId}`);
+          await api.delete(`/api/drivers/${selectedDriverId}/tasks/${taskId}`);
           setTasks(tasks.filter((t) => t._id !== taskId));
           toast.success('Task deleted successfully!');
         } catch (error) {
@@ -348,7 +348,7 @@ function Drivers() {
   const fetchReportData = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks`);
+      const response = await api.get(`/api/drivers/${selectedDriverId}/tasks`);
       const tasksWithNum = response.data
         .filter((task) => selectedStatuses.includes(task.status))
         .filter((task) => {
@@ -490,7 +490,7 @@ function Drivers() {
                             />
                           ) : editDriver && editDriver.profileImage ? (
                             <img
-                              src={`http://localhost:5000/${editDriver.profileImage}`}
+                              src={`/${editDriver.profileImage}`}
                               alt="Profile"
                               className="rounded-circle border"
                               style={{ width: '150px', height: '150px', objectFit: 'cover' }}
@@ -1007,7 +1007,7 @@ function Drivers() {
                 <div className="text-center mb-4">
                   {viewDriver.profileImage ? (
                     <img
-                      src={`http://localhost:5000/${viewDriver.profileImage}`}
+                      src={`/${viewDriver.profileImage}`}
                       alt="Profile"
                       className="rounded-circle border"
                       style={{ width: '150px', height: '150px', objectFit: 'cover' }}

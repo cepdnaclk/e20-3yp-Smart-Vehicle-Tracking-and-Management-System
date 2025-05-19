@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
-import axios from "axios";
+import { api } from "../services/apihost";
 
 const DashboardScreen = () => {
   const {
@@ -30,8 +30,8 @@ const DashboardScreen = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get(
-        `http://localhost:5000/api/vehicles?licensePlate=${inputVehicle.trim()}`
+      const response = await api.get(
+        `/api/vehicles?licensePlate=${inputVehicle.trim()}`
       );
       if (response.data.length === 0) {
         Alert.alert("Error", "The vehicle is not registered.");
@@ -40,8 +40,8 @@ const DashboardScreen = () => {
       }
 
       const vehicle = response.data[0];
-      const driverResponse = await axios.get(
-        `http://localhost:5000/api/drivers?vehicleNumber=${inputVehicle.trim()}`
+      const driverResponse = await api.get(
+        `/api/drivers?vehicleNumber=${inputVehicle.trim()}`
       );
       if (
         driverResponse.data.length > 0 &&
@@ -59,13 +59,9 @@ const DashboardScreen = () => {
       const formData = new FormData();
       formData.append("vehicleNumber", inputVehicle.trim());
 
-      await axios.put(
-        `http://localhost:5000/api/drivers/682a45ab697561ca8270846b`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      await api.put(`/api/drivers/682a45ab697561ca8270846b`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setVehicleNumber(inputVehicle.trim());
       setInputVehicle("");
       Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);

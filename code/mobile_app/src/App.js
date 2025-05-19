@@ -72,10 +72,9 @@ const App = () => {
   const [activeTaskId, setActiveTaskId] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [driverId, setDriverId] = useState("682a4e3187988d771b9b3f12"); // Use state for driverId
+  const [driverId, setDriverId] = useState("682b34a386b8b6354fd1da0b"); // Use state for driverId
 
-  const API_URL = "http://localhost:5000/api/drivers";
-  const socket = io("http://localhost:5000");
+  const socket = io("http://10.0.2.2:5000");
 
   const getTasks = async () => {
     try {

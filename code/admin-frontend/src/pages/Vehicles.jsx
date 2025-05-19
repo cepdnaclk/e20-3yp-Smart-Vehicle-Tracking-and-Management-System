@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaCar, FaIdCard, FaCalendarAlt, FaMapMarkerAlt, FaArrowLeft } from 'react-icons/fa';
-import axios from 'axios';
+
+import { api } from "../services/api";
 
 function Vehicles() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ function Vehicles() {
     const fetchVehicles = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get('http://localhost:5000/api/vehicles');
+        const response = await api.get('/api/vehicles');
         setVehicles(response.data);
       } catch (error) {
         console.error('Error fetching vehicles:', error);
@@ -64,12 +65,12 @@ function Vehicles() {
       let response;
       if (editVehicle) {
         // Update existing vehicle
-        response = await axios.put(`http://localhost:5000/api/vehicles/${editVehicle._id}`, payload);
+        response = await api.put(`/api/vehicles/${editVehicle._id}`, payload);
         setVehicles(vehicles.map((v) => (v._id === editVehicle._id ? response.data : v)));
         toast.success('Vehicle updated successfully!');
       } else {
         // Create new vehicle
-        response = await axios.post('http://localhost:5000/api/vehicles', payload);
+        response = await api.post('/api/vehicles', payload);
         setVehicles([...vehicles, response.data]);
         toast.success('Vehicle registered successfully!');
       }
@@ -120,7 +121,7 @@ function Vehicles() {
     if (window.confirm('Are you sure you want to delete this vehicle?')) {
       if (window.confirm('Please confirm again to delete this vehicle.')) {
         try {
-          await axios.delete(`http://localhost:5000/api/vehicles/${vehicleId}`);
+          await api.delete(`/api/vehicles/${vehicleId}`);
           setVehicles(vehicles.filter((v) => v._id !== vehicleId));
           toast.success('Vehicle deleted successfully!');
         } catch (error) {

@@ -8,10 +8,10 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import axios from "axios";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import { startTask } from "../services/api";
+import { api } from "../services/apihost";
 
 export const TaskScreen = ({ navigation }) => {
   const { tasks, completedTasks, loading, vehicleNumber } = useAppContext();
@@ -179,8 +179,8 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
                   onPress: async () => {
                     setLoading(true);
                     try {
-                      await axios.put(
-                        `http://localhost:5000/api/drivers/${driverId}/tasks/${task._id}/complete`
+                      await api.put(
+                        `/api/drivers/${driverId}/tasks/${task._id}/complete`
                       );
                       setStatus("Completed");
                       setCompletedTasks((prev) => [...prev, task._id]);
@@ -231,8 +231,8 @@ export const TaskDetailsScreen = ({ route, navigation }) => {
                   onPress: async () => {
                     setLoading(true);
                     try {
-                      await axios.put(
-                        `http://localhost:5000/api/drivers/${driverId}/tasks/${task._id}/cancel`
+                      await api.put(
+                        `/api/drivers/${driverId}/tasks/${task._id}/cancel`
                       );
                       setStatus("Cancelled");
                       setActiveTaskId(null);
