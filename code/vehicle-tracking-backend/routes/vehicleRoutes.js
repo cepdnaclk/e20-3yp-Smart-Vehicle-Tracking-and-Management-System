@@ -13,6 +13,16 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET total number of vehicles
+router.get("/count", async (req, res) => {
+  try {
+    const totalVehicles = await Vehicle.countDocuments();
+    res.json({ totalVehicles });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET vehicle by license plate
 router.get("/check", async (req, res) => {
   const { licensePlate } = req.query;
@@ -76,6 +86,10 @@ router.post(
     body("color").optional().isString(),
     body("deviceId").notEmpty().withMessage("Device ID is required"),
     body("trackingEnabled").optional().isBoolean(),
+    body("status").optional().isIn(["active", "inactive", "maintenance"]),
+    body("driver").optional().isString(),
+    body("lastLocation").optional().isString(),
+    body("lastUpdated").optional().isISO8601(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -95,6 +109,8 @@ router.post(
       trackingEnabled,
       status,
       lastLocation,
+      driver,
+      lastUpdated,
     } = req.body;
 
     try {
@@ -110,6 +126,8 @@ router.post(
         trackingEnabled,
         status: status || "active",
         lastLocation: lastLocation || "Not tracked yet",
+        driver: driver || "",
+        lastUpdated: lastUpdated || Date.now(),
       });
 
       const savedVehicle = await newVehicle.save();
@@ -150,6 +168,10 @@ router.put(
     body("color").optional().isString(),
     body("deviceId").notEmpty().withMessage("Device ID is required"),
     body("trackingEnabled").optional().isBoolean(),
+    body("status").optional().isIn(["active", "inactive", "maintenance"]),
+    body("driver").optional().isString(),
+    body("lastLocation").optional().isString(),
+    body("lastUpdated").optional().isISO8601(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -175,6 +197,8 @@ router.put(
         trackingEnabled,
         status,
         lastLocation,
+        driver,
+        lastUpdated,
       } = req.body;
 
       vehicle.vehicleName = vehicleName;
@@ -191,6 +215,8 @@ router.put(
           : vehicle.trackingEnabled;
       vehicle.status = status || vehicle.status;
       vehicle.lastLocation = lastLocation || vehicle.lastLocation;
+      vehicle.driver = driver || vehicle.driver;
+      vehicle.lastUpdated = lastUpdated || Date.now();
 
       const updatedVehicle = await vehicle.save();
       res.json(updatedVehicle);
@@ -208,16 +234,6 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ message: "Vehicle not found" });
     }
     res.json({ message: "Vehicle deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// GET total number of vehicles
-router.get("/count", async (req, res) => {
-  try {
-    const totalVehicles = await Vehicle.countDocuments();
-    res.json({ totalVehicles });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

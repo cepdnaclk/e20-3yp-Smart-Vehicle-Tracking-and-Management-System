@@ -22,7 +22,7 @@ const blinkingDotStyle = `
   }
 `;
 
-const LeafletMap = () => {
+const LeafletMap = ({ mapType = 'standard' }) => {
     const [vehicleData, setVehicleData] = useState(null);
     const [map, setMap] = useState(null);
     const [marker, setMarker] = useState(null);
