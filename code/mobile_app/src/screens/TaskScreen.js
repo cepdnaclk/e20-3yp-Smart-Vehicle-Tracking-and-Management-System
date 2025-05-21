@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
-import { api } from "../services/apihost";
+import { DRIVER_ID } from "../config/constants";
+import { fetchDriverTasks } from "../services/TaskService";
 import AnimatedPlaceholder from "../components/AnimatedPlaceholder";
 
 export const TaskScreen = ({ navigation }) => {
@@ -30,23 +31,17 @@ export const TaskScreen = ({ navigation }) => {
   }, [driverId]);
 
   const loadTasks = async () => {
-    // Hardcoded driverId to match the specific driver created in admin frontend
-    const hardcodedDriverId = "DR001";
-
     setLoading(true);
     try {
-      // Use the actual API endpoint from the backend
-      const response = await api.get(`/api/tasks/driver/${hardcodedDriverId}`);
-
-      if (response.data && Array.isArray(response.data)) {
-        console.log("Tasks fetched successfully:", response.data);
-        setTasks(response.data);
+      // Use the TaskService which now uses the centralized DRIVER_ID
+      const tasks = await fetchDriverTasks();
+      if (tasks && Array.isArray(tasks)) {
+        setTasks(tasks);
       } else {
-        console.log("No tasks found or invalid response format");
-        // Fallback to mock data if API returns empty or invalid data
-        setTasks([
+        // Mock data for development as fallback
+        const mockTasks = [
           {
-            _id: "mockTask1",
+            _id: "1",
             taskNumber: "TSK0001",
             cargoType: "Electronics",
             weight: 150,
@@ -55,9 +50,34 @@ export const TaskScreen = ({ navigation }) => {
             deliveryPhone: "0712345678",
             expectedDelivery: new Date().toISOString(),
             status: "Pending",
-            driverId: hardcodedDriverId,
+            driverId: DRIVER_ID,
           },
-        ]);
+          {
+            _id: "2",
+            taskNumber: "TSK0002",
+            cargoType: "Clothing",
+            weight: 200,
+            pickup: "Warehouse B",
+            delivery: "Kandy City Center",
+            deliveryPhone: "0723456789",
+            expectedDelivery: new Date(Date.now() + 86400000).toISOString(), // +1 day
+            status: "Pending",
+            driverId: DRIVER_ID,
+          },
+          {
+            _id: "3",
+            taskNumber: "TSK0003",
+            cargoType: "Furniture",
+            weight: 350,
+            pickup: "Warehouse C",
+            delivery: "Galle Face",
+            deliveryPhone: "0734567890",
+            expectedDelivery: new Date(Date.now() + 172800000).toISOString(), // +2 days
+            status: "Pending",
+            driverId: DRIVER_ID,
+          },
+        ];
+        setTasks(mockTasks);
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -75,7 +95,7 @@ export const TaskScreen = ({ navigation }) => {
           deliveryPhone: "0712345678",
           expectedDelivery: new Date().toISOString(),
           status: "Pending",
-          driverId: hardcodedDriverId,
+          driverId: DRIVER_ID,
         },
       ]);
     } finally {

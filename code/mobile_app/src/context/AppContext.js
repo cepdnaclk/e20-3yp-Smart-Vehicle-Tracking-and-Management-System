@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../services/apihost";
+import { DRIVER_ID, DRIVER_NAME } from "../config/constants";
 
 const AppContext = createContext();
 
@@ -15,9 +16,6 @@ export const AppProvider = ({ children }) => {
   const [activeTaskId, setActiveTaskId] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
-
-  // Hardcoded driver ID to match the specific driver created in admin frontend
-  const hardcodedDriverId = "DR001";
 
   // Simplified storage for web compatibility
   const getStorageItem = async (key) => {
@@ -42,12 +40,12 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        // Set the hardcoded driver ID
-        setDriverId(hardcodedDriverId);
+        // Set the centralized driver ID
+        setDriverId(DRIVER_ID);
 
-        // Try to get driver name from storage or set a default
+        // Try to get driver name from storage or set the default
         const storedDriverName =
-          (await getStorageItem("driverName")) || "sachin dulaj";
+          (await getStorageItem("driverName")) || DRIVER_NAME;
         setDriverName(storedDriverName);
 
         // Try to get vehicle number from storage
@@ -57,7 +55,7 @@ export const AppProvider = ({ children }) => {
         } else {
           // Try to get vehicle from the backend
           try {
-            const response = await api.get(`/api/drivers/${hardcodedDriverId}`);
+            const response = await api.get(`/api/drivers/${DRIVER_ID}`);
             if (response.data && response.data.assignedVehicle) {
               setVehicleNumber(response.data.assignedVehicle);
               await setStorageItem(
@@ -72,9 +70,7 @@ export const AppProvider = ({ children }) => {
 
         // Fetch tasks for this driver
         try {
-          const tasksResponse = await api.get(
-            `/api/tasks/driver/${hardcodedDriverId}`
-          );
+          const tasksResponse = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
           if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
             setTasks(tasksResponse.data);
           }
@@ -92,7 +88,7 @@ export const AppProvider = ({ children }) => {
               deliveryPhone: "0712345678",
               expectedDelivery: new Date().toISOString(),
               status: "Pending",
-              driverId: hardcodedDriverId,
+              driverId: DRIVER_ID,
             },
           ]);
         }

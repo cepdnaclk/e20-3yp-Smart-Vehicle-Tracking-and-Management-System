@@ -12,6 +12,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { styles } from "../styles/styles";
 import { api } from "../services/apihost";
 import { useAppContext } from "../context/AppContext";
+import {
+  DRIVER_ID,
+  DRIVER_NAME,
+  DEFAULT_CREDENTIALS,
+} from "../config/constants";
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -48,18 +53,17 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(true);
     try {
       // Mock authentication for development
-      // In production, you'd use a real API call to authenticate
-      // const response = await api.post('/api/drivers/login', { username, password });
-
-      if (username === "driver" && password === "password") {
-        // Use hardcoded driver ID that matches the one created in admin frontend
-        const mockDriverId = "DR001";
-        await AsyncStorage.setItem("driverId", mockDriverId);
+      if (
+        username === DEFAULT_CREDENTIALS.username &&
+        password === DEFAULT_CREDENTIALS.password
+      ) {
+        // Use centralized driver ID
+        await AsyncStorage.setItem("driverId", DRIVER_ID);
         await AsyncStorage.setItem("driverToken", "mock-token-123");
-        await AsyncStorage.setItem("driverName", "sachin dulaj");
+        await AsyncStorage.setItem("driverName", DRIVER_NAME);
 
-        // Update context with the hardcoded driver ID
-        setDriverId(mockDriverId);
+        // Update context
+        setDriverId(DRIVER_ID);
 
         // Navigate to main app
         navigation.replace("MainTabs");

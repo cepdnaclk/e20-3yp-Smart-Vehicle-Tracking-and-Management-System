@@ -1,7 +1,5 @@
 import { api } from "./apihost";
-
-// Hardcoded driver ID to match the specific driver created in admin frontend
-const DRIVER_ID = "DR001";
+import { DRIVER_ID } from "../config/constants";
 
 export const fetchDriverTasks = async () => {
   try {

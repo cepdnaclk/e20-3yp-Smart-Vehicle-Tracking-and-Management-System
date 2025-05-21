@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import { api } from "../services/apihost";
+import { DRIVER_ID } from "../config/constants";
 
 const DashboardScreen = ({ navigation }) => {
   const {
@@ -30,14 +31,11 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Hardcoded driver ID to match the specific driver created in admin frontend
-  const hardcodedDriverId = "DR001";
-
   useEffect(() => {
     // Check if the driver already has an assigned vehicle
     const checkVehicle = async () => {
       try {
-        const response = await api.get(`/api/drivers/${hardcodedDriverId}`);
+        const response = await api.get(`/api/drivers/${DRIVER_ID}`);
         if (response.data && response.data.assignedVehicle) {
           setVehicleNumber(response.data.assignedVehicle);
           await AsyncStorage.setItem(
@@ -84,7 +82,7 @@ const DashboardScreen = ({ navigation }) => {
       const formData = new FormData();
       formData.append("vehicleNumber", inputVehicle.trim());
 
-      await api.put(`/api/drivers/${hardcodedDriverId}`, formData, {
+      await api.put(`/api/drivers/${DRIVER_ID}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -110,7 +108,7 @@ const DashboardScreen = ({ navigation }) => {
       const formData = new FormData();
       formData.append("vehicleNumber", "");
 
-      await api.put(`/api/drivers/${hardcodedDriverId}`, formData, {
+      await api.put(`/api/drivers/${DRIVER_ID}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
