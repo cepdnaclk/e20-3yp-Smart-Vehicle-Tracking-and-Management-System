@@ -13,6 +13,8 @@ import {
   Trash2,
   Edit
 } from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import Sidebar from "../components/Sidebar";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
@@ -215,6 +217,101 @@ const Vehicles = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title to PDF
+    doc.setFontSize(18);
+    doc.text('Vehicle Management System - Vehicle Report', 14, 22);
+    
+    // Add date
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 14, 30);
+    
+    // Define the columns for the table
+    const tableColumn = [
+      "License Plate", 
+      "Vehicle Name", 
+      "Type", 
+      "Year", 
+      "Color", 
+      "Status"
+    ];
+    
+    // Define the rows for the table
+    const tableRows = [];
+    
+    // Add data rows with updated status based on trackingEnabled
+    vehicles.forEach(vehicle => {
+      const vehicleData = [
+        vehicle.licensePlate,
+        vehicle.vehicleName,
+        vehicle.vehicleType,
+        vehicle.year,
+        vehicle.color,
+        // Update the status value to reflect tracking status
+        vehicle.trackingEnabled ? 'Active' : 'Inactive'
+      ];
+      tableRows.push(vehicleData);
+    });
+    
+    // Create the table - use the imported autoTable function
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      }
+    });
+    
+    // Update the summary section to include tracking statistics
+    const finalY = (doc.lastAutoTable?.finalY || 40) + 10;
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Total Vehicles: ${vehicles.length}`, 14, finalY);
+    
+    // Count active (tracked) and inactive vehicles
+    const activeVehicles = vehicles.filter(v => v.trackingEnabled).length;
+    const inactiveVehicles = vehicles.filter(v => !v.trackingEnabled).length;
+    
+    doc.text(`Active (Tracked) Vehicles: ${activeVehicles}`, 14, finalY + 10);
+    doc.text(`Inactive Vehicles: ${inactiveVehicles}`, 14, finalY + 20);
+    
+    // Add vehicle type distribution
+    const typeCounts = {};
+    vehicles.forEach(v => {
+      typeCounts[v.vehicleType] = (typeCounts[v.vehicleType] || 0) + 1;
+    });
+    
+    doc.text('Vehicle Type Distribution:', 14, finalY + 30);
+    let yOffset = finalY + 40;
+    Object.entries(typeCounts).forEach(([type, count]) => {
+      doc.text(`- ${type}: ${count}`, 20, yOffset);
+      yOffset += 8;
+    });
+    
+    // Add footer
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('Smart Vehicle Tracking and Management System', 14, doc.internal.pageSize.height - 10);
+    
+    // Save PDF
+    doc.save('vehicle_report.pdf');
+  };
+  
   const tableColumns = [
     { key: 'licensePlate', header: 'License Plate', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'vehicleType', header: 'Vehicle Type', sortable: true, render: (v) => <span>{v}</span> },
@@ -228,7 +325,16 @@ const Vehicles = () => {
         </Button>
       ) 
     },
-    { key: 'status', header: 'Status', sortable: true, render: (v) => <span>{v}</span> },
+    { 
+      key: 'status', 
+      header: 'Status', 
+      sortable: true, 
+      render: (v, row) => (
+        <span className={`badge ${row.trackingEnabled ? 'bg-success' : 'bg-warning'}`}>
+          {row.trackingEnabled ? 'Active' : 'Inactive'}
+        </span>
+      ) 
+    },
     {
       key: 'actions', header: 'Action', sortable: false, render: (_, row) => (
         <div className="d-flex gap-2">
@@ -278,13 +384,7 @@ const Vehicles = () => {
               <Button 
                 variant="outline-primary" 
                 className="d-flex align-items-center"
-              >
-                <Filter size={16} className="me-2" />
-                Filter
-              </Button>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
+                onClick={handleExportPDF}
               >
                 <DownloadCloud size={16} className="me-2" />
                 Export

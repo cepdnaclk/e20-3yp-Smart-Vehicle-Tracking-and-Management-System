@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { 
   Users,
   Plus, 
-  Filter, 
   DownloadCloud, 
   RefreshCw,
   Eye,
@@ -14,6 +13,8 @@ import {
   Trash2,
   Briefcase // Add this new icon for tasks
 } from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import Sidebar from "../components/Sidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -341,6 +342,108 @@ const Drivers = () => {
     }
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title to PDF
+    doc.setFontSize(18);
+    doc.text('Driver Management System - Driver Report', 14, 22);
+    
+    // Add date
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 14, 30);
+    
+    // Define the columns for the table
+    const tableColumn = [
+      "Driver ID", 
+      "Full Name",
+      "Email", 
+      "Phone", 
+      "License Number",
+      "Join Date",
+      "Status"
+    ];
+    
+    // Define the rows for the table
+    const tableRows = [];
+    
+    // Add data rows
+    drivers.forEach(driver => {
+      const driverData = [
+        driver.driverId,
+        driver.fullName,
+        driver.email,
+        driver.phone,
+        driver.licenseNumber,
+        new Date(driver.joinDate).toLocaleDateString(),
+        driver.employmentStatus
+      ];
+      tableRows.push(driverData);
+    });
+    
+    // Create the table
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: {
+        fillColor: [76, 175, 80], // Green color for driver management
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      }
+    });
+    
+    // Add summary section
+    const finalY = (doc.lastAutoTable?.finalY || 40) + 10;
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Total Drivers: ${drivers.length}`, 14, finalY);
+    
+    // Add active/inactive driver counts
+    const activeDrivers = drivers.filter(d => d.employmentStatus === 'active').length;
+    const inactiveDrivers = drivers.filter(d => d.employmentStatus === 'inactive').length;
+    doc.text(`Active Drivers: ${activeDrivers}`, 14, finalY + 10);
+    doc.text(`Inactive Drivers: ${inactiveDrivers}`, 14, finalY + 20);
+    
+    // Add driver statistics (e.g., newest drivers)
+    if (drivers.length > 0) {
+      // Sort drivers by join date descending to get newest drivers
+      const sortedDrivers = [...drivers].sort((a, b) => 
+        new Date(b.joinDate) - new Date(a.joinDate));
+      
+      doc.text('Recently Added Drivers:', 14, finalY + 35);
+      let yOffset = finalY + 45;
+      
+      // List 5 most recent drivers
+      sortedDrivers.slice(0, 5).forEach((driver, index) => {
+        doc.text(
+          `${index + 1}. ${driver.fullName} (${driver.driverId}) - ${new Date(driver.joinDate).toLocaleDateString()}`, 
+          20, 
+          yOffset
+        );
+        yOffset += 8;
+      });
+    }
+    
+    // Add footer
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('Smart Vehicle Tracking and Management System', 14, doc.internal.pageSize.height - 10);
+    
+    // Save PDF
+    doc.save('driver_report.pdf');
+  };
+
   const tableColumns = [
     { key: 'driverId', header: 'Driver ID', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'fullName', header: 'Full Name', sortable: true, render: (v) => <span>{v}</span> },
@@ -416,13 +519,7 @@ const Drivers = () => {
               <Button 
                 variant="outline-primary" 
                 className="d-flex align-items-center"
-              >
-                <Filter size={16} className="me-2" />
-                Filter
-              </Button>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
+                onClick={handleExportPDF}
               >
                 <DownloadCloud size={16} className="me-2" />
                 Export
