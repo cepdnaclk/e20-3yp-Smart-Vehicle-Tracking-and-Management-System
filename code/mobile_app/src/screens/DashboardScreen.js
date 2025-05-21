@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,60 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  RefreshControl,
+  StatusBar,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import { api } from "../services/apihost";
 
-const DashboardScreen = () => {
+const DashboardScreen = ({ navigation }) => {
   const {
+    driverId,
+    driverName,
     vehicleNumber,
     setVehicleNumber,
-    removeVehicle,
     tasks,
     completedTasks,
+    activeTaskId,
   } = useAppContext();
+
   const [inputVehicle, setInputVehicle] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Hardcoded driver ID to match the specific driver created in admin frontend
+  const hardcodedDriverId = "DR001";
+
+  useEffect(() => {
+    // Check if the driver already has an assigned vehicle
+    const checkVehicle = async () => {
+      try {
+        const response = await api.get(`/api/drivers/${hardcodedDriverId}`);
+        if (response.data && response.data.assignedVehicle) {
+          setVehicleNumber(response.data.assignedVehicle);
+          await AsyncStorage.setItem(
+            "vehicleNumber",
+            response.data.assignedVehicle
+          );
+        }
+      } catch (error) {
+        console.error("Error checking vehicle assignment:", error);
+      }
+    };
+
+    checkVehicle();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simpler refresh without location tracking for now
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
 
   const handleSubmitVehicle = async () => {
     if (!inputVehicle.trim()) {
@@ -30,46 +69,31 @@ const DashboardScreen = () => {
 
     setLoading(true);
     try {
-      // Check if vehicle exists
-      const response = await api.get(
+      // Check if vehicle exists using your backend API
+      const vehicleCheckResponse = await api.get(
         `/api/vehicles/check?licensePlate=${inputVehicle.trim()}`
       );
 
-      if (!response.data.exists) {
-        Alert.alert("Error", "The vehicle is not registered.");
+      if (!vehicleCheckResponse.data.exists) {
+        Alert.alert("Error", "The vehicle is not registered in the system.");
         setLoading(false);
         return;
       }
 
-      // Continue with driver check
-      const driverResponse = await api.get(
-        `/api/drivers?vehicleNumber=${inputVehicle.trim()}`
-      );
-      if (
-        driverResponse.data.length > 0 &&
-        driverResponse.data[0]._id !== "682ba8ff234239f225db2630"
-      ) {
-        Alert.alert(
-          "Error",
-          "The vehicle is already occupied by another driver."
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Create FormData for the PUT request
+      // Update the driver with the new vehicle assignment
       const formData = new FormData();
       formData.append("vehicleNumber", inputVehicle.trim());
 
-      await api.put(`/api/drivers/682ba8ff234239f225db2630`, formData, {
+      await api.put(`/api/drivers/${hardcodedDriverId}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
       setVehicleNumber(inputVehicle.trim());
+      await AsyncStorage.setItem("vehicleNumber", inputVehicle.trim());
       setInputVehicle("");
       Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);
     } catch (error) {
       console.error("Error setting vehicle:", error);
-      console.log("Server response:", error.response?.data);
       Alert.alert(
         "Error",
         error.response?.data?.message ||
@@ -77,6 +101,32 @@ const DashboardScreen = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveVehicle = async () => {
+    try {
+      // Clear vehicle assignment in backend
+      const formData = new FormData();
+      formData.append("vehicleNumber", "");
+
+      await api.put(`/api/drivers/${hardcodedDriverId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setVehicleNumber(null);
+      await AsyncStorage.removeItem("vehicleNumber");
+      Alert.alert(
+        "Vehicle Removed",
+        "Vehicle number has been removed successfully."
+      );
+    } catch (error) {
+      console.error("Error removing vehicle:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message ||
+          "Failed to remove vehicle. Please try again."
+      );
     }
   };
 
@@ -92,52 +142,76 @@ const DashboardScreen = () => {
     day: "numeric",
   });
 
+  const activeTask = tasks.find((task) => task._id === activeTaskId);
+
   return (
-    <View style={styles.dashboardContainer}>
-      <View style={styles.dashboardHeader}>
-        <Text style={styles.welcomeText}>Welcome, John Driver</Text>
-        <Text style={styles.dateText}>{currentDate}</Text>
-      </View>
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{pendingCount}</Text>
-          <Text style={styles.statLabel}>Pending Tasks</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+
+      <ScrollView
+        style={styles.dashboardContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.dashboardHeader}>
+          <Text style={styles.welcomeText}>
+            Welcome, {driverName || "Driver"}
+          </Text>
+          <Text style={styles.dateText}>{currentDate}</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{completedCount}</Text>
-          <Text style={styles.statLabel}>Completed Tasks</Text>
+
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{pendingCount}</Text>
+            <Text style={styles.statLabel}>Pending Tasks</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{completedCount}</Text>
+            <Text style={styles.statLabel}>Completed Tasks</Text>
+          </View>
         </View>
-      </View>
-      <Text style={styles.sectionTitle}>Current Vehicle</Text>
-      <View style={styles.vehicleInfoBox}>
-        <Text style={styles.vehicleInfoText}>
-          {vehicleNumber || "No vehicle entered"}
-        </Text>
-      </View>
-      <View style={styles.vehicleInputContainer}>
-        <TextInput
-          style={styles.vehicleInput}
-          placeholder="Enter Vehicle Number"
-          value={inputVehicle}
-          onChangeText={setInputVehicle}
-        />
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={handleSubmitVehicle}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.submitButtonText}>Set Vehicle Number</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-      {vehicleNumber && (
-        <TouchableOpacity style={styles.removeButton} onPress={removeVehicle}>
-          <Text style={styles.removeButtonText}>Remove Current Vehicle</Text>
-        </TouchableOpacity>
-      )}
+
+        {/* Current Vehicle Section */}
+        <Text style={styles.sectionTitle}>Current Vehicle</Text>
+        <View style={styles.vehicleInfoBox}>
+          <Text style={styles.vehicleInfoText}>
+            {vehicleNumber || "No vehicle entered"}
+          </Text>
+        </View>
+
+        {/* Vehicle Input */}
+        <View style={styles.vehicleInputContainer}>
+          <TextInput
+            style={styles.vehicleInput}
+            placeholder="Enter Vehicle Number"
+            value={inputVehicle}
+            onChangeText={setInputVehicle}
+            autoCapitalize="characters"
+          />
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmitVehicle}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Set Vehicle Number</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {vehicleNumber && (
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={handleRemoveVehicle}
+          >
+            <Text style={styles.removeButtonText}>Remove Current Vehicle</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </View>
   );
 };

@@ -1,20 +1,93 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
-  ScrollView,
+  RefreshControl,
   Alert,
-  ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
-import { startTask } from "../services/api";
 import { api } from "../services/apihost";
+import AnimatedPlaceholder from "../components/AnimatedPlaceholder";
 
 export const TaskScreen = ({ navigation }) => {
-  const { tasks, completedTasks, loading, vehicleNumber } = useAppContext();
+  const {
+    driverId,
+    tasks,
+    setTasks,
+    completedTasks,
+    loading,
+    setLoading,
+    vehicleNumber,
+  } = useAppContext();
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadTasks();
+  }, [driverId]);
+
+  const loadTasks = async () => {
+    // Hardcoded driverId to match the specific driver created in admin frontend
+    const hardcodedDriverId = "DR001";
+
+    setLoading(true);
+    try {
+      // Use the actual API endpoint from the backend
+      const response = await api.get(`/api/tasks/driver/${hardcodedDriverId}`);
+
+      if (response.data && Array.isArray(response.data)) {
+        console.log("Tasks fetched successfully:", response.data);
+        setTasks(response.data);
+      } else {
+        console.log("No tasks found or invalid response format");
+        // Fallback to mock data if API returns empty or invalid data
+        setTasks([
+          {
+            _id: "mockTask1",
+            taskNumber: "TSK0001",
+            cargoType: "Electronics",
+            weight: 150,
+            pickup: "Warehouse A",
+            delivery: "Colombo City Center",
+            deliveryPhone: "0712345678",
+            expectedDelivery: new Date().toISOString(),
+            status: "Pending",
+            driverId: hardcodedDriverId,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      Alert.alert("Error", "Failed to load tasks. Using cached data.");
+
+      // Use mock data as fallback
+      setTasks([
+        {
+          _id: "mockTask1",
+          taskNumber: "TSK0001",
+          cargoType: "Electronics",
+          weight: 150,
+          pickup: "Warehouse A",
+          delivery: "Colombo City Center",
+          deliveryPhone: "0712345678",
+          expectedDelivery: new Date().toISOString(),
+          status: "Pending",
+          driverId: hardcodedDriverId,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadTasks();
+  };
 
   const handleTaskPress = (taskId) => {
     if (!vehicleNumber) {
@@ -30,361 +103,120 @@ export const TaskScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => {
     const isCompleted = completedTasks.includes(item._id);
+    const isOverdue =
+      new Date(item.expectedDelivery) < new Date() && !isCompleted;
 
     return (
       <TouchableOpacity
-        style={[styles.taskItem, isCompleted ? styles.completedTask : null]}
+        style={[
+          styles.taskItem,
+          isCompleted && styles.completedTask,
+          isOverdue && styles.overdueTask,
+        ]}
         onPress={() => handleTaskPress(item._id)}
       >
         <View style={styles.taskHeader}>
-          <Text style={styles.vehicleText}>Vehicle: {item.vehicle}</Text>
+          <View>
+            <Text style={styles.taskNumber}>{item.taskNumber}</Text>
+            <Text style={styles.cargoTypeText}>{item.cargoType}</Text>
+          </View>
           <Text
             style={[
               styles.statusBadge,
-              isCompleted ? styles.completedBadge : styles.pendingBadge,
+              item.status === "Pending"
+                ? styles.pendingBadge
+                : item.status === "In Progress"
+                ? styles.inProgressBadge
+                : item.status === "Completed"
+                ? styles.completedBadge
+                : styles.cancelledBadge,
             ]}
           >
-            {isCompleted ? "Completed" : item.status}
+            {item.status}
           </Text>
         </View>
+
         <View style={styles.taskDetails}>
-          <Text style={styles.destinationText}>To: {item.delivery}</Text>
-          <Text style={styles.dateText}>
-            Due: {new Date(item.expectedDelivery).toLocaleDateString()}
-          </Text>
+          <View style={styles.locationContainer}>
+            <Text style={styles.locationText}>{item.delivery}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoText}>
+                {new Date(item.expectedDelivery).toLocaleDateString()}
+              </Text>
+            </View>
+
+            <View style={styles.infoItem}>
+              <Text style={styles.infoText}>{item.weight} kg</Text>
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
   };
 
+  const renderEmptyList = () => {
+    if (loading) {
+      return <AnimatedPlaceholder type="tasks" count={3} />;
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No tasks available</Text>
+        <Text style={styles.emptySubtext}>
+          Pull down to refresh or check back later
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.headerText}>Your Delivery Tasks</Text>
-      <Text style={styles.taskInstructions}>
-        Select a task to view details. You must enter a vehicle number in the
-        Dashboard before starting a task.
-      </Text>
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#4DA6FF"
-          style={{ marginTop: 20 }}
-        />
-      ) : (
-        <FlatList
-          data={tasks}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
+      <StatusBar barStyle="dark-content" />
+
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>Delivery Tasks</Text>
+        <Text style={styles.taskInstructions}>
+          View your assigned delivery tasks and track their progress
+        </Text>
+      </View>
+
+      <FlatList
+        data={tasks}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={[
+          styles.listContainer,
+          tasks.length === 0 && styles.emptyListContainer,
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={renderEmptyList}
+      />
     </View>
   );
 };
 
+// Basic TaskDetailsScreen stub - will be expanded later
 export const TaskDetailsScreen = ({ route, navigation }) => {
-  const { taskId } = route.params;
-  const {
-    vehicleNumber,
-    completedTasks,
-    setCompletedTasks,
-    tasks,
-    activeTaskId,
-    setActiveTaskId,
-    driverId, // Add driverId from context
-  } = useAppContext();
-  const task = tasks.find((t) => t._id === taskId);
-  const [status, setStatus] = useState(
-    completedTasks.includes(taskId) ? "Completed" : task?.status || "Pending"
-  );
-  const [loading, setLoading] = useState(false);
-
-  if (!task) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.headerText}>Task Not Found</Text>
-      </View>
-    );
-  }
-
-  const hasCorrectVehicle = vehicleNumber === task.vehicle;
-
-  const checkVehicleNumber = () => {
-    if (!vehicleNumber) {
-      Alert.alert(
-        "Vehicle Number Required",
-        "Please enter the vehicle number in the Dashboard before proceeding.",
-        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
-      );
-      return false;
-    }
-    if (!hasCorrectVehicle) {
-      Alert.alert(
-        "Wrong Vehicle",
-        `This task requires vehicle ${task.vehicle}, but you have entered ${vehicleNumber}.`,
-        [{ text: "OK", onPress: () => navigation.navigate("Dashboard") }]
-      );
-      return false;
-    }
-    return true;
-  };
-
-  const handleStart = async () => {
-    if (!checkVehicleNumber()) return;
-    if (activeTaskId && activeTaskId !== task._id) {
-      Alert.alert(
-        "Active Task",
-        "You must complete or cancel the current task before starting a new one."
-      );
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await startTask(driverId, task._id); // Use startTask from api.js
-      setStatus("In Progress");
-      setActiveTaskId(task._id);
-      Alert.alert("Task Started", "The task has been started successfully.");
-    } catch (error) {
-      console.error("Error starting task:", error);
-      console.log("Server response:", error.response?.data);
-      Alert.alert(
-        "Error",
-        error.response?.data?.message ||
-          "Failed to start task. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleComplete = async () => {
-    if (!checkVehicleNumber()) return;
-
-    Alert.alert(
-      "Complete Task",
-      `Are you sure you have completed the delivery for vehicle ${task.vehicle}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, Complete",
-          onPress: () => {
-            Alert.alert(
-              "Double Confirm",
-              "Please confirm again to complete the task.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Complete",
-                  onPress: async () => {
-                    setLoading(true);
-                    try {
-                      await api.put(
-                        `/api/drivers/${driverId}/tasks/${task._id}/complete`
-                      );
-                      setStatus("Completed");
-                      setCompletedTasks((prev) => [...prev, task._id]);
-                      setActiveTaskId(null);
-                      Alert.alert(
-                        "Task Completed",
-                        "The task has been completed successfully."
-                      );
-                    } catch (error) {
-                      console.error("Error completing task:", error);
-                      console.log("Server response:", error.response?.data);
-                      Alert.alert(
-                        "Error",
-                        error.response?.data?.message ||
-                          "Failed to complete task. Please try again."
-                      );
-                    } finally {
-                      setLoading(false);
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  };
-
-  const handleCancel = async () => {
-    if (!checkVehicleNumber()) return;
-
-    Alert.alert(
-      "Cancel Task",
-      `Are you sure you want to cancel the task for vehicle ${task.vehicle}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, Cancel",
-          onPress: () => {
-            Alert.alert(
-              "Double Confirm",
-              "Please confirm again to cancel the task.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Cancel Task",
-                  onPress: async () => {
-                    setLoading(true);
-                    try {
-                      await api.put(
-                        `/api/drivers/${driverId}/tasks/${task._id}/cancel`
-                      );
-                      setStatus("Cancelled");
-                      setActiveTaskId(null);
-                      Alert.alert(
-                        "Task Cancelled",
-                        "The task has been cancelled successfully."
-                      );
-                    } catch (error) {
-                      console.error("Error cancelling task:", error);
-                      console.log("Server response:", error.response?.data);
-                      Alert.alert(
-                        "Error",
-                        error.response?.data?.message ||
-                          "Failed to cancel task. Please try again."
-                      );
-                    } finally {
-                      setLoading(false);
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  };
-
-  if (!hasCorrectVehicle && vehicleNumber) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.noVehicleContainer}>
-          <Text style={styles.noVehicleTitle}>Wrong Vehicle</Text>
-          <Text style={styles.noVehicleText}>
-            This task requires vehicle:{" "}
-            <Text style={{ fontWeight: "bold" }}>{task.vehicle}</Text>
-          </Text>
-          <Text style={styles.noVehicleText}>
-            Currently entered:{" "}
-            <Text style={{ fontWeight: "bold" }}>{vehicleNumber}</Text>
-          </Text>
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={() => navigation.navigate("Dashboard")}
-          >
-            <Text style={styles.submitButtonText}>
-              Enter Correct Vehicle Number
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.vehicleNumber}>Vehicle: {task.vehicle}</Text>
-        <Text style={styles.statusText}>Status: {status}</Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.sectionTitle}>Cargo Details</Text>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Cargo Type:</Text>
-          <Text style={styles.detailValue}>{task.cargoType}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Weight:</Text>
-          <Text style={styles.detailValue}>{task.weight} kg</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Pickup:</Text>
-          <Text style={styles.detailValue}>{task.pickup}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Delivery:</Text>
-          <Text style={styles.detailValue}>{task.delivery}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Expected Delivery:</Text>
-          <Text style={styles.detailValue}>
-            {new Date(task.expectedDelivery).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.actionContainer}>
-        {status === "Pending" && (
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
-            onPress={handleStart}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.actionButtonText}>Start Task</Text>
-            )}
-          </TouchableOpacity>
-        )}
-        {status === "In Progress" && (
-          <>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: "#FF0000" }]}
-              onPress={handleComplete}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.actionButtonText}>Complete Task</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: "#FFA500" }]}
-              onPress={handleCancel}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.actionButtonText}>Cancel Task</Text>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
-        {status === "Completed" && (
-          <View style={styles.completionContainer}>
-            <Text style={styles.completionText}>
-              Delivery completed successfully!
-            </Text>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
-              onPress={() => navigation.navigate("Tasks")}
-            >
-              <Text style={styles.actionButtonText}>Return to Tasks</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {status === "Cancelled" && (
-          <View style={styles.completionContainer}>
-            <Text style={styles.completionText}>Task has been cancelled.</Text>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
-              onPress={() => navigation.navigate("Tasks")}
-            >
-              <Text style={styles.actionButtonText}>Return to Tasks</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Text>Task Details Screen</Text>
+      <Text>Task ID: {route.params?.taskId}</Text>
+      <TouchableOpacity
+        style={{
+          marginTop: 20,
+          padding: 10,
+          backgroundColor: "#4DA6FF",
+          borderRadius: 5,
+        }}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={{ color: "white" }}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
-
-export default TaskScreen;

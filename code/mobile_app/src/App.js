@@ -2,60 +2,84 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-import { Alert } from "react-native";
+import { StatusBar, LogBox, Alert, Platform } from "react-native";
+import { Feather } from "@expo/vector-icons";
+
+import { AppProvider } from "./context/AppContext";
 import DashboardScreen from "./screens/DashboardScreen";
 import LoginScreen from "./screens/LoginScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
-import { TaskScreen, TaskDetailsScreen } from "./screens/TaskScreen";
+import { TaskScreen } from "./screens/TaskScreen";
+import { TaskDetailsScreen } from "./screens/TaskScreen";
 import Icon from "./screens/Icon";
 import { fetchTasks } from "./services/api";
 import { io } from "socket.io-client";
-import AppContext from "./context/AppContext";
+
+// Ignore specific harmless warnings
+LogBox.ignoreLogs([
+  "VirtualizedLists should never be nested",
+  "Non-serializable values were found in the navigation state",
+]);
+
+// Use simple icon implementation for web compatibility
+const TabIcon = ({ name, color }) => {
+  return (
+    <div
+      style={{
+        color: color,
+        fontSize: "18px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      {name}
+    </div>
+  );
+};
 
 const Tab = createBottomTabNavigator();
 const MainTabs = () => (
   <Tab.Navigator
     screenOptions={{
       tabBarActiveTintColor: "#4DA6FF",
+      tabBarInactiveTintColor: "#999",
       headerStyle: { backgroundColor: "#4DA6FF" },
       headerTintColor: "white",
+      tabBarStyle: {
+        paddingBottom: 5,
+        paddingTop: 5,
+        height: 60,
+      },
     }}
   >
     <Tab.Screen
       name="Dashboard"
       component={DashboardScreen}
       options={{
-        tabBarIcon: ({ color, size }) => (
-          <Icon name="view-dashboard" color={color} size={size} />
-        ),
+        tabBarIcon: ({ color }) => <TabIcon name="📊" color={color} />,
       }}
     />
     <Tab.Screen
       name="Tasks"
       component={TaskScreen}
       options={{
-        tabBarIcon: ({ color, size }) => (
-          <Icon name="format-list-checks" color={color} size={size} />
-        ),
+        tabBarIcon: ({ color }) => <TabIcon name="📋" color={color} />,
       }}
     />
     <Tab.Screen
       name="Notifications"
       component={NotificationsScreen}
       options={{
-        tabBarIcon: ({ color, size }) => (
-          <Icon name="bell" color={color} size={size} />
-        ),
+        tabBarIcon: ({ color }) => <TabIcon name="🔔" color={color} />,
       }}
     />
     <Tab.Screen
       name="Settings"
       component={SettingsScreen}
       options={{
-        tabBarIcon: ({ color, size }) => (
-          <Icon name="account-settings" color={color} size={size} />
-        ),
+        tabBarIcon: ({ color }) => <TabIcon name="⚙️" color={color} />,
       }}
     />
   </Tab.Navigator>
@@ -72,9 +96,9 @@ const App = () => {
   const [activeTaskId, setActiveTaskId] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [driverId, setDriverId] = useState("682ba8ff234239f225db2630"); // Use state for driverId
+  const [driverId, setDriverId] = useState("DR001"); // Use state for driverId
 
-  const socket = io("http://10.0.2.2:5000");
+  const socket = io("http://localhost:5000");
 
   const getTasks = async () => {
     try {
@@ -126,25 +150,10 @@ const App = () => {
   };
 
   return (
-    <AppContext.Provider
-      value={{
-        driverId, // Add driverId to context
-        vehicleNumber,
-        setVehicleNumber,
-        completedTasks,
-        setCompletedTasks,
-        removeVehicle,
-        tasks,
-        loading,
-        notifications,
-        activeTaskId,
-        setActiveTaskId,
-        darkMode,
-        setDarkMode,
-        pushNotifications,
-        setPushNotifications,
-      }}
-    >
+    <AppProvider>
+      {Platform.OS !== "web" && (
+        <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+      )}
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen
@@ -164,11 +173,12 @@ const App = () => {
               title: "Delivery Task",
               headerStyle: { backgroundColor: "#4DA6FF" },
               headerTintColor: "white",
+              headerBackTitle: "Back",
             }}
           />
         </Stack.Navigator>
       </NavigationContainer>
-    </AppContext.Provider>
+    </AppProvider>
   );
 };
 
