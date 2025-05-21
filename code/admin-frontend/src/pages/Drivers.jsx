@@ -11,7 +11,8 @@ import {
   Eye,
   MapPin,
   Edit,
-  Trash2
+  Trash2,
+  Briefcase // Add this new icon for tasks
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
@@ -44,6 +45,20 @@ const Drivers = () => {
   });
   const [showVehicleDetails, setShowVehicleDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedDriverForTask, setSelectedDriverForTask] = useState(null);
+  const [taskFormData, setTaskFormData] = useState({
+    taskNumber: '',
+    cargoType: '',
+    weight: '',
+    pickup: '',
+    delivery: '',
+    deliveryPhone: '',
+    expectedDelivery: '',
+    additionalNotes: ''
+  });
+  const [taskSubmitted, setTaskSubmitted] = useState(false);
+  const [driverTasks, setDriverTasks] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -228,6 +243,104 @@ const Drivers = () => {
     setShowVehicleDetails(true);
   };
 
+  // Add this function to fetch tasks for a specific driver
+  const fetchDriverTasks = async (driverId) => {
+    try {
+      const response = await api.get(`/api/tasks/driver/${driverId}`);
+      setDriverTasks(response.data);
+    } catch (error) {
+      console.error("Error fetching driver tasks:", error);
+    }
+  };
+
+  const handleAssignTask = async (driver) => {
+    try {
+      // Reset task states
+      setTaskSubmitted(false);
+      setDriverTasks([]);
+      
+      // Generate a driver-specific task number
+      const response = await api.get(`/api/tasks/next-number/${driver.driverId}`);
+      const taskNum = response.data.nextTaskNumber;
+      
+      console.log(`Generated task number for driver ${driver.driverId}: ${taskNum}`);
+      
+      setSelectedDriverForTask(driver);
+      setTaskFormData({
+        taskNumber: taskNum,
+        cargoType: '',
+        weight: '',
+        pickup: '',
+        delivery: '',
+        deliveryPhone: '',
+        expectedDelivery: '',
+        additionalNotes: ''
+      });
+      
+      setShowTaskModal(true);
+    } catch (error) {
+      console.error("Error preparing task assignment:", error);
+      setAlertMessage(`Failed to prepare task assignment: ${error.response?.data?.message || error.message}`);
+      setAlertType("danger");
+      setShowAlert(true);
+    }
+  };
+
+  const handleTaskInputChange = (e) => {
+    const { name, value } = e.target;
+    setTaskFormData({
+      ...taskFormData,
+      [name]: value
+    });
+  };
+
+  const handleTaskSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (!selectedDriverForTask) {
+        setAlertMessage("No driver selected");
+        setAlertType("danger");
+        setShowAlert(true);
+        return;
+      }
+      
+      console.log(`Submitting task ${taskFormData.taskNumber} for driver ${selectedDriverForTask.driverId}`);
+      
+      const payload = {
+        ...taskFormData,
+        driverId: selectedDriverForTask.driverId,
+        licensePlate: selectedDriverForTask.assignedVehicle || "Not assigned"
+      };
+
+      const response = await api.post(`/api/drivers/${selectedDriverForTask.driverId}/tasks`, payload);
+      console.log("Task created successfully:", response.data);
+      
+      setAlertMessage("Task assigned successfully");
+      setAlertType("success");
+      setShowAlert(true);
+      
+      // Close the modal after successful submission
+      setShowTaskModal(false);
+      
+      // Clear the form data
+      setTaskFormData({
+        taskNumber: '',
+        cargoType: '',
+        weight: '',
+        pickup: '',
+        delivery: '',
+        deliveryPhone: '',
+        expectedDelivery: '',
+        additionalNotes: ''
+      });
+    } catch (err) {
+      console.error("Failed to assign task:", err);
+      setAlertMessage(`Failed to assign task: ${err.response?.data?.message || err.message}`);
+      setAlertType("danger");
+      setShowAlert(true);
+    }
+  };
+
   const tableColumns = [
     { key: 'driverId', header: 'Driver ID', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'fullName', header: 'Full Name', sortable: true, render: (v) => <span>{v}</span> },
@@ -262,6 +375,9 @@ const Drivers = () => {
           </Button>
           <Button size="sm" variant="outline-danger" onClick={() => handleDeleteDriver(row)}>
             <Trash2 size={16} />
+          </Button>
+          <Button size="sm" variant="outline-success" onClick={() => handleAssignTask(row)}>
+            <Briefcase size={16} />
           </Button>
         </div>
       )
@@ -455,6 +571,124 @@ const Drivers = () => {
           onClose={() => setShowVehicleDetails(false)}
         />
       )}
+
+      {/* Task Assignment Modal */}
+      <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered size="lg">
+        <Form onSubmit={handleTaskSubmit}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              Assign Task to {selectedDriverForTask?.fullName}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Task Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="taskNumber"
+                    value={taskFormData.taskNumber}
+                    disabled
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Cargo Type</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="cargoType"
+                    value={taskFormData.cargoType}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="e.g., Electronics, Furniture"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Weight (kg)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="weight"
+                    value={taskFormData.weight}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Weight in kilograms"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Pickup Location</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="pickup"
+                    value={taskFormData.pickup}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Full pickup address"
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Delivery Location</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="delivery"
+                    value={taskFormData.delivery}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Full delivery address"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Delivery Phone Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="deliveryPhone"
+                    value={taskFormData.deliveryPhone}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Contact number at delivery location"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Expected Delivery Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="expectedDelivery"
+                    value={taskFormData.expectedDelivery}
+                    onChange={handleTaskInputChange}
+                    required
+                  />
+                </Form.Group>
+              </div>
+            </div>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Additional Notes</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="additionalNotes"
+                value={taskFormData.additionalNotes}
+                onChange={handleTaskInputChange}
+                placeholder="Any special instructions or notes"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={() => setShowTaskModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Assign Task
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </div>
   );
 };

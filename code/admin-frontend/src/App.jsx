@@ -10,6 +10,7 @@ import Vehicles from "./pages/Vehicles";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Tasks from "./pages/Tasks";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -64,6 +65,15 @@ function App() {
         element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/tasks" 
+        element={
+          <ProtectedRoute>
+            <Tasks />
           </ProtectedRoute>
         } 
       />

@@ -41,10 +41,15 @@ app.use((req, res, next) => {
   next();
 });
 
-const vehicleRoutes = require("./routes/vehicleRoutes");
 const driverRoutes = require("./routes/driverRoutes");
-app.use("/api/vehicles", vehicleRoutes);
+const vehicleRoutes = require("./routes/vehicleRoutes");
+// const userRoutes = require("./routes/userRoutes");  // Comment this out for now
+const taskRoutes = require("./routes/taskRoutes");
+
 app.use("/api/drivers", driverRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+// app.use("/api/users", userRoutes);  // Comment this out for now
+app.use("/api/tasks", taskRoutes);
 
 app.get("/", (req, res) => {
   res.send("Vehicle Tracking Backend");

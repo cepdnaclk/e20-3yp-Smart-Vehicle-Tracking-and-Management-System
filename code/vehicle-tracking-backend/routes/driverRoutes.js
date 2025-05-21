@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const { Driver } = require("../models/Driver");
+const { Driver, Task } = require("../models/Driver"); // Import Task from Driver model instead of separate file
 const router = express.Router();
 
 // GET all drivers
@@ -161,6 +161,84 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// GET tasks for a specific driver
+router.get("/:id/tasks", async (req, res) => {
+  try {
+    const tasks = await Task.find({ driverId: req.params.id });
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST a new task for a specific driver
+router.post(
+  "/:id/tasks",
+  [
+    body("taskNumber").notEmpty().withMessage("Task number is required"),
+    body("cargoType").notEmpty().withMessage("Cargo type is required"),
+    body("weight").isNumeric().withMessage("Weight must be a number"),
+    body("pickup").notEmpty().withMessage("Pickup location is required"),
+    body("delivery").notEmpty().withMessage("Delivery location is required"),
+    body("deliveryPhone").notEmpty().withMessage("Delivery phone is required"),
+    body("expectedDelivery")
+      .notEmpty()
+      .withMessage("Expected delivery date is required")
+      .isISO8601()
+      .withMessage("Expected delivery must be a valid date"),
+    body("licensePlate").notEmpty().withMessage("License plate is required"),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      // Check if driver exists
+      const driver = await Driver.findOne({ driverId: req.params.id });
+      if (!driver) {
+        return res.status(404).json({ message: "Driver not found" });
+      }
+
+      // Check if this task number already exists for this specific driver
+      const existingTask = await Task.findOne({
+        driverId: req.params.id,
+        taskNumber: req.body.taskNumber,
+      });
+
+      if (existingTask) {
+        return res.status(400).json({
+          message: `Task number ${req.body.taskNumber} already exists for driver ${req.params.id}`,
+        });
+      }
+
+      const newTask = new Task({
+        taskNumber: req.body.taskNumber,
+        cargoType: req.body.cargoType,
+        weight: req.body.weight,
+        pickup: req.body.pickup,
+        delivery: req.body.delivery,
+        deliveryPhone: req.body.deliveryPhone,
+        expectedDelivery: new Date(req.body.expectedDelivery),
+        additionalNotes: req.body.additionalNotes || "",
+        licensePlate: req.body.licensePlate,
+        driverId: req.params.id,
+        status: "Pending",
+      });
+
+      const savedTask = await newTask.save();
+      res.status(201).json(savedTask);
+    } catch (err) {
+      console.error("Error creating task:", err);
+      res.status(400).json({
+        message: err.message || "Failed to create task",
+        details: err.toString(),
+      });
+    }
+  }
+);
 
 // Catch-all for missing/incorrect endpoints
 router.use((req, res) => {

@@ -11,7 +11,8 @@ import {
   PieChart,
   Bell,
   HelpCircle,
-  TrendingUp
+  TrendingUp,
+  Clipboard,
 } from 'lucide-react';
 
 const Sidebar = ({ handleLogout }) => {
@@ -21,8 +22,8 @@ const Sidebar = ({ handleLogout }) => {
     { path: '/dashboard', icon: <Map size={20} />, label: 'Dashboard' },
     { path: '/vehicles', icon: <Truck size={20} />, label: 'Vehicles' },
     { path: '/drivers', icon: <Users size={20} />, label: 'Drivers' },
+    { path: '/tasks', icon: <Clipboard size={20} />, label: 'Tasks' },
     { path: '/alerts', icon: <AlertTriangle size={20} />, label: 'Alerts' },
-    { path: '/analytics', icon: <PieChart size={20} />, label: 'Analytics' },
     { path: '/settings', icon: <Settings size={20} />, label: 'Settings' },
     { path: '/help', icon: <HelpCircle size={20} />, label: 'Help & Support' },
   ];
