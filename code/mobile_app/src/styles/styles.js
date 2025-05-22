@@ -449,39 +449,6 @@ export const styles = StyleSheet.create({
     width: "70%",
     color: "#666",
   },
-  mapContainer: {
-    backgroundColor: "white",
-    marginHorizontal: 15,
-    marginBottom: 15,
-    padding: 15,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  mapWrapper: {
-    height: 200,
-    borderRadius: 8,
-    overflow: "hidden",
-    marginTop: 5,
-  },
-  map: {
-    width: "100%",
-    height: "100%",
-  },
-  mapPlaceholder: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#f0f0f0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mapPlaceholderText: {
-    marginTop: 10,
-    color: "#999",
-  },
   notesContainer: {
     backgroundColor: "white",
     marginHorizontal: 15,
@@ -629,5 +596,26 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999",
     textAlign: "right",
+  },
+
+  // Add new styles for instruction items
+  instructionItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 15,
+  },
+  instructionBullet: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#4DA6FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 2,
+  },
+  instructionNumber: {
+    color: "white",
+    fontWeight: "bold",
   },
 });

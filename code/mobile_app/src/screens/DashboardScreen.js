@@ -209,6 +209,55 @@ const DashboardScreen = ({ navigation }) => {
             <Text style={styles.removeButtonText}>Remove Current Vehicle</Text>
           </TouchableOpacity>
         )}
+
+        {/* Active Task Section - if there is one */}
+        {activeTask && (
+          <View>
+            <Text style={styles.sectionTitle}>Current Active Task</Text>
+            <TouchableOpacity
+              style={styles.activeTaskCard}
+              onPress={() =>
+                navigation.navigate("TaskDetails", { taskId: activeTask._id })
+              }
+            >
+              <View style={styles.activeTaskHeader}>
+                <Text style={styles.activeTaskNumber}>
+                  {activeTask.taskNumber}
+                </Text>
+                <View style={styles.activeTaskBadge}>
+                  <Text style={styles.activeTaskBadgeText}>ACTIVE</Text>
+                </View>
+              </View>
+              <View style={styles.activeTaskDetails}>
+                <View style={styles.activeTaskRow}>
+                  <Text style={styles.activeTaskText}>
+                    {activeTask.pickup} → {activeTask.delivery}
+                  </Text>
+                </View>
+                <View style={styles.viewDetailsButton}>
+                  <Text style={styles.viewDetailsText}>View Details</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Driver Tip/Help Box */}
+        <View
+          style={[
+            styles.vehicleInfoBox,
+            { marginTop: 20, backgroundColor: "#E6F7FF" },
+          ]}
+        >
+          <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+            Driver Tips
+          </Text>
+          <Text style={{ lineHeight: 20 }}>
+            • Always confirm your vehicle details before starting your shift
+            {"\n"}• Update delivery status as soon as completed{"\n"}• Check
+            notifications regularly for updates
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );

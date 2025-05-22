@@ -6,17 +6,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Image,
   StatusBar,
-  StyleSheet,
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import { startTask, completeTask, updateTaskStatus } from "../services/api";
-import { Feather } from "@expo/vector-icons";
-import * as Location from "expo-location";
-import MapView, { Marker } from "react-native-maps";
 import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 
 const TaskDetailsScreen = ({ route, navigation }) => {
   const { taskId } = route.params;
@@ -31,7 +27,6 @@ const TaskDetailsScreen = ({ route, navigation }) => {
   } = useAppContext();
 
   const [task, setTask] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -40,21 +35,6 @@ const TaskDetailsScreen = ({ route, navigation }) => {
     // Find the task from the tasks list
     const foundTask = tasks.find((t) => t._id === taskId);
     setTask(foundTask);
-
-    // Get current location
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Location permission is required for this feature."
-        );
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({});
-      setCurrentLocation(location.coords);
-    })();
   }, [taskId, tasks]);
 
   const handleStartTask = async () => {
@@ -96,22 +76,9 @@ const TaskDetailsScreen = ({ route, navigation }) => {
   };
 
   const handleCompleteTask = async () => {
-    if (!currentLocation) {
-      Alert.alert(
-        "Location Required",
-        "We need your current location to complete this task."
-      );
-      return;
-    }
-
     setIsCompleting(true);
     try {
-      await completeTask(taskId, {
-        completionLocation: {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-        },
-      });
+      await completeTask(taskId);
 
       // Update local state
       setActiveTaskId(null);
@@ -203,36 +170,12 @@ const TaskDetailsScreen = ({ route, navigation }) => {
               {task.cargoType} ({task.weight} kg)
             </Text>
           </View>
-        </View>
 
-        {/* Map View */}
-        <View style={styles.mapContainer}>
-          <Text style={styles.sectionTitle}>Delivery Location</Text>
-          <View style={styles.mapWrapper}>
-            {currentLocation ? (
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: currentLocation.latitude,
-                  longitude: currentLocation.longitude,
-                  latitudeDelta: 0.0922,
-                  longitudeDelta: 0.0421,
-                }}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: currentLocation.latitude,
-                    longitude: currentLocation.longitude,
-                  }}
-                  title="Your Location"
-                />
-              </MapView>
-            ) : (
-              <View style={styles.mapPlaceholder}>
-                <Feather name="map" size={40} color="#ccc" />
-                <Text style={styles.mapPlaceholderText}>Loading map...</Text>
-              </View>
-            )}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Vehicle:</Text>
+            <Text style={styles.detailValue}>
+              {task.licensePlate || vehicleNumber || "Not assigned"}
+            </Text>
           </View>
         </View>
 
@@ -243,6 +186,33 @@ const TaskDetailsScreen = ({ route, navigation }) => {
             <Text style={styles.notesText}>{task.additionalNotes}</Text>
           </View>
         )}
+
+        {/* Delivery Instructions */}
+        <View style={styles.notesContainer}>
+          <Text style={styles.sectionTitle}>Delivery Instructions</Text>
+          <View style={styles.instructionItem}>
+            <View style={styles.instructionBullet}>
+              <Text style={styles.instructionNumber}>1</Text>
+            </View>
+            <Text style={styles.notesText}>
+              Confirm recipient's identity before delivery
+            </Text>
+          </View>
+          <View style={styles.instructionItem}>
+            <View style={styles.instructionBullet}>
+              <Text style={styles.instructionNumber}>2</Text>
+            </View>
+            <Text style={styles.notesText}>
+              Handle cargo with care - contains fragile items
+            </Text>
+          </View>
+          <View style={styles.instructionItem}>
+            <View style={styles.instructionBullet}>
+              <Text style={styles.instructionNumber}>3</Text>
+            </View>
+            <Text style={styles.notesText}>Take signature upon delivery</Text>
+          </View>
+        </View>
 
         {/* Action Buttons */}
         <View style={styles.actionContainer}>

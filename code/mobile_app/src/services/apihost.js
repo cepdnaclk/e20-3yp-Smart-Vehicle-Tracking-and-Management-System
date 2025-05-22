@@ -1,30 +1,39 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
-// Update the base URL to match your backend server
-// Use your local network IP address when testing with mobile devices
-const API_URL = "http://localhost:5000";
+// Determine correct base URL based on platform
+let baseURL;
+if (Platform.OS === "android") {
+  // Android emulator needs to use special IP to reach host
+  baseURL = "http://10.0.2.2:5000";
+} else if (Platform.OS === "ios") {
+  // iOS simulator can use localhost
+  baseURL = "http://localhost:5000";
+} else {
+  // Web or other platforms
+  baseURL = "http://localhost:5000";
+}
 
+// Create an axios instance with the platform-specific base URL
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Add request interceptor to handle authentication
+// Add a request interceptor for authentication
 api.interceptors.request.use(
   async (config) => {
-    let token;
     try {
-      token = await AsyncStorage.getItem("driverToken");
+      const token = await AsyncStorage.getItem("driverToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     } catch (e) {
-      // Fallback for web
-      token = localStorage.getItem("driverToken");
-    }
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      console.error("Error setting auth token:", e);
     }
     return config;
   },
@@ -33,4 +42,4 @@ api.interceptors.request.use(
   }
 );
 
-export default API_URL;
+export default api;

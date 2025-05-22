@@ -2,19 +2,17 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-import { StatusBar, LogBox, Alert, Platform } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { StatusBar, LogBox, Platform, View, Text } from "react-native";
 
-import { AppProvider } from "./context/AppContext";
+import { AppProvider, useAppContext } from "./context/AppContext";
 import DashboardScreen from "./screens/DashboardScreen";
 import LoginScreen from "./screens/LoginScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import { TaskScreen } from "./screens/TaskScreen";
-import { TaskDetailsScreen } from "./screens/TaskScreen";
+import TaskDetailsScreen from "./screens/TaskDetailsScreen";
+import socketService from "./services/SocketService";
 import Icon from "./screens/Icon";
-import { fetchTasks } from "./services/api";
-import { io } from "socket.io-client";
 
 // Ignore specific harmless warnings
 LogBox.ignoreLogs([
@@ -22,20 +20,24 @@ LogBox.ignoreLogs([
   "Non-serializable values were found in the navigation state",
 ]);
 
-// Use simple icon implementation for web compatibility
+// Use proper React Native components for TabIcon
 const TabIcon = ({ name, color }) => {
   return (
-    <div
+    <View
       style={{
-        color: color,
-        fontSize: "18px",
-        display: "flex",
-        justifyContent: "center",
         alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {name}
-    </div>
+      <Text
+        style={{
+          color: color,
+          fontSize: 24,
+        }}
+      >
+        {name}
+      </Text>
+    </View>
   );
 };
 
@@ -87,96 +89,123 @@ const MainTabs = () => (
 
 const Stack = createStackNavigator();
 
-const App = () => {
-  const [vehicleNumber, setVehicleNumber] = useState(null);
-  const [completedTasks, setCompletedTasks] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState([]);
-  const [activeTaskId, setActiveTaskId] = useState(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [driverId, setDriverId] = useState("DR001"); // Use state for driverId
-
-  const socket = io("http://localhost:5000");
-
-  const getTasks = async () => {
-    try {
-      const response = await fetchTasks(driverId);
-      setTasks(response.data);
-      const activeTask = response.data.find(
-        (task) => task.status === "In Progress"
-      );
-      setActiveTaskId(activeTask ? activeTask._id : null);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      Alert.alert("Error", "Failed to fetch tasks. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+const MainApp = () => {
+  const {
+    tasks,
+    setTasks,
+    handleTaskAssigned,
+    handleTaskUpdated,
+    handleTaskDeleted,
+    handleTaskReminder,
+  } = useAppContext();
 
   useEffect(() => {
-    getTasks();
-    const interval = setInterval(getTasks, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    console.log("Setting up socket handlers for real-time updates");
 
-  useEffect(() => {
-    socket.on("taskNotification", (notification) => {
-      if (notification.driverId === driverId) {
-        setNotifications((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            title: notification.title,
-            message: notification.message,
-            time: new Date().toLocaleTimeString(),
-          },
-        ]);
-        getTasks();
-      }
+    // Set up socket handlers
+    socketService.setHandlers({
+      onTaskAssigned: (taskData) => {
+        console.log("Task assigned event handler triggered:", taskData);
+
+        // Create notification
+        handleTaskAssigned(taskData);
+
+        // Update tasks list with new task at the top
+        setTasks((prev) => {
+          const exists = prev.some((t) => t._id === taskData._id);
+          if (!exists) {
+            console.log("Adding new real-time task:", taskData.taskNumber);
+            return [taskData, ...prev];
+          }
+          return prev;
+        });
+      },
+
+      onTaskUpdated: (taskData) => {
+        console.log("Task updated event handler triggered:", taskData);
+
+        // Create notification
+        handleTaskUpdated(taskData);
+
+        // Update task in the list
+        setTasks((prev) =>
+          prev.map((task) => (task._id === taskData._id ? taskData : task))
+        );
+      },
+
+      onTaskDeleted: (taskData) => {
+        console.log("Task deleted event handler triggered:", taskData);
+
+        // Create notification
+        handleTaskDeleted(taskData);
+
+        // Remove task from list
+        setTasks((prev) => prev.filter((task) => task._id !== taskData._id));
+      },
+
+      onTaskReminder: (taskData) => {
+        console.log("Task reminder event handler triggered:", taskData);
+
+        // Create notification only
+        handleTaskReminder(taskData);
+      },
+
+      onConnect: () => {
+        console.log(
+          "Socket connected successfully - ready for real-time updates"
+        );
+      },
+
+      onDisconnect: () => {
+        console.log("Socket disconnected - real-time updates paused");
+      },
+
+      onError: (error) => {
+        console.error("Socket error:", error);
+      },
     });
 
-    return () => socket.off("taskNotification");
+    // Connect to socket server
+    socketService.connect();
+
+    // Clean up on component unmount
+    return () => {
+      socketService.disconnect();
+    };
   }, []);
 
-  const removeVehicle = () => {
-    setVehicleNumber(null);
-    Alert.alert(
-      "Vehicle Removed",
-      "Vehicle number removed. Please enter a new vehicle number."
-    );
-  };
+  return (
+    <Stack.Navigator initialRouteName="Login">
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="MainTabs"
+        component={MainTabs}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TaskDetails"
+        component={TaskDetailsScreen}
+        options={{
+          title: "Delivery Task",
+          headerStyle: { backgroundColor: "#4DA6FF" },
+          headerTintColor: "white",
+          headerBackTitle: "Back",
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
 
+const App = () => {
   return (
     <AppProvider>
-      {Platform.OS !== "web" && (
-        <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-      )}
+      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="MainTabs"
-            component={MainTabs}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="TaskDetails"
-            component={TaskDetailsScreen}
-            options={{
-              title: "Delivery Task",
-              headerStyle: { backgroundColor: "#4DA6FF" },
-              headerTintColor: "white",
-              headerBackTitle: "Back",
-            }}
-          />
-        </Stack.Navigator>
+        <MainApp />
       </NavigationContainer>
     </AppProvider>
   );

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../services/apihost";
 import { DRIVER_ID, DRIVER_NAME } from "../config/constants";
+import { createNotificationFromTask } from "../services/NotificationService";
 
 const AppContext = createContext();
 
@@ -72,25 +73,30 @@ export const AppProvider = ({ children }) => {
         try {
           const tasksResponse = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
           if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
+            console.log(`Loaded ${tasksResponse.data.length} tasks from API`);
             setTasks(tasksResponse.data);
+
+            // Find any active task and set activeTaskId
+            const activeTask = tasksResponse.data.find(
+              (t) => t.status === "In Progress"
+            );
+            if (activeTask) {
+              setActiveTaskId(activeTask._id);
+              console.log("Found active task:", activeTask.taskNumber);
+            }
+
+            // Find completed tasks
+            const completed = tasksResponse.data
+              .filter((t) => t.status === "Completed")
+              .map((t) => t._id);
+            if (completed.length > 0) {
+              setCompletedTasks(completed);
+              console.log(`Found ${completed.length} completed tasks`);
+            }
           }
         } catch (error) {
           console.error("Error fetching tasks:", error);
-          // Set mock tasks if API call fails
-          setTasks([
-            {
-              _id: "mockTask1",
-              taskNumber: "TSK0001",
-              cargoType: "Electronics",
-              weight: 150,
-              pickup: "Warehouse A",
-              delivery: "Colombo City Center",
-              deliveryPhone: "0712345678",
-              expectedDelivery: new Date().toISOString(),
-              status: "Pending",
-              driverId: DRIVER_ID,
-            },
-          ]);
+          // Set dummy task for testing if needed
         }
 
         setLoading(false);
@@ -133,6 +139,44 @@ export const AppProvider = ({ children }) => {
     setActiveTaskId(null);
   };
 
+  // Updated task notification handlers with better sorting and integration
+  const handleTaskAssigned = (task) => {
+    console.log("Task assigned notification for:", task.taskNumber);
+    const notification = createNotificationFromTask(task, "assign");
+
+    // Add to notifications
+    setNotifications((prev) => [notification, ...prev]);
+
+    // Also add to tasks list if not already present
+    setTasks((prev) => {
+      // Check if the task already exists
+      const exists = prev.some((t) => t._id === task._id);
+      if (!exists) {
+        console.log("Adding new task to list:", task.taskNumber);
+        return [task, ...prev];
+      }
+      return prev;
+    });
+  };
+
+  const handleTaskUpdated = (task) => {
+    console.log("Task updated notification for:", task.taskNumber);
+    const notification = createNotificationFromTask(task, "update");
+    setNotifications((prev) => [notification, ...prev]);
+  };
+
+  const handleTaskDeleted = (task) => {
+    console.log("Task deleted notification for:", task.taskNumber);
+    const notification = createNotificationFromTask(task, "delete");
+    setNotifications((prev) => [notification, ...prev]);
+  };
+
+  const handleTaskReminder = (task) => {
+    console.log("Task reminder notification for:", task.taskNumber);
+    const notification = createNotificationFromTask(task, "reminder");
+    setNotifications((prev) => [notification, ...prev]);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -158,6 +202,11 @@ export const AppProvider = ({ children }) => {
         pushNotifications,
         setPushNotifications,
         logout,
+        // Add task notification handlers
+        handleTaskAssigned,
+        handleTaskUpdated,
+        handleTaskDeleted,
+        handleTaskReminder,
       }}
     >
       {children}
