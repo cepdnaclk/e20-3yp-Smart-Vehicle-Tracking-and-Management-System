@@ -17,6 +17,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { api } from "../services/api";
 
 const Tasks = () => {
@@ -43,6 +44,10 @@ const Tasks = () => {
     additionalNotes: '',
     status: 'Pending'
   });
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    task: null
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -60,6 +65,28 @@ const Tasks = () => {
       setDrivers(response.data);
     } catch (error) {
       console.error("Error fetching drivers:", error);
+    }
+  };
+
+  // Update the fetchTasks function to sort by taskNumber
+  const fetchTasks = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get("/api/tasks");
+      
+      // Sort tasks by taskNumber for consistent display
+      const sortedTasks = response.data.sort((a, b) => {
+        return a.taskNumber.localeCompare(b.taskNumber);
+      });
+      
+      setTasks(sortedTasks);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setAlertMessage("Failed to load task data. Please try again.");
+      setAlertType("danger");
+      setShowAlert(true);
+      setIsLoading(false);
     }
   };
 
@@ -115,30 +142,54 @@ const Tasks = () => {
     }
   };
   
-  const handleDeleteTask = async (task) => {
-    if (window.confirm(`Are you sure you want to delete task ${task.taskNumber}?`)) {
-      try {
+  const handleDeleteClick = (task) => {
+    setDeleteModal({
+      show: true,
+      task
+    });
+  };
+
+  // Update the handleDeleteConfirm function to handle deletion by taskNumber
+  const handleDeleteConfirm = async () => {
+    const task = deleteModal.task;
+    if (!task) return;
+    
+    try {
+      // Try to delete by ID first if available
+      if (task._id) {
         await api.delete(`/api/tasks/${task._id}`);
-        
-        setAlertMessage("Task deleted successfully");
-        setAlertType("success");
-        setShowAlert(true);
-        
-        // Refresh tasks
-        if (selectedDriverId) {
-          fetchTasksForDriver(selectedDriverId);
-        } else {
-          fetchAllTasks();
-        }
-      } catch (error) {
-        console.error("Error deleting task:", error);
-        setAlertMessage("Failed to delete task");
-        setAlertType("danger");
-        setShowAlert(true);
+      } else {
+        // Fallback to using taskNumber
+        await api.delete(`/api/tasks/${task.taskNumber}`);
       }
+      
+      setAlertMessage("Task deleted successfully");
+      setAlertType("success");
+      setShowAlert(true);
+      fetchTasks(); // Refresh the task list
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      
+      // More detailed error message
+      let errorMsg = "Failed to delete task.";
+      if (err.response?.data?.message) {
+        errorMsg += ` Server message: ${err.response.data.message}`;
+      } else if (err.message) {
+        errorMsg += ` Error: ${err.message}`;
+      }
+      
+      setAlertMessage(errorMsg);
+      setAlertType("danger");
+      setShowAlert(true);
+    } finally {
+      setDeleteModal({ show: false, task: null });
     }
   };
 
+  const handleDeleteCancel = () => {
+    setDeleteModal({ show: false, task: null });
+  };
+  
   const handleViewTask = (task) => {
     setSelectedTask(task);
     setViewMode(true);
@@ -245,17 +296,20 @@ const Tasks = () => {
     }
   };
 
+  // Update the tableColumns definition to handle null driverId
   const tableColumns = [
+    { 
+      key: 'taskNumber', 
+      header: 'Task ID', 
+      sortable: true, 
+      render: (v) => <span className="fw-bold">{v}</span> 
+    },
     { 
       key: 'driverId', 
       header: 'Driver ID', 
       sortable: true, 
-      render: (v) => {
-        const driver = drivers.find(d => d.driverId === v);
-        return <span>{driver ? `${v} (${driver.fullName})` : v}</span>;
-      }
+      render: (v) => v ? <span>{v}</span> : <span className="text-danger">(Driver deleted)</span>
     },
-    { key: 'taskNumber', header: 'Task ID', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'cargoType', header: 'Cargo Type', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'expectedDelivery', header: 'Expected Delivery', sortable: true, render: (v) => <span>{formatDate(v)}</span> },
     { key: 'status', header: 'Status', sortable: true, render: (v) => getStatusBadge(v) },
@@ -271,7 +325,7 @@ const Tasks = () => {
           <Button size="sm" variant="outline-secondary" onClick={() => handleEditTask(row)}>
             <Edit size={16} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteTask(row)}>
+          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
             <Trash2 size={16} />
           </Button>
         </div>
@@ -503,6 +557,16 @@ const Tasks = () => {
             </Form>
           </Modal>
         )}
+        
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          show={deleteModal.show}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          itemType="Task"
+          itemName={deleteModal.task ? `${deleteModal.task.taskNumber}` : ""}
+          additionalMessage="All task data and completion history will be permanently removed."
+        />
       </div>
     </div>
   );

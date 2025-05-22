@@ -22,6 +22,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { api } from "../services/api";
 
 const Vehicles = () => {
@@ -38,6 +39,10 @@ const Vehicles = () => {
     editMode: false,
     viewMode: false,
     vehicle: null,
+  });
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    vehicle: null
   });
 
   useEffect(() => {
@@ -195,24 +200,38 @@ const Vehicles = () => {
     }
   };
 
-  const handleDeleteVehicle = async (vehicle) => {
-    if (window.confirm(`Are you sure you want to delete vehicle ${vehicle.licensePlate}? This action cannot be undone.`)) {
-      try {
-        await api.delete(`/api/vehicles/${vehicle._id}`);
-        setAlertMessage("Vehicle deleted successfully");
-        setAlertType("success");
-        setShowAlert(true);
-        closeModal();
-        fetchVehicles();
-      } catch (err) {
-        console.error("Error deleting vehicle:", err);
-        setAlertMessage("Failed to delete vehicle.");
-        setAlertType("danger");
-        setShowAlert(true);
-      }
+  const handleDeleteClick = (vehicle) => {
+    setDeleteModal({
+      show: true,
+      vehicle
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const vehicle = deleteModal.vehicle;
+    if (!vehicle) return;
+    
+    try {
+      await api.delete(`/api/vehicles/${vehicle._id}`);
+      setAlertMessage("Vehicle deleted successfully");
+      setAlertType("success");
+      setShowAlert(true);
+      closeModal();
+      fetchVehicles();
+    } catch (err) {
+      console.error("Error deleting vehicle:", err);
+      setAlertMessage("Failed to delete vehicle.");
+      setAlertType("danger");
+      setShowAlert(true);
+    } finally {
+      setDeleteModal({ show: false, vehicle: null });
     }
   };
 
+  const handleDeleteCancel = () => {
+    setDeleteModal({ show: false, vehicle: null });
+  };
+  
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -344,7 +363,7 @@ const Vehicles = () => {
           <Button size="sm" variant="outline-secondary" onClick={() => handleEditVehicle(row)}>
             <Edit size={16} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteVehicle(row)}>
+          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
             <Trash2 size={16} />
           </Button>
         </div>
@@ -539,6 +558,16 @@ const Vehicles = () => {
             onClose={closeModal}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          show={deleteModal.show}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          itemType="Vehicle"
+          itemName={deleteModal.vehicle ? `${deleteModal.vehicle.vehicleName} (${deleteModal.vehicle.licensePlate})` : ""}
+          additionalMessage="All data related to this vehicle will be permanently removed."
+        />
       </div>
     </div>
   );

@@ -145,8 +145,9 @@ const Dashboard = () => {
   const fetchActiveVehicles = async () => {
     try {
       const response = await api.get("/api/vehicles");
-      // Filter for active status as backend may not support query param
-      setActiveVehicles(response.data.filter(v => v.status === "active"));
+      // Filter for vehicles with tracking enabled (which means status is Active)
+      const activeVehiclesList = response.data.filter(v => v.trackingEnabled === true);
+      setActiveVehicles(activeVehiclesList);
     } catch (error) {
       console.error("Error fetching active vehicles:", error);
     }
@@ -155,8 +156,8 @@ const Dashboard = () => {
   // Fetch total drivers
   const fetchTotalDrivers = async () => {
     try {
-      const response = await api.get("/api/drivers/count");
-      setTotalDrivers(response.data.totalDrivers);
+      const response = await api.get("/api/drivers");
+      setTotalDrivers(response.data.length);
     } catch (error) {
       console.error("Error fetching total drivers:", error);
     }
@@ -165,8 +166,12 @@ const Dashboard = () => {
   // Fetch active drivers
   const fetchActiveDrivers = async () => {
     try {
-      const response = await api.get("/api/drivers/count/active");
-      setActiveDrivers(response.data.activeDriversCount);
+      const response = await api.get("/api/drivers");
+      // Count drivers with employmentStatus = 'active'
+      const activeDriversCount = response.data.filter(
+        driver => driver.employmentStatus === 'active'
+      ).length;
+      setActiveDrivers(activeDriversCount);
     } catch (error) {
       console.error("Error fetching active drivers count:", error);
     }
@@ -416,12 +421,12 @@ const Dashboard = () => {
             isUp={true}
           />
           <StatsCardNew 
-            icon={<Activity size={24} className="text-danger" />} 
-            title="Active Alerts" 
-            value={activeAlerts} 
-            color="bg-danger"
-            percentage="3"
-            isUp={false}
+            icon={<User size={24} className="text-warning" />} 
+            title="Active Drivers" 
+            value={activeDrivers} 
+            color="bg-warning"
+            percentage="10"
+            isUp={true}
           />
         </motion.div>
 

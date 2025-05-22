@@ -5,7 +5,7 @@ const taskSchema = new mongoose.Schema(
     taskNumber: {
       type: String,
       required: true,
-      unique: true, // Make taskNumber unique across all drivers
+      unique: true, // This already creates an index, so we don't need the explicit index below
     },
     cargoType: { type: String, required: true },
     weight: { type: Number, required: true, min: 0 },
@@ -20,7 +20,12 @@ const taskSchema = new mongoose.Schema(
       enum: ["Pending", "In Progress", "Completed", "Cancelled"],
       default: "Pending",
     },
-    driverId: { type: String, required: true, ref: "Driver" },
+    driverId: {
+      type: String,
+      ref: "Driver",
+      required: false, // Allow null for when driver is deleted
+      default: null,
+    },
   },
   { timestamps: true }
 );

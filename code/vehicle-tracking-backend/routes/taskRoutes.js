@@ -160,12 +160,28 @@ router.put(
 // DELETE a task
 router.delete("/:id", async (req, res) => {
   try {
-    const task = await Task.findByIdAndDelete(req.params.id);
+    const taskId = req.params.id;
+    let task;
+
+    // Try to find by MongoDB ObjectId if it's a valid ObjectId
+    if (/^[0-9a-fA-F]{24}$/.test(taskId)) {
+      task = await Task.findById(taskId);
+    }
+
+    // If not found by ObjectId, try by taskNumber
+    if (!task) {
+      task = await Task.findOne({ taskNumber: taskId });
+    }
+
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
+
+    // Delete the task without checking for driver dependency
+    await Task.deleteOne({ _id: task._id });
     res.json({ message: "Task deleted successfully" });
   } catch (err) {
+    console.error("Error deleting task:", err);
     res.status(500).json({ message: err.message });
   }
 });

@@ -22,6 +22,7 @@ import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { api } from "../services/api";
 
 const Drivers = () => {
@@ -60,6 +61,10 @@ const Drivers = () => {
   });
   const [taskSubmitted, setTaskSubmitted] = useState(false);
   const [driverTasks, setDriverTasks] = useState([]);
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    driver: null
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -129,22 +134,36 @@ const Drivers = () => {
     setShowAddModal(true);
   };
 
-  const handleDeleteDriver = async (driver) => {
-    if (window.confirm(`Are you sure you want to delete driver ${driver.fullName}? This action cannot be undone.`)) {
-      try {
-        await api.delete(`/api/drivers/${driver.driverId}`);
-        setDrivers(drivers.filter(d => d.driverId !== driver.driverId));
-        setAlertMessage("Driver deleted successfully");
-        setAlertType("success");
-        setShowAlert(true);
-      } catch (err) {
-        setAlertMessage("Failed to delete driver.");
-        setAlertType("danger");
-        setShowAlert(true);
-      }
+  const handleDeleteClick = (driver) => {
+    setDeleteModal({
+      show: true,
+      driver
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const driver = deleteModal.driver;
+    if (!driver) return;
+    
+    try {
+      await api.delete(`/api/drivers/${driver.driverId}`);
+      setDrivers(drivers.filter(d => d.driverId !== driver.driverId));
+      setAlertMessage("Driver deleted successfully");
+      setAlertType("success");
+      setShowAlert(true);
+    } catch (err) {
+      setAlertMessage("Failed to delete driver.");
+      setAlertType("danger");
+      setShowAlert(true);
+    } finally {
+      setDeleteModal({ show: false, driver: null });
     }
   };
 
+  const handleDeleteCancel = () => {
+    setDeleteModal({ show: false, driver: null });
+  };
+  
   const handleAddDriver = () => {
     console.log("Add mode activated", { viewMode: false, editMode: false });
     setViewMode(false);
@@ -476,7 +495,7 @@ const Drivers = () => {
           <Button size="sm" variant="outline-secondary" onClick={() => handleEditDriver(row)}>
             <Edit size={16} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteDriver(row)}>
+          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
             <Trash2 size={16} />
           </Button>
           <Button size="sm" variant="outline-success" onClick={() => handleAssignTask(row)}>
@@ -786,6 +805,16 @@ const Drivers = () => {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        show={deleteModal.show}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        itemType="Driver"
+        itemName={deleteModal.driver ? `${deleteModal.driver.fullName} (${deleteModal.driver.driverId})` : ""}
+        additionalMessage="this driver will be permanently removed."
+      />
     </div>
   );
 };

@@ -149,13 +149,21 @@ router.put(
   }
 );
 
-// DELETE a driver
+// DELETE driver by ID
 router.delete("/:id", async (req, res) => {
   try {
-    const driver = await Driver.findOneAndDelete({ driverId: req.params.id });
+    const driver = await Driver.findOne({ driverId: req.params.id });
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
     }
+
+    // Update tasks to set driverId to null instead of deleting them
+    await Task.updateMany(
+      { driverId: req.params.id },
+      { $set: { driverId: null } }
+    );
+
+    await Driver.deleteOne({ driverId: req.params.id });
     res.json({ message: "Driver deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
