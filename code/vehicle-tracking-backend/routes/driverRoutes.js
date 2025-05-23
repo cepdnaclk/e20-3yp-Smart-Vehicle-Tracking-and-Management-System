@@ -198,11 +198,6 @@ router.post(
     body("licensePlate").notEmpty().withMessage("License plate is required"),
   ],
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
       // Check if driver exists
       const driver = await Driver.findOne({ driverId: req.params.id });
@@ -237,6 +232,20 @@ router.post(
       });
 
       const savedTask = await newTask.save();
+
+      // Emit socket event if socketServer is available
+      if (req.socketServer) {
+        console.log(
+          "Emitting task:assigned event from driver route for task:",
+          savedTask.taskNumber
+        );
+        req.socketServer.emitTaskAssigned(savedTask);
+      } else {
+        console.warn(
+          "Socket server not available, couldn't emit task:assigned event"
+        );
+      }
+
       res.status(201).json(savedTask);
     } catch (err) {
       console.error("Error creating task:", err);

@@ -6,6 +6,8 @@ class SocketService {
   constructor() {
     this.socket = null;
     this.isConnected = false;
+    this.connectionAttempts = 0;
+    this.maxConnectionAttempts = 5;
     this.handlers = {
       onTaskAssigned: null,
       onTaskUpdated: null,
@@ -18,82 +20,162 @@ class SocketService {
   }
 
   connect() {
-    // Use different URLs for Android emulator vs iOS simulator
+    // Different URL based on platform
     let apiUrl;
     if (Platform.OS === "android") {
-      // Android emulator sees localhost as the emulator itself, not the host machine
+      // Android emulator uses 10.0.2.2 to access host machine
       apiUrl = "http://10.0.2.2:5000";
     } else if (Platform.OS === "ios") {
-      // iOS simulator can use localhost which maps to the host
+      // iOS simulator can use localhost
       apiUrl = "http://localhost:5000";
     } else {
-      // Web or other platforms
+      // Web fallback
       apiUrl = "http://localhost:5000";
     }
 
-    if (this.socket) {
-      // Socket already connected or attempting to connect
+    if (this.socket && this.isConnected) {
+      console.log("Socket already connected, not creating new connection");
       return;
     }
 
-    console.log("Attempting to connect to socket server at:", apiUrl);
+    if (this.connectionAttempts >= this.maxConnectionAttempts) {
+      console.error(
+        `Max connection attempts (${this.maxConnectionAttempts}) reached. Giving up.`
+      );
+      return;
+    }
 
-    this.socket = io(apiUrl, {
-      transports: ["websocket", "polling"], // Allow fallback to polling if websocket fails
-      query: { driverId: DRIVER_ID },
-      reconnectionAttempts: 5,
-      timeout: 10000,
-    });
+    console.log(
+      `[SocketService] Connecting to ${apiUrl} for driver ${DRIVER_ID} (Attempt ${
+        this.connectionAttempts + 1
+      })`
+    );
 
-    this.socket.on("connect", () => {
-      console.log("Socket connected successfully");
-      this.isConnected = true;
-      if (this.handlers.onConnect) this.handlers.onConnect();
-    });
+    try {
+      // More robust socket configuration
+      this.socket = io(apiUrl, {
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+        query: { driverId: DRIVER_ID },
+        transports: ["websocket", "polling"],
+      });
 
-    this.socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error.message);
-    });
+      // Debug all socket events in development
+      this.socket.onAny((event, ...args) => {
+        console.log(`[SocketService] Event received: ${event}`, args);
+      });
 
-    this.socket.on("disconnect", () => {
-      console.log("Socket disconnected");
-      this.isConnected = false;
-      if (this.handlers.onDisconnect) this.handlers.onDisconnect();
-    });
+      this.socket.on("connect", () => {
+        console.log(`[SocketService] Connected! Socket ID: ${this.socket.id}`);
+        this.isConnected = true;
+        this.connectionAttempts = 0;
 
-    this.socket.on("error", (error) => {
-      console.error("Socket error:", error);
-      if (this.handlers.onError) this.handlers.onError(error);
-    });
+        // Join a driver-specific room
+        this.socket.emit("joinDriverRoom", DRIVER_ID);
+        console.log(`[SocketService] Joined room driver-${DRIVER_ID}`);
 
-    // Task event listeners
-    this.socket.on("task:assigned", (taskData) => {
-      console.log("Task assigned event received:", taskData);
-      if (this.handlers.onTaskAssigned && taskData.driverId === DRIVER_ID) {
-        this.handlers.onTaskAssigned(taskData);
-      }
-    });
+        if (this.handlers.onConnect) {
+          this.handlers.onConnect();
+        }
+      });
 
-    this.socket.on("task:updated", (taskData) => {
-      console.log("Task updated event received:", taskData);
-      if (this.handlers.onTaskUpdated && taskData.driverId === DRIVER_ID) {
-        this.handlers.onTaskUpdated(taskData);
-      }
-    });
+      this.socket.on("connect_error", (error) => {
+        console.error(`[SocketService] Connection error:`, error.message);
+        this.connectionAttempts++;
 
-    this.socket.on("task:deleted", (taskData) => {
-      console.log("Task deleted event received:", taskData);
-      if (this.handlers.onTaskDeleted && taskData.driverId === DRIVER_ID) {
-        this.handlers.onTaskDeleted(taskData);
-      }
-    });
+        if (this.connectionAttempts >= this.maxConnectionAttempts) {
+          console.error(
+            `[SocketService] Max connection attempts reached. Will not retry.`
+          );
+        } else {
+          console.log(
+            `[SocketService] Will retry connection (${this.connectionAttempts}/${this.maxConnectionAttempts})`
+          );
+        }
+      });
 
-    this.socket.on("task:reminder", (taskData) => {
-      console.log("Task reminder event received:", taskData);
-      if (this.handlers.onTaskReminder && taskData.driverId === DRIVER_ID) {
-        this.handlers.onTaskReminder(taskData);
-      }
-    });
+      this.socket.on("disconnect", (reason) => {
+        console.log(`[SocketService] Disconnected! Reason: ${reason}`);
+        this.isConnected = false;
+
+        if (this.handlers.onDisconnect) {
+          this.handlers.onDisconnect(reason);
+        }
+      });
+
+      this.socket.on("task:assigned", (taskData) => {
+        console.log(
+          `[SocketService] ✅ Task assigned event received:`,
+          taskData
+        );
+
+        // Check if the task is for this driver
+        if (
+          taskData &&
+          taskData.driverId === DRIVER_ID &&
+          this.handlers.onTaskAssigned
+        ) {
+          console.log(`[SocketService] Task is for this driver, handling...`);
+          this.handlers.onTaskAssigned(taskData);
+        } else {
+          console.log(
+            `[SocketService] Task is not for this driver or no handler available`
+          );
+        }
+      });
+
+      this.socket.on("task:updated", (taskData) => {
+        console.log(`[SocketService] ✅ Task updated event received`);
+
+        if (
+          taskData &&
+          taskData.driverId === DRIVER_ID &&
+          this.handlers.onTaskUpdated
+        ) {
+          this.handlers.onTaskUpdated(taskData);
+        }
+      });
+
+      this.socket.on("task:deleted", (taskData) => {
+        console.log(`[SocketService] ✅ Task deleted event received`);
+
+        if (
+          taskData &&
+          taskData.driverId === DRIVER_ID &&
+          this.handlers.onTaskDeleted
+        ) {
+          this.handlers.onTaskDeleted(taskData);
+        }
+      });
+
+      this.socket.on("task:reminder", (taskData) => {
+        console.log(`[SocketService] ✅ Task reminder event received`);
+
+        if (
+          taskData &&
+          taskData.driverId === DRIVER_ID &&
+          this.handlers.onTaskReminder
+        ) {
+          this.handlers.onTaskReminder(taskData);
+        }
+      });
+
+      // Test event
+      this.socket.on("test", (data) => {
+        console.log(`[SocketService] Test event received:`, data);
+      });
+
+      this.socket.on("error", (error) => {
+        console.error(`[SocketService] Socket error:`, error);
+
+        if (this.handlers.onError) {
+          this.handlers.onError(error);
+        }
+      });
+    } catch (err) {
+      console.error(`[SocketService] Error initializing socket:`, err);
+    }
   }
 
   disconnect() {
@@ -101,11 +183,29 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
+      console.log(`[SocketService] Socket disconnected manually`);
     }
   }
 
   setHandlers(handlers) {
     this.handlers = { ...this.handlers, ...handlers };
+  }
+
+  // Test ping method to check connection
+  emitTest() {
+    if (this.socket && this.isConnected) {
+      console.log(`[SocketService] Sending test ping...`);
+      this.socket.emit("test:ping", {
+        driverId: DRIVER_ID,
+        timestamp: new Date().toISOString(),
+      });
+      return true;
+    } else {
+      console.log(
+        `[SocketService] Cannot send test ping - socket not connected`
+      );
+      return false;
+    }
   }
 }
 

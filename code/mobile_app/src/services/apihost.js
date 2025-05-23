@@ -11,8 +11,19 @@ if (Platform.OS === "android") {
   // iOS simulator can use localhost
   baseURL = "http://localhost:5000";
 } else {
-  // Web or other platforms
-  baseURL = "http://localhost:5000";
+  // Web environment
+  if (
+    typeof window !== "undefined" &&
+    window.location &&
+    window.location.port === "5173"
+  ) {
+    // We're in Vite dev server, use relative URL to leverage the proxy
+    baseURL = "";
+    console.log("Using relative URL for API requests to work with Vite proxy");
+  } else {
+    // Regular web environment
+    baseURL = "http://localhost:5000";
+  }
 }
 
 // Create an axios instance with the platform-specific base URL

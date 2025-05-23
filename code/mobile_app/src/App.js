@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-import { StatusBar, LogBox, Platform, View, Text } from "react-native";
+import { StatusBar, LogBox, View, Text } from "react-native";
 
 import { AppProvider, useAppContext } from "./context/AppContext";
+import { SocketProvider } from "./context/SocketContext";
 import DashboardScreen from "./screens/DashboardScreen";
 import LoginScreen from "./screens/LoginScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
@@ -42,6 +43,8 @@ const TabIcon = ({ name, color }) => {
 };
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
 const MainTabs = () => (
   <Tab.Navigator
     screenOptions={{
@@ -86,8 +89,6 @@ const MainTabs = () => (
     />
   </Tab.Navigator>
 );
-
-const Stack = createStackNavigator();
 
 const MainApp = () => {
   const {
@@ -203,10 +204,12 @@ const MainApp = () => {
 const App = () => {
   return (
     <AppProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-      <NavigationContainer>
-        <MainApp />
-      </NavigationContainer>
+      <SocketProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+        <NavigationContainer>
+          <MainApp />
+        </NavigationContainer>
+      </SocketProvider>
     </AppProvider>
   );
 };

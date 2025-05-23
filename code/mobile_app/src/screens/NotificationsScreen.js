@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,30 +6,70 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Alert,
+  Button,
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
-import { markNotificationAsRead } from "../services/NotificationService";
+import {
+  markNotificationAsRead,
+  setupNotificationListeners,
+} from "../services/NotificationService";
 import AnimatedPlaceholder from "../components/AnimatedPlaceholder";
+import socketService from "../services/SocketService";
+import { Feather } from "@expo/vector-icons";
 
 const NotificationsScreen = ({ navigation }) => {
   const { notifications, setNotifications } = useAppContext();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Handle new notifications
+  const handleNewNotification = useCallback(
+    (notification) => {
+      console.log("New notification received:", notification.title);
+      setNotifications((prev) => [notification, ...prev]);
+    },
+    [setNotifications]
+  );
+
+  // Set up notification listeners
   useEffect(() => {
-    // Just to show loading UI briefly
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
-  }, []);
+    console.log("Setting up notification listeners in NotificationsScreen");
+    const unsubscribe = setupNotificationListeners(handleNewNotification);
+
+    // Initialize
+    setTimeout(() => setLoading(false), 500);
+
+    return () => {
+      console.log("Cleaning up notification listeners");
+      unsubscribe();
+    };
+  }, [handleNewNotification]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    // Just to simulate refresh
+    // Test socket connection
+    socketService.emitTest();
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
+  };
+
+  const handleClearAll = () => {
+    Alert.alert(
+      "Clear Notifications",
+      "Are you sure you want to clear all notifications?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          onPress: clearNotifications,
+          style: "destructive",
+        },
+      ]
+    );
   };
 
   const handleNotificationPress = async (notification) => {
@@ -63,22 +103,37 @@ const NotificationsScreen = ({ navigation }) => {
       ]}
       onPress={() => handleNotificationPress(item)}
     >
-      <Text style={styles.notificationTitle}>
-        {item.title}
-        {!item.read && <View style={styles.unreadDot} />}
-      </Text>
-      <Text style={styles.notificationMessage}>{item.message}</Text>
-      <Text style={styles.notificationTime}>
-        {item.time} • {item.date}
-      </Text>
+      <View style={styles.notificationIcon}>
+        {getNotificationIcon(item.action)}
+      </View>
+      <View style={styles.notificationContent}>
+        <Text style={styles.notificationTitle}>
+          {item.title}
+          {!item.read && <View style={styles.unreadDot} />}
+        </Text>
+        <Text style={styles.notificationMessage}>{item.message}</Text>
+        <Text style={styles.notificationTime}>
+          {item.time} • {item.date}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
-  // Sort notifications with newest first
-  const sortedNotifications = [...notifications].sort(
-    (a, b) =>
-      new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now())
-  );
+  // Helper function to get the appropriate icon for each notification type
+  const getNotificationIcon = (action) => {
+    switch (action) {
+      case "assign":
+        return <Feather name="plus-circle" size={24} color="#4DA6FF" />;
+      case "update":
+        return <Feather name="edit" size={24} color="#FFC107" />;
+      case "delete":
+        return <Feather name="trash-2" size={24} color="#FF6B6B" />;
+      case "reminder":
+        return <Feather name="clock" size={24} color="#4CAF50" />;
+      default:
+        return <Feather name="bell" size={24} color="#4DA6FF" />;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -89,11 +144,42 @@ const NotificationsScreen = ({ navigation }) => {
         </Text>
       </View>
 
+      {/* Debug button - remove in production */}
+      <TouchableOpacity
+        style={{
+          backgroundColor: "#4DA6FF",
+          padding: 10,
+          margin: 10,
+          borderRadius: 5,
+          alignItems: "center",
+        }}
+        onPress={() => {
+          const success = socketService.emitTest();
+          if (success) {
+            setNotifications((prev) => [
+              {
+                id: `notif_test_${Date.now()}`,
+                title: "Test Notification",
+                message:
+                  "This is a test notification to verify the system is working.",
+                time: new Date().toLocaleTimeString(),
+                date: new Date().toLocaleDateString(),
+                read: false,
+                createdAt: new Date(),
+              },
+              ...prev,
+            ]);
+          }
+        }}
+      >
+        <Text style={{ color: "white" }}>Test Connection</Text>
+      </TouchableOpacity>
+
       {loading ? (
         <AnimatedPlaceholder type="notification" count={3} />
       ) : (
         <FlatList
-          data={sortedNotifications}
+          data={notifications}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.notificationsList}
@@ -104,7 +190,7 @@ const NotificationsScreen = ({ navigation }) => {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No notifications yet</Text>
               <Text style={styles.emptySubtext}>
-                You'll be notified of task assignments and updates here
+                You'll be notified when tasks are updated
               </Text>
             </View>
           }
@@ -125,6 +211,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerSubrow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 5,
+  },
   headerText: {
     fontSize: 22,
     fontWeight: "bold",
@@ -133,7 +230,24 @@ const styles = StyleSheet.create({
   subHeaderText: {
     fontSize: 14,
     color: "#666",
-    marginTop: 5,
+  },
+  clearButton: {
+    padding: 5,
+  },
+  clearButtonText: {
+    color: "#FF6B6B",
+    fontWeight: "500",
+  },
+  connectionIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  connected: {
+    backgroundColor: "#4CAF50",
+  },
+  disconnected: {
+    backgroundColor: "#FF6B6B",
   },
   notificationsList: {
     padding: 15,
@@ -148,6 +262,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+    flexDirection: "row",
+  },
+  notificationIcon: {
+    marginRight: 15,
+    alignSelf: "center",
+  },
+  notificationContent: {
+    flex: 1,
   },
   unreadNotification: {
     borderLeftWidth: 4,
@@ -190,14 +312,31 @@ const styles = StyleSheet.create({
     padding: 30,
     marginTop: 50,
   },
+  emptyIcon: {
+    marginBottom: 15,
+  },
   emptyText: {
     fontSize: 16,
     color: "#999",
     marginBottom: 10,
+    fontWeight: "500",
   },
   emptySubtext: {
     fontSize: 14,
     color: "#BBB",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  socketButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#4DA6FF",
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  socketButtonText: {
+    color: "white",
+    fontWeight: "500",
   },
 });
 

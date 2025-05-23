@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,28 +11,97 @@ import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import AnimatedPlaceholder from "../components/AnimatedPlaceholder";
 import { Feather } from "@expo/vector-icons";
+import {
+  subscribeToTaskUpdates,
+  fetchDriverTasks,
+} from "../services/TaskService";
 
 export const TaskScreen = ({ navigation }) => {
-  const { tasks, completedTasks, activeTaskId, loading } = useAppContext();
+  const {
+    tasks: contextTasks,
+    setTasks: setContextTasks,
+    completedTasks,
+    activeTaskId,
+    loading,
+  } = useAppContext();
+
   const [refreshing, setRefreshing] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [localTasks, setLocalTasks] = useState([]);
+
+  // Initialize local state with context tasks
+  useEffect(() => {
+    setLocalTasks(contextTasks);
+  }, [contextTasks]);
+
+  // Handle real-time task updates
+  const handleTaskUpdate = useCallback((action, task) => {
+    console.log(`Real-time task ${action}:`, task.taskNumber);
+
+    switch (action) {
+      case "add":
+        setLocalTasks((prev) => {
+          // Check if task already exists in the list
+          if (prev.some((t) => t._id === task._id)) return prev;
+          // Add new task at the beginning
+          return [task, ...prev];
+        });
+        setContextTasks((prev) => {
+          if (prev.some((t) => t._id === task._id)) return prev;
+          return [task, ...prev];
+        });
+        break;
+
+      case "update":
+        setLocalTasks((prev) =>
+          prev.map((t) => (t._id === task._id ? task : t))
+        );
+        setContextTasks((prev) =>
+          prev.map((t) => (t._id === task._id ? task : t))
+        );
+        break;
+
+      case "delete":
+        setLocalTasks((prev) => prev.filter((t) => t._id !== task._id));
+        setContextTasks((prev) => prev.filter((t) => t._id !== task._id));
+        break;
+    }
+  }, []);
+
+  // Set up subscription to task updates
+  useEffect(() => {
+    console.log("Setting up task update subscription");
+    // Subscribe to task updates
+    const unsubscribe = subscribeToTaskUpdates(handleTaskUpdate);
+
+    // Cleanup on unmount
+    return () => {
+      console.log("Cleaning up task update subscription");
+      unsubscribe();
+    };
+  }, [handleTaskUpdate]);
 
   // Function to handle task refresh
   const onRefresh = async () => {
-    // This will be handled by the socket listeners in AppContext
     setRefreshing(true);
-    setTimeout(() => {
+    try {
+      const freshTasks = await fetchDriverTasks();
+      setLocalTasks(freshTasks);
+      setContextTasks(freshTasks);
+    } catch (error) {
+      console.error("Failed to refresh tasks:", error);
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   // Filter tasks based on completion status
   const filteredTasks = showCompleted
-    ? tasks.filter(
+    ? localTasks.filter(
         (task) =>
           task.status === "Completed" || completedTasks.includes(task._id)
       )
-    : tasks.filter(
+    : localTasks.filter(
         (task) =>
           task.status !== "Completed" && !completedTasks.includes(task._id)
       );
@@ -109,6 +178,7 @@ export const TaskScreen = ({ navigation }) => {
         </Text>
       </View>
 
+      {/* Task filter toggle */}
       <View
         style={{
           flexDirection: "row",

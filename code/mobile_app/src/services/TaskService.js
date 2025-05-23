@@ -1,48 +1,111 @@
 import { api } from "./apihost";
 import { DRIVER_ID } from "../config/constants";
+import socketService from "./SocketService";
 
 export const fetchDriverTasks = async () => {
   try {
     const response = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching tasks:", error);
+    console.error("[TaskService] Error fetching tasks:", error);
     throw error;
   }
 };
 
 export const updateTaskStatus = async (taskId, status) => {
   try {
-    const response = await api.put(`/api/tasks/${taskId}/status`, { status });
+    const response = await api.patch(`/api/tasks/${taskId}/status`, { status });
     return response.data;
   } catch (error) {
-    console.error("Error updating task status:", error);
+    console.error("[TaskService] Error updating task status:", error);
     throw error;
   }
 };
 
 export const startTask = async (taskId) => {
   try {
-    const response = await api.put(`/api/tasks/${taskId}/status`, {
-      status: "In Progress",
-    });
-    return response.data;
+    return await updateTaskStatus(taskId, "In Progress");
   } catch (error) {
-    console.error("Error starting task:", error);
+    console.error("[TaskService] Error starting task:", error);
     throw error;
   }
 };
 
 export const completeTask = async (taskId) => {
   try {
-    const response = await api.put(`/api/tasks/${taskId}/status`, {
-      status: "Completed",
-    });
-    return response.data;
+    return await updateTaskStatus(taskId, "Completed");
   } catch (error) {
-    console.error("Error completing task:", error);
+    console.error("[TaskService] Error completing task:", error);
     throw error;
   }
+};
+
+// Register a task listener for real-time updates with better error handling
+export const subscribeToTaskUpdates = (onTaskUpdate) => {
+  console.log(
+    "[TaskService] Setting up task update subscription for driver:",
+    DRIVER_ID
+  );
+
+  // Configure socket handlers to update tasks in real-time
+  socketService.setHandlers({
+    onTaskAssigned: (taskData) => {
+      try {
+        console.log("[TaskService] New task assigned:", taskData.taskNumber);
+
+        // Call the provided callback with the new task
+        if (taskData.driverId === DRIVER_ID) {
+          onTaskUpdate("add", taskData);
+        }
+      } catch (err) {
+        console.error("[TaskService] Error handling task assigned event:", err);
+      }
+    },
+    onTaskUpdated: (taskData) => {
+      try {
+        console.log("[TaskService] Task updated:", taskData.taskNumber);
+        if (taskData.driverId === DRIVER_ID) {
+          onTaskUpdate("update", taskData);
+        }
+      } catch (err) {
+        console.error("[TaskService] Error handling task updated event:", err);
+      }
+    },
+    onTaskDeleted: (taskData) => {
+      try {
+        console.log("[TaskService] Task deleted:", taskData.taskNumber);
+        if (taskData.driverId === DRIVER_ID) {
+          onTaskUpdate("delete", taskData);
+        }
+      } catch (err) {
+        console.error("[TaskService] Error handling task deleted event:", err);
+      }
+    },
+    onConnect: () => {
+      console.log("[TaskService] Socket connected");
+    },
+    onDisconnect: () => {
+      console.log("[TaskService] Socket disconnected");
+    },
+    onError: (error) => {
+      console.error("[TaskService] Socket error:", error);
+    },
+  });
+
+  // Ensure socket is connected
+  socketService.connect();
+
+  return () => {
+    // Just clear the handlers for this component
+    socketService.setHandlers({
+      onTaskAssigned: null,
+      onTaskUpdated: null,
+      onTaskDeleted: null,
+      onConnect: null,
+      onDisconnect: null,
+      onError: null,
+    });
+  };
 };
 
 export default {
@@ -50,4 +113,5 @@ export default {
   updateTaskStatus,
   startTask,
   completeTask,
+  subscribeToTaskUpdates,
 };

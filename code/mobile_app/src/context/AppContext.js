@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../services/apihost";
 import { DRIVER_ID, DRIVER_NAME } from "../config/constants";
 import { createNotificationFromTask } from "../services/NotificationService";
+import socketService from "../services/SocketService";
 
 const AppContext = createContext();
 
@@ -109,6 +110,66 @@ export const AppProvider = ({ children }) => {
     loadStoredData();
   }, []);
 
+  // Initialize socket connection early
+  useEffect(() => {
+    console.log("[AppContext] Setting up global socket connection");
+
+    // Configure socket event handlers
+    socketService.setHandlers({
+      onTaskAssigned: (taskData) => {
+        console.log(
+          "[AppContext] Task assigned event received:",
+          taskData.taskNumber
+        );
+        handleTaskAssigned(taskData);
+      },
+      onTaskUpdated: (taskData) => {
+        console.log(
+          "[AppContext] Task updated event received:",
+          taskData.taskNumber
+        );
+        handleTaskUpdated(taskData);
+      },
+      onTaskDeleted: (taskData) => {
+        console.log(
+          "[AppContext] Task deleted event received:",
+          taskData.taskNumber
+        );
+        handleTaskDeleted(taskData);
+      },
+      onTaskReminder: (taskData) => {
+        console.log(
+          "[AppContext] Task reminder event received:",
+          taskData.taskNumber
+        );
+        handleTaskReminder(taskData);
+      },
+      onConnect: () => {
+        console.log("[AppContext] Socket connected");
+      },
+      onDisconnect: () => {
+        console.log("[AppContext] Socket disconnected");
+      },
+      onError: (error) => {
+        console.error("[AppContext] Socket error:", error);
+      },
+    });
+
+    // Connect to socket
+    socketService.connect();
+
+    // Test socket connection after a short delay
+    setTimeout(() => {
+      socketService.emitTest();
+    }, 2000);
+
+    // Cleanup on app unmount
+    return () => {
+      console.log("[AppContext] Cleaning up global socket connection");
+      socketService.disconnect();
+    };
+  }, []);
+
   const removeVehicle = async () => {
     setVehicleNumber(null);
     try {
@@ -139,42 +200,80 @@ export const AppProvider = ({ children }) => {
     setActiveTaskId(null);
   };
 
-  // Updated task notification handlers with better sorting and integration
+  // Updated task notification handlers with better error handling
   const handleTaskAssigned = (task) => {
-    console.log("Task assigned notification for:", task.taskNumber);
-    const notification = createNotificationFromTask(task, "assign");
-
-    // Add to notifications
-    setNotifications((prev) => [notification, ...prev]);
-
-    // Also add to tasks list if not already present
-    setTasks((prev) => {
-      // Check if the task already exists
-      const exists = prev.some((t) => t._id === task._id);
-      if (!exists) {
-        console.log("Adding new task to list:", task.taskNumber);
-        return [task, ...prev];
+    try {
+      console.log(
+        "[AppContext] Creating notification for assigned task:",
+        task.taskNumber
+      );
+      const notification = createNotificationFromTask(task, "assign");
+      if (notification) {
+        setNotifications((prev) => [notification, ...prev]);
       }
-      return prev;
-    });
+
+      // Add to tasks list if not already present
+      setTasks((prev) => {
+        if (!prev.some((t) => t._id === task._id)) {
+          console.log("[AppContext] Adding new task to list:", task.taskNumber);
+          return [task, ...prev];
+        }
+        return prev;
+      });
+    } catch (error) {
+      console.error("[AppContext] Error handling task assigned event:", error);
+    }
   };
 
   const handleTaskUpdated = (task) => {
-    console.log("Task updated notification for:", task.taskNumber);
-    const notification = createNotificationFromTask(task, "update");
-    setNotifications((prev) => [notification, ...prev]);
+    try {
+      console.log(
+        "[AppContext] Creating notification for updated task:",
+        task.taskNumber
+      );
+      const notification = createNotificationFromTask(task, "update");
+      if (notification) {
+        setNotifications((prev) => [notification, ...prev]);
+      }
+
+      // Update the task in the list
+      setTasks((prev) => prev.map((t) => (t._id === task._id ? task : t)));
+    } catch (error) {
+      console.error("[AppContext] Error handling task updated event:", error);
+    }
   };
 
   const handleTaskDeleted = (task) => {
-    console.log("Task deleted notification for:", task.taskNumber);
-    const notification = createNotificationFromTask(task, "delete");
-    setNotifications((prev) => [notification, ...prev]);
+    try {
+      console.log(
+        "[AppContext] Creating notification for deleted task:",
+        task.taskNumber
+      );
+      const notification = createNotificationFromTask(task, "delete");
+      if (notification) {
+        setNotifications((prev) => [notification, ...prev]);
+      }
+
+      // Remove the task from the list
+      setTasks((prev) => prev.filter((t) => t._id !== task._id));
+    } catch (error) {
+      console.error("[AppContext] Error handling task deleted event:", error);
+    }
   };
 
   const handleTaskReminder = (task) => {
-    console.log("Task reminder notification for:", task.taskNumber);
-    const notification = createNotificationFromTask(task, "reminder");
-    setNotifications((prev) => [notification, ...prev]);
+    try {
+      console.log(
+        "[AppContext] Creating notification for task reminder:",
+        task.taskNumber
+      );
+      const notification = createNotificationFromTask(task, "reminder");
+      if (notification) {
+        setNotifications((prev) => [notification, ...prev]);
+      }
+    } catch (error) {
+      console.error("[AppContext] Error handling task reminder event:", error);
+    }
   };
 
   return (

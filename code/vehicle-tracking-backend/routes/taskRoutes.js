@@ -85,6 +85,7 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
@@ -99,89 +100,84 @@ router.post(
         deliveryPhone: req.body.deliveryPhone,
         expectedDelivery: new Date(req.body.expectedDelivery),
         additionalNotes: req.body.additionalNotes || "",
-        licensePlate: req.body.licensePlate,
         driverId: req.body.driverId,
-        status: req.body.status || "Pending",
+        licensePlate: req.body.licensePlate,
+        status: "Pending",
       });
 
       const savedTask = await newTask.save();
-      res.status(201).json(savedTask);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
-  }
-);
 
-// PUT update a task
-router.put(
-  "/:id",
-  [
-    body("cargoType").notEmpty().withMessage("Cargo type is required"),
-    body("weight").isNumeric().withMessage("Weight must be a number"),
-    body("pickup").notEmpty().withMessage("Pickup location is required"),
-    body("delivery").notEmpty().withMessage("Delivery location is required"),
-    body("deliveryPhone").notEmpty().withMessage("Delivery phone is required"),
-    body("expectedDelivery")
-      .notEmpty()
-      .withMessage("Expected delivery date is required"),
-    body("status")
-      .isIn(["Pending", "In Progress", "Completed", "Cancelled"])
-      .withMessage("Invalid status"),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    try {
-      const task = await Task.findById(req.params.id);
-      if (!task) {
-        return res.status(404).json({ message: "Task not found" });
+      // Emit socket event if socketServer is available
+      if (req.socketServer) {
+        console.log(
+          "Emitting task:assigned event for new task:",
+          savedTask.taskNumber
+        );
+        req.socketServer.emitTaskAssigned(savedTask);
+      } else {
+        console.warn(
+          "Socket server not available, couldn't emit task:assigned event"
+        );
       }
 
-      task.cargoType = req.body.cargoType;
-      task.weight = req.body.weight;
-      task.pickup = req.body.pickup;
-      task.delivery = req.body.delivery;
-      task.deliveryPhone = req.body.deliveryPhone;
-      task.expectedDelivery = new Date(req.body.expectedDelivery);
-      task.additionalNotes = req.body.additionalNotes || task.additionalNotes;
-      task.status = req.body.status;
-
-      const updatedTask = await task.save();
-      res.json(updatedTask);
+      res.status(201).json(savedTask);
     } catch (err) {
+      console.error("Error creating task:", err);
       res.status(400).json({ message: err.message });
     }
   }
 );
 
-// DELETE a task
-router.delete("/:id", async (req, res) => {
+// PUT (update) a task
+router.put("/:id", async (req, res) => {
   try {
-    const taskId = req.params.id;
-    let task;
-
-    // Try to find by MongoDB ObjectId if it's a valid ObjectId
-    if (/^[0-9a-fA-F]{24}$/.test(taskId)) {
-      task = await Task.findById(taskId);
-    }
-
-    // If not found by ObjectId, try by taskNumber
-    if (!task) {
-      task = await Task.findOne({ taskNumber: taskId });
-    }
+    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    // Delete the task without checking for driver dependency
-    await Task.deleteOne({ _id: task._id });
-    res.json({ message: "Task deleted successfully" });
+    // Emit socket event if socketServer is available
+    if (req.socketServer) {
+      console.log("Emitting task:updated event for task:", task.taskNumber);
+      req.socketServer.emitTaskUpdated(task);
+    } else {
+      console.warn(
+        "Socket server not available, couldn't emit task:updated event"
+      );
+    }
+
+    res.json(task);
   } catch (err) {
-    console.error("Error deleting task:", err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// DELETE a task
+router.delete("/:id", async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    await Task.findByIdAndDelete(req.params.id);
+
+    // Emit socket event if socketServer is available
+    if (req.socketServer) {
+      console.log("Emitting task:deleted event for task:", task.taskNumber);
+      req.socketServer.emitTaskDeleted(task);
+    } else {
+      console.warn(
+        "Socket server not available, couldn't emit task:deleted event"
+      );
+    }
+
+    res.json({ message: "Task deleted" });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
