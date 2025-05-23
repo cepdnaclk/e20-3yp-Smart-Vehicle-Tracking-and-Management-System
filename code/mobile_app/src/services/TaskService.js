@@ -2,6 +2,9 @@ import { api } from "./apihost";
 import { DRIVER_ID } from "../config/constants";
 import socketService from "./SocketService";
 
+// Track if we've already set up task handlers
+let taskHandlersSet = false;
+
 export const fetchDriverTasks = async () => {
   try {
     const response = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
@@ -47,64 +50,79 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
     DRIVER_ID
   );
 
-  // Configure socket handlers to update tasks in real-time
-  socketService.setHandlers({
-    onTaskAssigned: (taskData) => {
-      try {
-        console.log("[TaskService] New task assigned:", taskData.taskNumber);
+  // Only set handlers if not already set
+  if (!taskHandlersSet) {
+    console.log("[TaskService] First subscription, setting handlers");
 
-        // Call the provided callback with the new task
-        if (taskData.driverId === DRIVER_ID) {
-          onTaskUpdate("add", taskData);
+    // Configure socket handlers to update tasks in real-time
+    socketService.setHandlers({
+      onTaskAssigned: (taskData) => {
+        try {
+          console.log("[TaskService] New task assigned:", taskData.taskNumber);
+
+          // Call the provided callback with the new task
+          if (taskData.driverId === DRIVER_ID) {
+            onTaskUpdate("add", taskData);
+          }
+        } catch (err) {
+          console.error(
+            "[TaskService] Error handling task assigned event:",
+            err
+          );
         }
-      } catch (err) {
-        console.error("[TaskService] Error handling task assigned event:", err);
-      }
-    },
-    onTaskUpdated: (taskData) => {
-      try {
-        console.log("[TaskService] Task updated:", taskData.taskNumber);
-        if (taskData.driverId === DRIVER_ID) {
-          onTaskUpdate("update", taskData);
+      },
+      onTaskUpdated: (taskData) => {
+        try {
+          console.log("[TaskService] Task updated:", taskData.taskNumber);
+          if (taskData.driverId === DRIVER_ID) {
+            onTaskUpdate("update", taskData);
+          }
+        } catch (err) {
+          console.error(
+            "[TaskService] Error handling task updated event:",
+            err
+          );
         }
-      } catch (err) {
-        console.error("[TaskService] Error handling task updated event:", err);
-      }
-    },
-    onTaskDeleted: (taskData) => {
-      try {
-        console.log("[TaskService] Task deleted:", taskData.taskNumber);
-        if (taskData.driverId === DRIVER_ID) {
-          onTaskUpdate("delete", taskData);
+      },
+      onTaskDeleted: (taskData) => {
+        try {
+          console.log("[TaskService] Task deleted:", taskData.taskNumber);
+          if (taskData.driverId === DRIVER_ID) {
+            onTaskUpdate("delete", taskData);
+          }
+        } catch (err) {
+          console.error(
+            "[TaskService] Error handling task deleted event:",
+            err
+          );
         }
-      } catch (err) {
-        console.error("[TaskService] Error handling task deleted event:", err);
-      }
-    },
-    onConnect: () => {
-      console.log("[TaskService] Socket connected");
-    },
-    onDisconnect: () => {
-      console.log("[TaskService] Socket disconnected");
-    },
-    onError: (error) => {
-      console.error("[TaskService] Socket error:", error);
-    },
-  });
+      },
+      onConnect: () => {
+        console.log("[TaskService] Socket connected");
+      },
+      onDisconnect: () => {
+        console.log("[TaskService] Socket disconnected");
+      },
+      onError: (error) => {
+        console.error("[TaskService] Socket error:", error);
+      },
+    });
+
+    taskHandlersSet = true;
+  } else {
+    console.log(
+      "[TaskService] Handlers already set, using existing subscription"
+    );
+  }
 
   // Ensure socket is connected
   socketService.connect();
 
   return () => {
-    // Just clear the handlers for this component
-    socketService.setHandlers({
-      onTaskAssigned: null,
-      onTaskUpdated: null,
-      onTaskDeleted: null,
-      onConnect: null,
-      onDisconnect: null,
-      onError: null,
-    });
+    console.log(
+      "[TaskService] Component unmounted, but keeping subscription active"
+    );
+    // We don't clear handlers to keep socket events working
   };
 };
 

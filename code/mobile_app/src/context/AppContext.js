@@ -122,6 +122,15 @@ export const AppProvider = ({ children }) => {
           taskData.taskNumber
         );
         handleTaskAssigned(taskData);
+
+        // Add to tasks list if not already present
+        setTasks((prev) => {
+          if (!prev.some((t) => t._id === taskData._id)) {
+            console.log("[AppContext] Adding new task to global context");
+            return [taskData, ...prev];
+          }
+          return prev;
+        });
       },
       onTaskUpdated: (taskData) => {
         console.log(
@@ -129,6 +138,11 @@ export const AppProvider = ({ children }) => {
           taskData.taskNumber
         );
         handleTaskUpdated(taskData);
+
+        // Update the task in global context
+        setTasks((prev) =>
+          prev.map((t) => (t._id === taskData._id ? taskData : t))
+        );
       },
       onTaskDeleted: (taskData) => {
         console.log(
@@ -136,6 +150,9 @@ export const AppProvider = ({ children }) => {
           taskData.taskNumber
         );
         handleTaskDeleted(taskData);
+
+        // Remove the task from global context
+        setTasks((prev) => prev.filter((t) => t._id !== taskData._id));
       },
       onTaskReminder: (taskData) => {
         console.log(
@@ -211,15 +228,6 @@ export const AppProvider = ({ children }) => {
       if (notification) {
         setNotifications((prev) => [notification, ...prev]);
       }
-
-      // Add to tasks list if not already present
-      setTasks((prev) => {
-        if (!prev.some((t) => t._id === task._id)) {
-          console.log("[AppContext] Adding new task to list:", task.taskNumber);
-          return [task, ...prev];
-        }
-        return prev;
-      });
     } catch (error) {
       console.error("[AppContext] Error handling task assigned event:", error);
     }
@@ -235,9 +243,6 @@ export const AppProvider = ({ children }) => {
       if (notification) {
         setNotifications((prev) => [notification, ...prev]);
       }
-
-      // Update the task in the list
-      setTasks((prev) => prev.map((t) => (t._id === task._id ? task : t)));
     } catch (error) {
       console.error("[AppContext] Error handling task updated event:", error);
     }
@@ -253,9 +258,6 @@ export const AppProvider = ({ children }) => {
       if (notification) {
         setNotifications((prev) => [notification, ...prev]);
       }
-
-      // Remove the task from the list
-      setTasks((prev) => prev.filter((t) => t._id !== task._id));
     } catch (error) {
       console.error("[AppContext] Error handling task deleted event:", error);
     }

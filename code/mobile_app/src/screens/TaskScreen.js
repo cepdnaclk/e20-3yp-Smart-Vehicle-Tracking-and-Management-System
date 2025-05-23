@@ -29,14 +29,18 @@ export const TaskScreen = ({ navigation }) => {
   const [showCompleted, setShowCompleted] = useState(false);
   const [localTasks, setLocalTasks] = useState([]);
 
-  // Initialize local state with context tasks
+  // Initialize local state with context tasks and ensure it updates when context changes
   useEffect(() => {
+    console.log(
+      "TaskScreen: Updating local tasks from context:",
+      contextTasks.length
+    );
     setLocalTasks(contextTasks);
   }, [contextTasks]);
 
   // Handle real-time task updates
   const handleTaskUpdate = useCallback((action, task) => {
-    console.log(`Real-time task ${action}:`, task.taskNumber);
+    console.log(`TaskScreen: Real-time task ${action}:`, task.taskNumber);
 
     switch (action) {
       case "add":
@@ -46,37 +50,29 @@ export const TaskScreen = ({ navigation }) => {
           // Add new task at the beginning
           return [task, ...prev];
         });
-        setContextTasks((prev) => {
-          if (prev.some((t) => t._id === task._id)) return prev;
-          return [task, ...prev];
-        });
         break;
 
       case "update":
         setLocalTasks((prev) =>
           prev.map((t) => (t._id === task._id ? task : t))
         );
-        setContextTasks((prev) =>
-          prev.map((t) => (t._id === task._id ? task : t))
-        );
         break;
 
       case "delete":
         setLocalTasks((prev) => prev.filter((t) => t._id !== task._id));
-        setContextTasks((prev) => prev.filter((t) => t._id !== task._id));
         break;
     }
   }, []);
 
   // Set up subscription to task updates
   useEffect(() => {
-    console.log("Setting up task update subscription");
+    console.log("TaskScreen: Setting up task update subscription");
     // Subscribe to task updates
     const unsubscribe = subscribeToTaskUpdates(handleTaskUpdate);
 
     // Cleanup on unmount
     return () => {
-      console.log("Cleaning up task update subscription");
+      console.log("TaskScreen: Cleaning up task update subscription");
       unsubscribe();
     };
   }, [handleTaskUpdate]);
@@ -212,6 +208,7 @@ export const TaskScreen = ({ navigation }) => {
       ) : (
         <FlatList
           data={filteredTasks}
+          extraData={localTasks} // Add this to ensure FlatList refreshes when localTasks changes
           renderItem={renderTaskItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContainer}
