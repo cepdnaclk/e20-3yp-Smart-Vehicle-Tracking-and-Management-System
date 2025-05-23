@@ -94,17 +94,19 @@ const MainApp = () => {
   const {
     tasks,
     setTasks,
-    handleTaskAssigned,
-    handleTaskUpdated,
-    handleTaskDeleted,
-    handleTaskReminder,
+    // Remove these handlers since we're handling notifications directly in AppContext
+    // handleTaskAssigned,
+    // handleTaskUpdated,
+    // handleTaskDeleted,
+    // handleTaskReminder,
   } = useAppContext();
 
   // Track if handlers have been set up
   const handlersSetUp = useRef(false);
 
   useEffect(() => {
-    // Only set up handlers once
+    // Only set up handlers once - but we don't need this anymore since we're using AppContext handlers
+    /*
     if (handlersSetUp.current) {
       console.log("Socket handlers already set up, skipping");
       return;
@@ -114,65 +116,11 @@ const MainApp = () => {
 
     // Set up socket handlers
     socketService.setHandlers({
-      onTaskAssigned: (taskData) => {
-        console.log("Task assigned event handler triggered:", taskData);
-
-        // Create notification
-        handleTaskAssigned(taskData);
-
-        // Update tasks list with new task at the top
-        setTasks((prev) => {
-          const exists = prev.some((t) => t._id === taskData._id);
-          if (!exists) {
-            console.log("Adding new real-time task:", taskData.taskNumber);
-            return [taskData, ...prev];
-          }
-          return prev;
-        });
-      },
-
-      onTaskUpdated: (taskData) => {
-        console.log("Task updated event handler triggered:", taskData);
-
-        // Create notification
-        handleTaskUpdated(taskData);
-
-        // Update task in the list
-        setTasks((prev) =>
-          prev.map((task) => (task._id === taskData._id ? taskData : task))
-        );
-      },
-
-      onTaskDeleted: (taskData) => {
-        console.log("Task deleted event handler triggered:", taskData);
-
-        // Create notification
-        handleTaskDeleted(taskData);
-
-        // Remove task from list
-        setTasks((prev) => prev.filter((task) => task._id !== taskData._id));
-      },
-
-      onTaskReminder: (taskData) => {
-        console.log("Task reminder event handler triggered:", taskData);
-
-        // Create notification only
-        handleTaskReminder(taskData);
-      },
-
-      onConnect: () => {
-        console.log(
-          "Socket connected successfully - ready for real-time updates"
-        );
-      },
-
-      onDisconnect: () => {
-        console.log("Socket disconnected - real-time updates paused");
-      },
-
-      onError: (error) => {
-        console.error("Socket error:", error);
-      },
+      onTaskAssigned: (taskData) => {...},
+      onTaskUpdated: (taskData) => {...}, 
+      onTaskDeleted: (taskData) => {...},
+      onTaskReminder: (taskData) => {...},
+      // ...other handlers...
     });
 
     // Connect to socket server
@@ -180,10 +128,14 @@ const MainApp = () => {
 
     // Mark that we've set up handlers
     handlersSetUp.current = true;
+    */
+
+    // Just connect to ensure socket is connected (handlers are set in AppContext)
+    socketService.connect();
 
     // Clean up on component unmount
     return () => {
-      // Don't disconnect - AppContext handles that
+      // No need to disconnect - AppContext handles that
       console.log("MainApp unmounting, handlers remain active");
     };
   }, []);

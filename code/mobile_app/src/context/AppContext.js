@@ -117,13 +117,16 @@ export const AppProvider = ({ children }) => {
     // Configure socket event handlers
     socketService.setHandlers({
       onTaskAssigned: (taskData) => {
-        console.log(
-          "[AppContext] Task assigned event received:",
-          taskData.taskNumber
-        );
-        handleTaskAssigned(taskData);
+        console.log("[AppContext] Task assigned event received:", taskData.taskNumber);
 
-        // Add to tasks list if not already present
+        // Create the notification first
+        const notification = createNotificationFromTask(taskData, "assign");
+        if (notification) {
+          setNotifications((prev) => [notification, ...prev]);
+          console.log("[AppContext] Created notification for assigned task");
+        }
+
+        // Then update the tasks list
         setTasks((prev) => {
           if (!prev.some((t) => t._id === taskData._id)) {
             console.log("[AppContext] Adding new task to global context");
@@ -132,28 +135,37 @@ export const AppProvider = ({ children }) => {
           return prev;
         });
       },
-      onTaskUpdated: (taskData) => {
-        console.log(
-          "[AppContext] Task updated event received:",
-          taskData.taskNumber
-        );
-        handleTaskUpdated(taskData);
 
-        // Update the task in global context
+      onTaskUpdated: (taskData) => {
+        console.log("[AppContext] Task updated event received:", taskData.taskNumber);
+
+        // Create the notification first
+        const notification = createNotificationFromTask(taskData, "update");
+        if (notification) {
+          setNotifications((prev) => [notification, ...prev]);
+          console.log("[AppContext] Created notification for updated task");
+        }
+
+        // Then update the task in the list
         setTasks((prev) =>
           prev.map((t) => (t._id === taskData._id ? taskData : t))
         );
       },
-      onTaskDeleted: (taskData) => {
-        console.log(
-          "[AppContext] Task deleted event received:",
-          taskData.taskNumber
-        );
-        handleTaskDeleted(taskData);
 
-        // Remove the task from global context
+      onTaskDeleted: (taskData) => {
+        console.log("[AppContext] Task deleted event received:", taskData.taskNumber);
+
+        // Create the notification first
+        const notification = createNotificationFromTask(taskData, "delete");
+        if (notification) {
+          setNotifications((prev) => [notification, ...prev]);
+          console.log("[AppContext] Created notification for deleted task");
+        }
+
+        // Then remove the task from the list
         setTasks((prev) => prev.filter((t) => t._id !== taskData._id));
       },
+
       onTaskReminder: (taskData) => {
         console.log(
           "[AppContext] Task reminder event received:",
@@ -217,67 +229,6 @@ export const AppProvider = ({ children }) => {
     setActiveTaskId(null);
   };
 
-  // Updated task notification handlers with better error handling
-  const handleTaskAssigned = (task) => {
-    try {
-      console.log(
-        "[AppContext] Creating notification for assigned task:",
-        task.taskNumber
-      );
-      const notification = createNotificationFromTask(task, "assign");
-      if (notification) {
-        setNotifications((prev) => [notification, ...prev]);
-      }
-    } catch (error) {
-      console.error("[AppContext] Error handling task assigned event:", error);
-    }
-  };
-
-  const handleTaskUpdated = (task) => {
-    try {
-      console.log(
-        "[AppContext] Creating notification for updated task:",
-        task.taskNumber
-      );
-      const notification = createNotificationFromTask(task, "update");
-      if (notification) {
-        setNotifications((prev) => [notification, ...prev]);
-      }
-    } catch (error) {
-      console.error("[AppContext] Error handling task updated event:", error);
-    }
-  };
-
-  const handleTaskDeleted = (task) => {
-    try {
-      console.log(
-        "[AppContext] Creating notification for deleted task:",
-        task.taskNumber
-      );
-      const notification = createNotificationFromTask(task, "delete");
-      if (notification) {
-        setNotifications((prev) => [notification, ...prev]);
-      }
-    } catch (error) {
-      console.error("[AppContext] Error handling task deleted event:", error);
-    }
-  };
-
-  const handleTaskReminder = (task) => {
-    try {
-      console.log(
-        "[AppContext] Creating notification for task reminder:",
-        task.taskNumber
-      );
-      const notification = createNotificationFromTask(task, "reminder");
-      if (notification) {
-        setNotifications((prev) => [notification, ...prev]);
-      }
-    } catch (error) {
-      console.error("[AppContext] Error handling task reminder event:", error);
-    }
-  };
-
   return (
     <AppContext.Provider
       value={{
@@ -303,11 +254,6 @@ export const AppProvider = ({ children }) => {
         pushNotifications,
         setPushNotifications,
         logout,
-        // Add task notification handlers
-        handleTaskAssigned,
-        handleTaskUpdated,
-        handleTaskDeleted,
-        handleTaskReminder,
       }}
     >
       {children}

@@ -27,16 +27,6 @@ export const TaskScreen = ({ navigation }) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
-  const [localTasks, setLocalTasks] = useState([]);
-
-  // Initialize local state with context tasks and ensure it updates when context changes
-  useEffect(() => {
-    console.log(
-      "TaskScreen: Updating local tasks from context:",
-      contextTasks.length
-    );
-    setLocalTasks(contextTasks);
-  }, [contextTasks]);
 
   // Handle real-time task updates
   const handleTaskUpdate = useCallback((action, task) => {
@@ -44,7 +34,7 @@ export const TaskScreen = ({ navigation }) => {
 
     switch (action) {
       case "add":
-        setLocalTasks((prev) => {
+        setContextTasks((prev) => {
           // Check if task already exists in the list
           if (prev.some((t) => t._id === task._id)) return prev;
           // Add new task at the beginning
@@ -53,13 +43,13 @@ export const TaskScreen = ({ navigation }) => {
         break;
 
       case "update":
-        setLocalTasks((prev) =>
+        setContextTasks((prev) =>
           prev.map((t) => (t._id === task._id ? task : t))
         );
         break;
 
       case "delete":
-        setLocalTasks((prev) => prev.filter((t) => t._id !== task._id));
+        setContextTasks((prev) => prev.filter((t) => t._id !== task._id));
         break;
     }
   }, []);
@@ -77,13 +67,12 @@ export const TaskScreen = ({ navigation }) => {
     };
   }, [handleTaskUpdate]);
 
-  // Function to handle task refresh
+  // Function to handle task refresh - update the context directly
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       const freshTasks = await fetchDriverTasks();
-      setLocalTasks(freshTasks);
-      setContextTasks(freshTasks);
+      setContextTasks(freshTasks); // Update directly to context
     } catch (error) {
       console.error("Failed to refresh tasks:", error);
     } finally {
@@ -91,13 +80,13 @@ export const TaskScreen = ({ navigation }) => {
     }
   };
 
-  // Filter tasks based on completion status
+  // Filter tasks based on completion status - use contextTasks directly
   const filteredTasks = showCompleted
-    ? localTasks.filter(
+    ? contextTasks.filter(
         (task) =>
           task.status === "Completed" || completedTasks.includes(task._id)
       )
-    : localTasks.filter(
+    : contextTasks.filter(
         (task) =>
           task.status !== "Completed" && !completedTasks.includes(task._id)
       );
@@ -208,7 +197,7 @@ export const TaskScreen = ({ navigation }) => {
       ) : (
         <FlatList
           data={filteredTasks}
-          extraData={localTasks} // Add this to ensure FlatList refreshes when localTasks changes
+          extraData={contextTasks} // Update extraData to use contextTasks directly
           renderItem={renderTaskItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContainer}

@@ -22,6 +22,100 @@ class SocketService {
     this.processedEvents = new Map();
   }
 
+  // Task events with deduplication
+  attachEventListeners() {
+    if (!this.socket) return;
+
+    // Handle task:assigned event
+    this.socket.on("task:assigned", (taskData) => {
+      console.log(`[SocketService] Task assigned event received:`, taskData);
+
+      // Check if we've already processed this event
+      const eventId = `assign_${taskData._id}_${Date.now()}`;
+      if (this.isDuplicateEvent(eventId)) return;
+
+      // Process the event
+      if (
+        taskData &&
+        taskData.driverId === DRIVER_ID &&
+        this.handlers.onTaskAssigned
+      ) {
+        console.log(
+          `[SocketService] Processing task assigned event for ${taskData.taskNumber}`
+        );
+        this.handlers.onTaskAssigned(taskData);
+      }
+    });
+
+    this.socket.on("task:updated", (taskData) => {
+      console.log(`[SocketService] Task updated event received`);
+
+      // Check if we've already processed this event
+      const eventId = `update_${taskData._id}_${Date.now()}`;
+      if (this.isDuplicateEvent(eventId)) return;
+
+      if (
+        taskData &&
+        taskData.driverId === DRIVER_ID &&
+        this.handlers.onTaskUpdated
+      ) {
+        this.handlers.onTaskUpdated(taskData);
+      }
+    });
+
+    this.socket.on("task:deleted", (taskData) => {
+      console.log(`[SocketService] Task deleted event received`);
+
+      // Check if we've already processed this event
+      const eventId = `delete_${taskData._id}_${Date.now()}`;
+      if (this.isDuplicateEvent(eventId)) return;
+
+      if (
+        taskData &&
+        taskData.driverId === DRIVER_ID &&
+        this.handlers.onTaskDeleted
+      ) {
+        this.handlers.onTaskDeleted(taskData);
+      }
+    });
+
+    this.socket.on("task:reminder", (taskData) => {
+      console.log(`[SocketService] Task reminder event received`);
+
+      // Check if we've already processed this event
+      const eventId = `reminder_${taskData._id}_${Date.now()}`;
+      if (this.isDuplicateEvent(eventId)) return;
+
+      if (
+        taskData &&
+        taskData.driverId === DRIVER_ID &&
+        this.handlers.onTaskReminder
+      ) {
+        this.handlers.onTaskReminder(taskData);
+      }
+    });
+
+    // Test event
+    this.socket.on("test", (data) => {
+      console.log(`[SocketService] Test event received:`, data);
+    });
+
+    this.socket.on("error", (error) => {
+      console.error(`[SocketService] Socket error:`, error);
+
+      if (this.handlers.onError) {
+        this.handlers.onError(error);
+      }
+    });
+  }
+
+  // Add a method to ensure all event handlers are properly connected
+  ensureEventListeners() {
+    if (!this.socket || !this.socket.hasListeners("task:assigned")) {
+      this.attachEventListeners();
+    }
+  }
+
   connect() {
     // Different URL based on platform
     let apiUrl;
@@ -107,87 +201,8 @@ class SocketService {
         }
       });
 
-      // Task events with deduplication
-      this.socket.on("task:assigned", (taskData) => {
-        console.log(`[SocketService] Task assigned event received:`, taskData);
-
-        // Check if we've already processed this event
-        const eventId = `assign_${taskData._id}_${Date.now()}`;
-        if (this.isDuplicateEvent(eventId)) return;
-
-        // Process the event
-        if (
-          taskData &&
-          taskData.driverId === DRIVER_ID &&
-          this.handlers.onTaskAssigned
-        ) {
-          console.log(
-            `[SocketService] Processing task assigned event for ${taskData.taskNumber}`
-          );
-          this.handlers.onTaskAssigned(taskData);
-        }
-      });
-
-      this.socket.on("task:updated", (taskData) => {
-        console.log(`[SocketService] Task updated event received`);
-
-        // Check if we've already processed this event
-        const eventId = `update_${taskData._id}_${Date.now()}`;
-        if (this.isDuplicateEvent(eventId)) return;
-
-        if (
-          taskData &&
-          taskData.driverId === DRIVER_ID &&
-          this.handlers.onTaskUpdated
-        ) {
-          this.handlers.onTaskUpdated(taskData);
-        }
-      });
-
-      this.socket.on("task:deleted", (taskData) => {
-        console.log(`[SocketService] Task deleted event received`);
-
-        // Check if we've already processed this event
-        const eventId = `delete_${taskData._id}_${Date.now()}`;
-        if (this.isDuplicateEvent(eventId)) return;
-
-        if (
-          taskData &&
-          taskData.driverId === DRIVER_ID &&
-          this.handlers.onTaskDeleted
-        ) {
-          this.handlers.onTaskDeleted(taskData);
-        }
-      });
-
-      this.socket.on("task:reminder", (taskData) => {
-        console.log(`[SocketService] Task reminder event received`);
-
-        // Check if we've already processed this event
-        const eventId = `reminder_${taskData._id}_${Date.now()}`;
-        if (this.isDuplicateEvent(eventId)) return;
-
-        if (
-          taskData &&
-          taskData.driverId === DRIVER_ID &&
-          this.handlers.onTaskReminder
-        ) {
-          this.handlers.onTaskReminder(taskData);
-        }
-      });
-
-      // Test event
-      this.socket.on("test", (data) => {
-        console.log(`[SocketService] Test event received:`, data);
-      });
-
-      this.socket.on("error", (error) => {
-        console.error(`[SocketService] Socket error:`, error);
-
-        if (this.handlers.onError) {
-          this.handlers.onError(error);
-        }
-      });
+      // Make sure to attach event listeners
+      this.attachEventListeners();
     } catch (err) {
       console.error(`[SocketService] Error initializing socket:`, err);
     }
@@ -226,6 +241,8 @@ class SocketService {
 
   setHandlers(handlers) {
     this.handlers = { ...this.handlers, ...handlers };
+    // Ensure event listeners are attached when handlers are updated
+    this.ensureEventListeners();
   }
 
   // Test ping method to check connection
