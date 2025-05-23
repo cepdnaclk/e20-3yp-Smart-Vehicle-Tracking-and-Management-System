@@ -2,6 +2,10 @@ import { api } from "./apihost";
 import { DRIVER_ID } from "../config/constants";
 import socketService from "./SocketService";
 
+// Track notifications to prevent duplicates
+let notificationCache = new Map();
+let notificationHandlersSet = false;
+
 /**
  * Service to handle notifications for the driver app
  */
@@ -43,13 +47,47 @@ export const markNotificationAsRead = async (notificationId) => {
 export const setupNotificationListeners = (onNotification) => {
   console.log("Setting up notification listeners for driver:", DRIVER_ID);
 
+  // Use a flag to ensure we only set up handlers once
+  if (notificationHandlersSet) {
+    console.log("Notification handlers already set, skipping setup");
+    // Still return a cleanup function
+    return () => {
+      console.log("Notification component unmounted");
+    };
+  }
+
   const handleTaskEvent = (task, action) => {
     if (!task) return; // Guard against null data
 
     // Create notification only if this task belongs to the current driver
     if (task.driverId === DRIVER_ID) {
+      // Check if we've already processed a very similar notification recently
+      const cacheKey = `${action}_${task._id}_${task.taskNumber}`;
+      const now = Date.now();
+
+      // Clean up old entries from cache
+      notificationCache = new Map(
+        Array.from(notificationCache.entries()).filter(
+          ([_, timestamp]) => now - timestamp < 2000
+        )
+      );
+
+      // If we've seen this notification recently, don't create another one
+      if (notificationCache.has(cacheKey)) {
+        console.log(
+          `[NotificationService] Skipping duplicate notification: ${cacheKey}`
+        );
+        return;
+      }
+
+      // Add to cache to prevent duplicates
+      notificationCache.set(cacheKey, now);
+
+      // Create and send the notification
       const notification = createNotificationFromTask(task, action);
-      onNotification(notification);
+      if (notification) {
+        onNotification(notification);
+      }
     }
   };
 
@@ -66,17 +104,15 @@ export const setupNotificationListeners = (onNotification) => {
       console.error("Notification service: Socket error:", error),
   });
 
+  // Mark that we've set up handlers
+  notificationHandlersSet = true;
+
   // Ensure socket is connected
   socketService.connect();
 
   return () => {
-    // Cleanup handlers
-    socketService.setHandlers({
-      onTaskAssigned: null,
-      onTaskUpdated: null,
-      onTaskDeleted: null,
-      onTaskReminder: null,
-    });
+    // Don't reset the handlers, just log that component unmounted
+    console.log("Notification component unmounted, keeping handlers active");
   };
 };
 

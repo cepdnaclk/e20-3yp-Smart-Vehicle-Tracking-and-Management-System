@@ -17,6 +17,9 @@ class SocketService {
       onDisconnect: null,
       onError: null,
     };
+
+    // Track which events have been processed to prevent duplicates
+    this.processedEvents = new Map();
   }
 
   connect() {
@@ -104,29 +107,33 @@ class SocketService {
         }
       });
 
+      // Task events with deduplication
       this.socket.on("task:assigned", (taskData) => {
-        console.log(
-          `[SocketService] ✅ Task assigned event received:`,
-          taskData
-        );
+        console.log(`[SocketService] Task assigned event received:`, taskData);
 
-        // Check if the task is for this driver
+        // Check if we've already processed this event
+        const eventId = `assign_${taskData._id}_${Date.now()}`;
+        if (this.isDuplicateEvent(eventId)) return;
+
+        // Process the event
         if (
           taskData &&
           taskData.driverId === DRIVER_ID &&
           this.handlers.onTaskAssigned
         ) {
-          console.log(`[SocketService] Task is for this driver, handling...`);
-          this.handlers.onTaskAssigned(taskData);
-        } else {
           console.log(
-            `[SocketService] Task is not for this driver or no handler available`
+            `[SocketService] Processing task assigned event for ${taskData.taskNumber}`
           );
+          this.handlers.onTaskAssigned(taskData);
         }
       });
 
       this.socket.on("task:updated", (taskData) => {
-        console.log(`[SocketService] ✅ Task updated event received`);
+        console.log(`[SocketService] Task updated event received`);
+
+        // Check if we've already processed this event
+        const eventId = `update_${taskData._id}_${Date.now()}`;
+        if (this.isDuplicateEvent(eventId)) return;
 
         if (
           taskData &&
@@ -138,7 +145,11 @@ class SocketService {
       });
 
       this.socket.on("task:deleted", (taskData) => {
-        console.log(`[SocketService] ✅ Task deleted event received`);
+        console.log(`[SocketService] Task deleted event received`);
+
+        // Check if we've already processed this event
+        const eventId = `delete_${taskData._id}_${Date.now()}`;
+        if (this.isDuplicateEvent(eventId)) return;
 
         if (
           taskData &&
@@ -150,7 +161,11 @@ class SocketService {
       });
 
       this.socket.on("task:reminder", (taskData) => {
-        console.log(`[SocketService] ✅ Task reminder event received`);
+        console.log(`[SocketService] Task reminder event received`);
+
+        // Check if we've already processed this event
+        const eventId = `reminder_${taskData._id}_${Date.now()}`;
+        if (this.isDuplicateEvent(eventId)) return;
 
         if (
           taskData &&
@@ -176,6 +191,28 @@ class SocketService {
     } catch (err) {
       console.error(`[SocketService] Error initializing socket:`, err);
     }
+  }
+
+  // Method to check for duplicate events
+  isDuplicateEvent(eventId) {
+    // Check if we've seen this event in the last second
+    const now = Date.now();
+    const recentEvents = Array.from(this.processedEvents.entries()).filter(
+      ([_, timestamp]) => now - timestamp < 1000
+    );
+
+    // Clean up old events
+    this.processedEvents = new Map(recentEvents);
+
+    // Check if this event is a duplicate
+    if (this.processedEvents.has(eventId)) {
+      console.log(`[SocketService] Duplicate event detected: ${eventId}`);
+      return true;
+    }
+
+    // Record this event
+    this.processedEvents.set(eventId, now);
+    return false;
   }
 
   disconnect() {

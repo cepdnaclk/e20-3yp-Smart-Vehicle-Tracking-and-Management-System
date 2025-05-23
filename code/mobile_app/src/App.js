@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -100,7 +100,16 @@ const MainApp = () => {
     handleTaskReminder,
   } = useAppContext();
 
+  // Track if handlers have been set up
+  const handlersSetUp = useRef(false);
+
   useEffect(() => {
+    // Only set up handlers once
+    if (handlersSetUp.current) {
+      console.log("Socket handlers already set up, skipping");
+      return;
+    }
+
     console.log("Setting up socket handlers for real-time updates");
 
     // Set up socket handlers
@@ -169,9 +178,13 @@ const MainApp = () => {
     // Connect to socket server
     socketService.connect();
 
+    // Mark that we've set up handlers
+    handlersSetUp.current = true;
+
     // Clean up on component unmount
     return () => {
-      socketService.disconnect();
+      // Don't disconnect - AppContext handles that
+      console.log("MainApp unmounting, handlers remain active");
     };
   }, []);
 

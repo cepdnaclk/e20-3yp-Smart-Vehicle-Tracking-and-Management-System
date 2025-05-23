@@ -6,7 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Button,
+  Alert,
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import {
@@ -14,7 +14,6 @@ import {
   setupNotificationListeners,
 } from "../services/NotificationService";
 import AnimatedPlaceholder from "../components/AnimatedPlaceholder";
-import socketService from "../services/SocketService";
 import { Feather } from "@expo/vector-icons";
 
 const NotificationsScreen = ({ navigation }) => {
@@ -47,8 +46,6 @@ const NotificationsScreen = ({ navigation }) => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    // Test socket connection
-    socketService.emitTest();
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
@@ -143,37 +140,6 @@ const NotificationsScreen = ({ navigation }) => {
           Stay updated with your delivery tasks
         </Text>
       </View>
-
-      {/* Debug button - remove in production */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: "#4DA6FF",
-          padding: 10,
-          margin: 10,
-          borderRadius: 5,
-          alignItems: "center",
-        }}
-        onPress={() => {
-          const success = socketService.emitTest();
-          if (success) {
-            setNotifications((prev) => [
-              {
-                id: `notif_test_${Date.now()}`,
-                title: "Test Notification",
-                message:
-                  "This is a test notification to verify the system is working.",
-                time: new Date().toLocaleTimeString(),
-                date: new Date().toLocaleDateString(),
-                read: false,
-                createdAt: new Date(),
-              },
-              ...prev,
-            ]);
-          }
-        }}
-      >
-        <Text style={{ color: "white" }}>Test Connection</Text>
-      </TouchableOpacity>
 
       {loading ? (
         <AnimatedPlaceholder type="notification" count={3} />
@@ -326,17 +292,6 @@ const styles = StyleSheet.create({
     color: "#BBB",
     textAlign: "center",
     marginBottom: 20,
-  },
-  socketButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#4DA6FF",
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  socketButtonText: {
-    color: "white",
-    fontWeight: "500",
   },
 });
 
