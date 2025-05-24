@@ -7,10 +7,38 @@ let taskHandlersSet = false;
 
 export const fetchDriverTasks = async () => {
   try {
+    console.log("[TaskService] Fetching tasks for driver:", DRIVER_ID);
     const response = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
-    return response.data;
+
+    if (response.data && Array.isArray(response.data)) {
+      console.log(
+        "[TaskService] Successfully fetched",
+        response.data.length,
+        "tasks"
+      );
+      return response.data;
+    } else {
+      console.warn(
+        "[TaskService] Invalid response format, returning empty array"
+      );
+      return [];
+    }
   } catch (error) {
     console.error("[TaskService] Error fetching tasks:", error);
+
+    // Provide more specific error information
+    if (error.response) {
+      console.error(
+        "[TaskService] Server responded with:",
+        error.response.status,
+        error.response.data
+      );
+    } else if (error.request) {
+      console.error("[TaskService] Network error - no response received");
+    } else {
+      console.error("[TaskService] Request setup error:", error.message);
+    }
+
     throw error;
   }
 };

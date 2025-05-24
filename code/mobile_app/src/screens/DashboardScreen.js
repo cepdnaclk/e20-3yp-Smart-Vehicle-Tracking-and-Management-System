@@ -15,6 +15,7 @@ import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
 import { api } from "../services/apihost";
 import { DRIVER_ID } from "../config/constants";
+import { fetchDriverTasks } from "../services/TaskService";
 
 const DashboardScreen = ({ navigation }) => {
   const {
@@ -23,8 +24,11 @@ const DashboardScreen = ({ navigation }) => {
     vehicleNumber,
     setVehicleNumber,
     tasks,
+    setTasks,
     completedTasks,
+    setCompletedTasks,
     activeTaskId,
+    setActiveTaskId,
   } = useAppContext();
 
   const [inputVehicle, setInputVehicle] = useState("");
@@ -53,10 +57,71 @@ const DashboardScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simpler refresh without location tracking for now
-    setTimeout(() => {
+    try {
+      console.log("Dashboard: Refreshing tasks and synchronizing data...");
+
+      // Fetch fresh tasks from the server
+      const freshTasks = await fetchDriverTasks();
+
+      if (freshTasks && Array.isArray(freshTasks)) {
+        console.log(
+          `Dashboard: Fetched ${freshTasks.length} tasks from server`
+        );
+
+        // Update tasks in context
+        setTasks(freshTasks);
+
+        // Find and update active task
+        const activeTask = freshTasks.find((t) => t.status === "In Progress");
+        if (activeTask) {
+          setActiveTaskId(activeTask._id);
+          console.log("Dashboard: Found active task:", activeTask.taskNumber);
+        } else {
+          setActiveTaskId(null);
+          console.log("Dashboard: No active task found");
+        }
+
+        // Update completed tasks
+        const completedTaskIds = freshTasks
+          .filter((t) => t.status === "Completed")
+          .map((t) => t._id);
+        setCompletedTasks(completedTaskIds);
+        console.log(
+          `Dashboard: Found ${completedTaskIds.length} completed tasks`
+        );
+
+        // Check if driver has assigned vehicle from server
+        try {
+          const driverResponse = await api.get(`/api/drivers/${DRIVER_ID}`);
+          if (driverResponse.data?.assignedVehicle && !vehicleNumber) {
+            setVehicleNumber(driverResponse.data.assignedVehicle);
+            await AsyncStorage.setItem(
+              "vehicleNumber",
+              driverResponse.data.assignedVehicle
+            );
+            console.log(
+              "Dashboard: Updated vehicle from server:",
+              driverResponse.data.assignedVehicle
+            );
+          }
+        } catch (vehicleError) {
+          console.error(
+            "Dashboard: Error fetching vehicle info:",
+            vehicleError
+          );
+        }
+
+        console.log("Dashboard: Synchronization completed successfully");
+      }
+    } catch (error) {
+      console.error("Dashboard: Error refreshing tasks:", error);
+      Alert.alert(
+        "Sync Error",
+        "Failed to synchronize tasks. Please check your connection and try again."
+      );
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   const handleSubmitVehicle = async () => {
@@ -126,10 +191,13 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
+  // Calculate counts from synchronized tasks
   const pendingCount = tasks.filter(
-    (task) => !completedTasks.includes(task._id)
+    (task) => task.status !== "Completed" && !completedTasks.includes(task._id)
   ).length;
-  const completedCount = completedTasks.length;
+  const completedCount = tasks.filter(
+    (task) => task.status === "Completed" || completedTasks.includes(task._id)
+  ).length;
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
