@@ -28,6 +28,7 @@ import { getSensorsData } from "../services/getSensorsData";
 import LeafletMap from "../components/LeafletMap";
 import { getAlerts } from "../services/getAlerts";
 import { api } from "../services/api";
+import { authService } from '../services/authService';
 
 // Animation variants
 const containerVariants = {
@@ -126,9 +127,16 @@ const Dashboard = () => {
     fetchData();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      // Navigate to login page with replace to prevent going back
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout API fails, still navigate to login
+      navigate('/login', { replace: true });
+    }
   };
 
   // Fetch total vehicles

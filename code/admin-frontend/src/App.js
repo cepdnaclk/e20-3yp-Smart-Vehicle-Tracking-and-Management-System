@@ -19,6 +19,7 @@ import Vehicles from "./pages/Vehicles";
 import Drivers from "./pages/Drivers";
 import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
+import Signup from "./pages/Signup";
 
 // Import components
 import SettingsPage from "./components/SettingsPage";
@@ -32,53 +33,21 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <AnimatePresence mode="wait">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/vehicles"
-            element={
-              <ProtectedRoute>
-                <Vehicles />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/drivers"
-            element={
-              <ProtectedRoute>
-                <Drivers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/alerts"
-            element={
-              <ProtectedRoute>
-                <Alerts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AnimatePresence>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Protected routes */}
+        <Route path="/dashboard/*" element={<Dashboard />} />
+        {/* ...other routes... */}
+
+        {/* Redirect root to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* Catch all unknown routes and redirect to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     </Router>
   );
 }

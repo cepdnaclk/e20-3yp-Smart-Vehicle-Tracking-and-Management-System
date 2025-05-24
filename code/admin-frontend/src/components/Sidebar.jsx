@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Map, 
@@ -14,9 +14,11 @@ import {
   TrendingUp,
   Clipboard,
 } from 'lucide-react';
+import { authService } from '../services/authService';
 
 const Sidebar = ({ handleLogout }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const sidebarItems = [
     { path: '/dashboard', icon: <Map size={20} />, label: 'Dashboard' },
@@ -42,6 +44,19 @@ const Sidebar = ({ handleLogout }) => {
   const itemVariants = {
     hidden: { x: -20, opacity: 0 },
     visible: { x: 0, opacity: 1 }
+  };
+
+  const handleLogoutClick = async () => {
+    try {
+      await authService.logout();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force navigation even if logout API fails
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -100,7 +115,7 @@ const Sidebar = ({ handleLogout }) => {
         
         <div className="border-top p-3">
           <motion.button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="btn btn-outline-danger d-flex align-items-center w-100"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

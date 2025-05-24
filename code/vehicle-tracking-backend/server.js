@@ -43,12 +43,12 @@ mongoose
 
 const driverRoutes = require("./routes/driverRoutes");
 const vehicleRoutes = require("./routes/vehicleRoutes");
-// const userRoutes = require("./routes/userRoutes");  // Comment this out for now
+const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 
 app.use("/api/drivers", driverRoutes);
 app.use("/api/vehicles", vehicleRoutes);
-// app.use("/api/users", userRoutes);  // Comment this out for now
+app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.get("/", (req, res) => {

@@ -1,136 +1,403 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { body, validationResult } = require("express-validator");
+const User = require("../models/User");
+const auth = require("../middleware/auth");
 const router = express.Router();
 
-// Create a simple User model
-// Note: In a real application, you would import this from a models file
-const User = require("../models/User"); // This will need to be created as well
+// JWT Secret (should be in environment variables)
+const JWT_SECRET =
+  process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
-// User registration
+// Helper function to generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+};
+
+// POST /api/users/register - Register new user
 router.post(
   "/register",
   [
-    body("username").notEmpty().withMessage("Username is required"),
-    body("email").isEmail().withMessage("Valid email is required"),
+    body("firstName")
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("First name must be between 2 and 50 characters"),
+    body("lastName")
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Last name must be between 2 and 50 characters"),
+    body("email")
+      .isEmail()
+      .normalizeEmail()
+      .withMessage("Please enter a valid email address"),
+    body("phone")
+      .trim()
+      .matches(/^[\+]?[1-9][\d]{0,15}$/)
+      .withMessage("Please enter a valid phone number"),
     body("password")
-      .isLength({ min: 6 })
-      .withMessage("Password must be at least 6 characters long"),
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters")
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/
+      )
+      .withMessage(
+        "Password must contain uppercase, lowercase, number, and special character"
+      ),
+    body("role")
+      .optional()
+      .isIn(["owner", "admin", "manager"])
+      .withMessage("Invalid role"),
   ],
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
-      const { username, email, password } = req.body;
+      // Check validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const { firstName, lastName, email, phone, password, role } = req.body;
 
       // Check if user already exists
-      let user = await User.findOne({ email });
-      if (user) {
-        return res.status(400).json({ message: "User already exists" });
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "User with this email already exists",
+        });
       }
 
       // Create new user
-      user = new User({
-        username,
-        email,
+      const user = new User({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.toLowerCase().trim(),
+        phone: phone.trim(),
         password,
+        role: role || "owner",
       });
-
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
 
       await user.save();
 
-      // Create and return JWT token
-      const payload = {
-        user: {
-          id: user.id,
-        },
-      };
+      // Generate JWT token
+      const token = generateToken(user._id);
 
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET || "default_secret_key",
-        { expiresIn: "1h" },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send("Server error");
+      res.status(201).json({
+        success: true,
+        message: "User registered successfully",
+        data: {
+          user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            fullName: user.fullName,
+            createdAt: user.createdAt,
+          },
+          token,
+        },
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error during registration",
+      });
     }
   }
 );
 
-// User login
+// POST /api/users/login - User login
 router.post(
   "/login",
   [
-    body("email").isEmail().withMessage("Valid email is required"),
+    body("email")
+      .isEmail()
+      .normalizeEmail()
+      .withMessage("Please enter a valid email address"),
     body("password").notEmpty().withMessage("Password is required"),
   ],
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      // Check validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
       const { email, password } = req.body;
 
-      // Find user by email
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
+      // Find user and validate credentials
+      const user = await User.findByCredentials(email, password);
 
-      // Check if password is correct
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
+      // Generate JWT token
+      const token = generateToken(user._id);
 
-      // Create and return JWT token
-      const payload = {
-        user: {
-          id: user.id,
+      res.json({
+        success: true,
+        message: "Login successful",
+        data: {
+          user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            fullName: user.fullName,
+            lastLogin: user.lastLogin,
+          },
+          token,
         },
-      };
-
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET || "default_secret_key",
-        { expiresIn: "1h" },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send("Server error");
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(401).json({
+        success: false,
+        message: error.message,
+      });
     }
   }
 );
 
-// Get current user
-router.get("/me", async (req, res) => {
+// GET /api/users/profile - Get user profile (protected route)
+router.get("/profile", auth, async (req, res) => {
   try {
-    // Here you would typically use middleware to verify token
-    // For now, we'll just return a mock response
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     res.json({
-      message: "User authentication will be implemented in the future",
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          fullName: user.fullName,
+          createdAt: user.createdAt,
+          lastLogin: user.lastLogin,
+        },
+      },
     });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+  } catch (error) {
+    console.error("Profile fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+// PUT /api/users/profile - Update user profile (protected route)
+router.put(
+  "/profile",
+  auth,
+  [
+    body("firstName")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("First name must be between 2 and 50 characters"),
+    body("lastName")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Last name must be between 2 and 50 characters"),
+    body("phone")
+      .optional()
+      .trim()
+      .matches(/^[\+]?[1-9][\d]{0,15}$/)
+      .withMessage("Please enter a valid phone number"),
+  ],
+  async (req, res) => {
+    try {
+      // Check validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const { firstName, lastName, phone } = req.body;
+
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Update fields if provided
+      if (firstName) user.firstName = firstName.trim();
+      if (lastName) user.lastName = lastName.trim();
+      if (phone) user.phone = phone.trim();
+
+      await user.save();
+
+      res.json({
+        success: true,
+        message: "Profile updated successfully",
+        data: {
+          user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            fullName: user.fullName,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
+
+// POST /api/users/change-password - Change password (protected route)
+router.post(
+  "/change-password",
+  auth,
+  [
+    body("currentPassword")
+      .notEmpty()
+      .withMessage("Current password is required"),
+    body("newPassword")
+      .isLength({ min: 8 })
+      .withMessage("New password must be at least 8 characters")
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/
+      )
+      .withMessage(
+        "New password must contain uppercase, lowercase, number, and special character"
+      ),
+  ],
+  async (req, res) => {
+    try {
+      // Check validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await user.comparePassword(
+        currentPassword
+      );
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is incorrect",
+        });
+      }
+
+      // Update password
+      user.password = newPassword;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: "Password changed successfully",
+      });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
+
+// GET /api/users - Get all users (admin only)
+router.get("/", auth, async (req, res) => {
+  try {
+    // Check if user is admin (you can implement role-based middleware)
+    const currentUser = await User.findById(req.user.userId);
+    if (currentUser.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin role required.",
+      });
+    }
+
+    const users = await User.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .select("-password");
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        total: users.length,
+      },
+    });
+  } catch (error) {
+    console.error("Users fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+// POST /api/users/logout - Logout (protected route)
+router.post("/logout", auth, async (req, res) => {
+  try {
+    // In a more sophisticated setup, you might want to blacklist the token
+    // For now, we'll just return success and let the frontend handle token removal
+    res.json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
