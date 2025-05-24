@@ -24,25 +24,33 @@ router.get("/count", async (req, res) => {
 });
 
 // GET vehicle by license plate
-router.get("/check", async (req, res) => {
-  const { licensePlate } = req.query;
+router.get("/license/:licensePlate", async (req, res) => {
+  const { licensePlate } = req.params;
 
   if (!licensePlate) {
     return res.status(400).json({ message: "License plate is required" });
   }
 
   try {
+    console.log("License plate query:", licensePlate.trim().toUpperCase());
     const vehicle = await Vehicle.findOne({
       licensePlate: licensePlate.trim().toUpperCase(),
     });
 
     if (!vehicle) {
+      console.log("License plate not found:", licensePlate);
       return res.status(404).json({
         message: "Vehicle not found",
         exists: false,
       });
     }
 
+    console.log(
+      "License plate found:",
+      licensePlate,
+      "- Vehicle ID:",
+      vehicle._id
+    );
     res.json({
       exists: true,
       vehicle: {
@@ -50,9 +58,13 @@ router.get("/check", async (req, res) => {
         licensePlate: vehicle.licensePlate,
         vehicleName: vehicle.vehicleName,
         vehicleType: vehicle.vehicleType,
+        status: vehicle.status,
+        trackingEnabled: vehicle.trackingEnabled,
+        assignedDriver: vehicle.assignedDriver,
       },
     });
   } catch (err) {
+    console.error("Error finding vehicle by license plate:", err);
     res.status(500).json({ message: err.message });
   }
 });

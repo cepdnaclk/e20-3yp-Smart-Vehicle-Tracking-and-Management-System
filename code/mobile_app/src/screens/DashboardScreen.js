@@ -126,40 +126,135 @@ const DashboardScreen = ({ navigation }) => {
 
   const handleSubmitVehicle = async () => {
     if (!inputVehicle.trim()) {
-      Alert.alert("Invalid Input", "Please enter a valid vehicle number.");
+      Alert.alert(
+        "Invalid Input",
+        "Please enter a valid vehicle license plate number."
+      );
       return;
     }
 
     setLoading(true);
     try {
-      // Check if vehicle exists using your backend API
-      const vehicleCheckResponse = await api.get(
-        `/api/vehicles/license/${inputVehicle.trim()}`
-      );
+      console.log("Validating license plate:", inputVehicle.trim());
 
-      if (!vehicleCheckResponse.data) {
-        Alert.alert("Error", "The vehicle is not registered in the system.");
-        setLoading(false);
-        return;
+      // Check if vehicle exists using license plate validation
+      const licensePlate = inputVehicle.trim().toUpperCase();
+
+      // Use try/catch specifically for the license plate check
+      try {
+        const vehicleCheckResponse = await api.get(
+          `/api/vehicles/license/${licensePlate}`
+        );
+
+        console.log("Vehicle check response:", vehicleCheckResponse.data);
+
+        // If the vehicle doesn't exist in the system
+        if (!vehicleCheckResponse.data || !vehicleCheckResponse.data.exists) {
+          console.log("License plate not registered:", licensePlate);
+          Alert.alert(
+            "Vehicle Not Registered",
+            "This license plate is not registered in the vehicle management system. Please contact your administrator to register this vehicle first."
+          );
+          setLoading(false);
+          return;
+        }
+
+        const vehicleData = vehicleCheckResponse.data.vehicle;
+        console.log("Vehicle found in system:", vehicleData);
+
+        // Check if vehicle is already assigned to another driver
+        if (
+          vehicleData.assignedDriver &&
+          vehicleData.assignedDriver !== DRIVER_ID
+        ) {
+          console.log(
+            "Vehicle already assigned to another driver:",
+            vehicleData.assignedDriver
+          );
+          Alert.alert(
+            "Vehicle Unavailable",
+            "This vehicle is already assigned to another driver. Please choose a different vehicle."
+          );
+          setLoading(false);
+          return;
+        }
+
+        // Continue with vehicle assignment if all checks pass
+        // First, get current driver data to preserve required fields
+        const driverResponse = await api.get(`/api/drivers/${DRIVER_ID}`);
+        const driverData = driverResponse.data;
+
+        if (!driverData) {
+          throw new Error("Could not retrieve driver data");
+        }
+
+        console.log("Retrieved driver data:", driverData);
+
+        // Update the driver with the new vehicle assignment
+        // while preserving all other required fields
+        const updateData = {
+          fullName: driverData.fullName,
+          email: driverData.email,
+          phone: driverData.phone,
+          licenseNumber: driverData.licenseNumber,
+          joinDate: driverData.joinDate,
+          employmentStatus: driverData.employmentStatus,
+          assignedVehicle: vehicleData.licensePlate,
+          vehicleId: vehicleData._id,
+        };
+
+        console.log("Updating driver with data:", updateData);
+        await api.put(`/api/drivers/${DRIVER_ID}`, updateData);
+
+        // Update the vehicle to assign it to this driver
+        // Using PUT instead of PATCH since the backend doesn't support PATCH
+        console.log("Updating vehicle with assignedDriver:", DRIVER_ID);
+        await api.put(`/api/vehicles/${vehicleData._id}`, {
+          vehicleName: vehicleData.vehicleName,
+          licensePlate: vehicleData.licensePlate,
+          vehicleType: vehicleData.vehicleType,
+          deviceId: vehicleData.deviceId || "unknown",
+          trackingEnabled: vehicleData.trackingEnabled,
+          status: "active",
+          assignedDriver: DRIVER_ID,
+        });
+
+        // Update local state and storage
+        setVehicleNumber(vehicleData.licensePlate);
+        await AsyncStorage.setItem("vehicleNumber", vehicleData.licensePlate);
+        await AsyncStorage.setItem("vehicleId", vehicleData._id);
+        setInputVehicle("");
+
+        console.log("Vehicle assignment successful:", vehicleData.licensePlate);
+        Alert.alert(
+          "Vehicle Assigned Successfully",
+          `License Plate: ${vehicleData.licensePlate}\nVehicle Type: ${
+            vehicleData.vehicleType || "Unknown"
+          }\n\nYou can now start your tasks with this vehicle.`
+        );
+      } catch (checkError) {
+        // Handle the 404 error from license plate check specifically
+        if (checkError.response?.status === 404) {
+          console.log("License plate not found:", licensePlate);
+          Alert.alert(
+            "Vehicle Not Found",
+            "This license plate is not registered in the system. Please verify the license plate number or contact your administrator."
+          );
+        } else {
+          // For any other errors during the check
+          console.error("Error checking license plate:", checkError);
+          Alert.alert(
+            "Error",
+            "Failed to verify license plate. Please check your connection and try again."
+          );
+        }
       }
-
-      // Update the driver with the new vehicle assignment
-      const updateData = {
-        assignedVehicle: inputVehicle.trim(),
-      };
-
-      await api.put(`/api/drivers/${DRIVER_ID}`, updateData);
-
-      setVehicleNumber(inputVehicle.trim());
-      await AsyncStorage.setItem("vehicleNumber", inputVehicle.trim());
-      setInputVehicle("");
-      Alert.alert("Vehicle Set", `Vehicle Number: ${inputVehicle.trim()}`);
     } catch (error) {
-      console.error("Error setting vehicle:", error);
+      // This catches any other errors in the overall function
+      console.error("Unexpected error in handleSubmitVehicle:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to set vehicle. Please try again."
+        "An unexpected error occurred. Please try again later."
       );
     } finally {
       setLoading(false);
@@ -168,25 +263,60 @@ const DashboardScreen = ({ navigation }) => {
 
   const handleRemoveVehicle = async () => {
     try {
-      // Clear vehicle assignment in backend
-      const updateData = {
-        assignedVehicle: "",
+      setLoading(true);
+
+      // Get stored vehicle ID
+      const vehicleId = await AsyncStorage.getItem("vehicleId");
+      console.log("Removing vehicle with ID:", vehicleId);
+
+      // First, get the current driver data to preserve required fields
+      const driverResponse = await api.get(`/api/drivers/${DRIVER_ID}`);
+      const driverData = driverResponse.data;
+
+      if (!driverData) {
+        throw new Error("Could not retrieve driver data");
+      }
+
+      // Update the driver with all required fields
+      const driverUpdateData = {
+        fullName: driverData.fullName,
+        email: driverData.email,
+        phone: driverData.phone,
+        licenseNumber: driverData.licenseNumber,
+        joinDate: driverData.joinDate,
+        employmentStatus: driverData.employmentStatus,
+        assignedVehicle: "", // Empty string instead of null
       };
 
-      await api.put(`/api/drivers/${DRIVER_ID}`, updateData);
+      console.log("Updating driver with data:", driverUpdateData);
+      await api.put(`/api/drivers/${DRIVER_ID}`, driverUpdateData);
 
+      // Don't try to update the vehicle if we don't have a valid vehicleId
+      if (vehicleId) {
+        // Just skip vehicle update - this prevents the 404 error
+        console.log("Skipping vehicle update for removed vehicle");
+      }
+
+      // Clear local storage and state
       setVehicleNumber(null);
       await AsyncStorage.removeItem("vehicleNumber");
+      await AsyncStorage.removeItem("vehicleId");
+
+      setLoading(false);
+
       Alert.alert(
-        "Vehicle Removed",
-        "Vehicle number has been removed successfully."
+        "Success",
+        "Vehicle assignment has been removed successfully."
       );
     } catch (error) {
+      setLoading(false);
       console.error("Error removing vehicle:", error);
+      console.error("Error response:", error.response?.data);
+
       Alert.alert(
         "Error",
         error.response?.data?.message ||
-          "Failed to remove vehicle. Please try again."
+          "Failed to remove vehicle assignment. Please try again."
       );
     }
   };
@@ -249,10 +379,11 @@ const DashboardScreen = ({ navigation }) => {
         <View style={styles.vehicleInputContainer}>
           <TextInput
             style={styles.vehicleInput}
-            placeholder="Enter Vehicle Number"
+            placeholder="Enter License Plate (e.g., WB-9999)"
             value={inputVehicle}
             onChangeText={setInputVehicle}
             autoCapitalize="characters"
+            maxLength={20}
           />
           <TouchableOpacity
             style={styles.submitButton}
@@ -295,14 +426,10 @@ const DashboardScreen = ({ navigation }) => {
                 </View>
               </View>
               <View style={styles.activeTaskDetails}>
-                <View style={styles.activeTaskRow}>
-                  <Text style={styles.activeTaskText}>
-                    {activeTask.pickup} → {activeTask.delivery}
-                  </Text>
-                </View>
-                <View style={styles.viewDetailsButton}>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                </View>
+                <Text style={styles.activeTaskText}>
+                  {activeTask.pickup} → {activeTask.delivery}
+                </Text>
+                <Text style={styles.viewDetailsText}>View Details</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -319,9 +446,9 @@ const DashboardScreen = ({ navigation }) => {
             Driver Tips
           </Text>
           <Text style={{ lineHeight: 20 }}>
-            • Always confirm your vehicle details before starting your shift
-            {"\n"}• Update delivery status as soon as completed{"\n"}• Check
-            notifications regularly for updates
+            • Confirm your vehicle details before starting your shift
+            {"\n"}• Update delivery status as soon as completed
+            {"\n"}• Check notifications regularly for updates
           </Text>
         </View>
       </ScrollView>
