@@ -120,13 +120,13 @@ const NotificationsScreen = ({ navigation }) => {
   const getNotificationIcon = (action) => {
     switch (action) {
       case "assign":
-        return <Feather name="plus-circle" size={24} color="#4DA6FF" />;
+        return <Feather name="plus-circle" size={24} color="#4CAF50" />; // Green circle with plus
       case "update":
-        return <Feather name="edit" size={24} color="#FFC107" />;
+        return <Feather name="edit-3" size={24} color="#FFC107" />; // Yellow edit icon
       case "delete":
-        return <Feather name="trash-2" size={24} color="#FF6B6B" />;
+        return <Feather name="x-circle" size={24} color="#FF6B6B" />; // Red X circle icon
       case "reminder":
-        return <Feather name="clock" size={24} color="#4CAF50" />;
+        return <Feather name="clock" size={24} color="#FF9800" />; // Orange clock
       default:
         return <Feather name="bell" size={24} color="#4DA6FF" />;
     }
@@ -145,7 +145,9 @@ const NotificationsScreen = ({ navigation }) => {
         <AnimatedPlaceholder type="notification" count={3} />
       ) : (
         <FlatList
-          data={notifications}
+          data={notifications.sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          )} // Sort by timestamp
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.notificationsList}

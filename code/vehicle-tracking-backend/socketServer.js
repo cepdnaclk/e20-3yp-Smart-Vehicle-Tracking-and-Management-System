@@ -1,66 +1,47 @@
 const socketIo = require("socket.io");
 
-// Map to keep track of connected drivers and their socket IDs
+// Map to track connected drivers by their ID
 const connectedDrivers = new Map();
+let io;
 
 // Socket.io setup function
 const setupSocketServer = (server) => {
-  const io = socketIo(server, {
+  // Initialize socket.io
+  io = socketIo(server, {
     cors: {
-      origin: "*", // In production, replace with specific origins
-      methods: ["GET", "POST", "PUT", "DELETE"],
-      credentials: true,
+      origin: "*",
+      methods: ["GET", "POST"],
     },
   });
 
-  // Connection handler
+  // Socket connection handling
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
-    // Get driverId from query params
-    const { driverId } = socket.handshake.query;
-
-    if (driverId) {
+    // Handle driver connection
+    socket.on("driver-connect", (driverId) => {
       console.log(`Driver ${driverId} connected with socket ${socket.id}`);
-
-      // Store socket ID for this driver
       connectedDrivers.set(driverId, socket.id);
-
-      // Join driver to a specific room for targeted notifications
       socket.join(`driver-${driverId}`);
-    }
-
-    // Handle explicit room joining
-    socket.on("joinDriverRoom", (driverId) => {
-      if (driverId) {
-        console.log(
-          `Driver ${driverId} explicitly joining room driver-${driverId}`
-        );
-        socket.join(`driver-${driverId}`);
-      }
     });
 
-    // Test ping handler
-    socket.on("test:ping", (data) => {
-      console.log("Received test ping:", data);
-      socket.emit("test", {
-        message: "Test response from server",
-        timestamp: new Date().toISOString(),
-      });
-    });
-
-    // Disconnect handler
+    // Handle disconnection
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
-
       // Remove from connected drivers map
       for (const [driverId, socketId] of connectedDrivers.entries()) {
         if (socketId === socket.id) {
-          console.log(`Driver ${driverId} disconnected`);
           connectedDrivers.delete(driverId);
+          console.log(`Driver ${driverId} disconnected`);
           break;
         }
       }
+    });
+
+    // Handle test events
+    socket.on("test", () => {
+      console.log("Test event received from:", socket.id);
+      socket.emit("test-response", { message: "Test successful" });
     });
   });
 

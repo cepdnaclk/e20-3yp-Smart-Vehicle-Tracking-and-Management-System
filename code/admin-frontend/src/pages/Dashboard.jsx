@@ -134,8 +134,8 @@ const Dashboard = () => {
   // Fetch total vehicles
   const fetchTotalVehicles = async () => {
     try {
-      const response = await api.get("/api/vehicles/count");
-      setTotalVehicles(response.data.totalVehicles);
+      const response = await api.get("/api/vehicles");
+      setTotalVehicles(response.data.length);
     } catch (error) {
       console.error("Error fetching total vehicles:", error);
     }
@@ -191,14 +191,16 @@ const Dashboard = () => {
   const fetchAlerts = async () => {
     try {
       const alertsData = await getAlerts();
-      const alert = {
-        type: 'Tamper',
-        vehicle: "CAM-8087",
-        time: alertsData.tampering_timestamp.split(" ")[1],
-        location: `${alertsData.tampering_latitude}° N, ${alertsData.tampering_longitude}° E`,
-      };
-      setAlert(alert);
-      setActiveAlerts(1);
+      if (alertsData && alertsData.tampering_timestamp) {
+        const alert = {
+          type: 'Tamper',
+          vehicle: "CAM-8087",
+          time: alertsData.tampering_timestamp.split(" ")[1],
+          location: `${alertsData.tampering_latitude}° N, ${alertsData.tampering_longitude}° E`,
+        };
+        setAlert(alert);
+        setActiveAlerts(1);
+      }
     } catch (error) {
       console.error("Error fetching alerts:", error);
     }

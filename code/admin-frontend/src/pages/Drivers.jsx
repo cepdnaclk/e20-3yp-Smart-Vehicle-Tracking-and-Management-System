@@ -335,7 +335,7 @@ const Drivers = () => {
       const response = await api.post(`/api/drivers/${selectedDriverForTask.driverId}/tasks`, payload);
       console.log("Task created successfully:", response.data);
       
-      setAlertMessage("Task assigned successfully");
+      setAlertMessage("Task assigned successfully! The driver will be notified in real-time.");
       setAlertType("success");
       setShowAlert(true);
       

@@ -257,6 +257,53 @@ router.post(
   }
 );
 
+// POST task assignment to driver
+router.post("/:driverId/tasks", async (req, res) => {
+  try {
+    const driverId = req.params.driverId;
+
+    // Verify driver exists
+    const driver = await Driver.findOne({ driverId });
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    const newTask = new Task({
+      taskNumber: req.body.taskNumber,
+      cargoType: req.body.cargoType,
+      weight: req.body.weight,
+      pickup: req.body.pickup,
+      delivery: req.body.delivery,
+      deliveryPhone: req.body.deliveryPhone,
+      expectedDelivery: new Date(req.body.expectedDelivery),
+      additionalNotes: req.body.additionalNotes || "",
+      driverId: driverId,
+      licensePlate: req.body.licensePlate || "Not assigned",
+      status: "Pending",
+    });
+
+    const savedTask = await newTask.save();
+
+    // Emit socket event if socketServer is available
+    if (req.socketServer) {
+      console.log(
+        "Emitting task:assigned event for new task:",
+        savedTask.taskNumber
+      );
+      req.socketServer.emitTaskAssigned(savedTask);
+    } else {
+      console.warn(
+        "Socket server not available, couldn't emit task:assigned event"
+      );
+    }
+
+    res.status(201).json(savedTask);
+  } catch (err) {
+    console.error("Error assigning task:", err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Catch-all for missing/incorrect endpoints
 router.use((req, res) => {
   res.status(404).json({ message: "Driver endpoint not found" });

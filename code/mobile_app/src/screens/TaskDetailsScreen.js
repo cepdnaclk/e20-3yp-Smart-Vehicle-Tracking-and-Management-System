@@ -10,7 +10,11 @@ import {
 } from "react-native";
 import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
-import { startTask, completeTask, updateTaskStatus } from "../services/api";
+import {
+  startTask,
+  completeTask,
+  updateTaskStatus,
+} from "../services/TaskService";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 
@@ -56,7 +60,8 @@ const TaskDetailsScreen = ({ route, navigation }) => {
 
     setIsStarting(true);
     try {
-      await startTask(taskId);
+      // Use the status endpoint for faster updates
+      await updateTaskStatus(taskId, "In Progress");
 
       // Update local state
       setActiveTaskId(taskId);
@@ -78,7 +83,8 @@ const TaskDetailsScreen = ({ route, navigation }) => {
   const handleCompleteTask = async () => {
     setIsCompleting(true);
     try {
-      await completeTask(taskId);
+      // Use the status endpoint for faster updates
+      await updateTaskStatus(taskId, "Completed");
 
       // Update local state
       setActiveTaskId(null);

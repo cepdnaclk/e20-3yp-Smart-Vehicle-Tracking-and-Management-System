@@ -86,6 +86,10 @@ export const setupNotificationListeners = (onNotification) => {
       // Create and send the notification
       const notification = createNotificationFromTask(task, action);
       if (notification) {
+        console.log(
+          `[NotificationService] Creating notification for ${action}:`,
+          notification
+        );
         onNotification(notification);
       }
     }
@@ -97,7 +101,11 @@ export const setupNotificationListeners = (onNotification) => {
     onTaskUpdated: (task) => handleTaskEvent(task, "update"),
     onTaskDeleted: (task) => handleTaskEvent(task, "delete"),
     onTaskReminder: (task) => handleTaskEvent(task, "reminder"),
-    onConnect: () => console.log("Notification service: Socket connected"),
+    onConnect: () => {
+      console.log("Notification service: Socket connected");
+      // Join driver-specific room
+      socketService.socket?.emit("driver-connect", DRIVER_ID);
+    },
     onDisconnect: () =>
       console.log("Notification service: Socket disconnected"),
     onError: (error) =>
@@ -130,51 +138,61 @@ export const createNotificationFromTask = (task, action) => {
   const now = new Date();
   const id = `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-  let title = "";
-  let message = "";
+  // Format time and date
+  const timeString = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const dateString = now.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  let title,
+    message,
+    type = "info";
 
   switch (action) {
     case "assign":
       title = "New Task Assigned";
-      message = `You have been assigned a new delivery task (${
-        task.taskNumber
-      }) to ${task.delivery || "destination"}.`;
+      message = `Task ${task.taskNumber} has been assigned to you`;
+      type = "success";
       break;
     case "update":
       title = "Task Updated";
-      message = `Task ${task.taskNumber} has been updated. Please check the details.`;
+      message = `Task ${task.taskNumber} has been updated`;
+      type = "info";
       break;
     case "delete":
-      title = "Task Deleted";
-      message = `Task ${task.taskNumber} has been removed from your assignments.`;
+      title = "Task Cancelled";
+      message = `Task ${task.taskNumber} has been cancelled`;
+      type = "warning";
       break;
     case "reminder":
       title = "Task Reminder";
-      message = `Reminder: Task ${task.taskNumber} delivery is due soon.`;
+      message = `Don't forget about task ${task.taskNumber}`;
+      type = "warning";
       break;
     default:
       title = "Task Notification";
-      message = `Notification regarding task ${task.taskNumber}.`;
+      message = `Task ${task.taskNumber} notification`;
   }
-
-  console.log(
-    `[Notification] Created: ${title} - ${action} for task ${task.taskNumber}`
-  );
 
   return {
     id,
     title,
     message,
-    time: now.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    date: now.toLocaleDateString(),
-    read: false,
+    type,
+    action,
+    time: timeString, // Formatted time string
+    date: dateString, // Formatted date string
+    timestamp: now.toISOString(), // Keep original timestamp for sorting
     taskId: task._id,
     taskNumber: task.taskNumber,
-    createdAt: now,
-    action,
+    read: false,
   };
 };
 

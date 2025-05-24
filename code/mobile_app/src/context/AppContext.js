@@ -117,53 +117,72 @@ export const AppProvider = ({ children }) => {
     // Configure socket event handlers
     socketService.setHandlers({
       onTaskAssigned: (taskData) => {
-        console.log("[AppContext] Task assigned event received:", taskData.taskNumber);
+        console.log(
+          "[AppContext] Task assigned event received:",
+          taskData.taskNumber
+        );
 
-        // Create the notification first
-        const notification = createNotificationFromTask(taskData, "assign");
-        if (notification) {
-          setNotifications((prev) => [notification, ...prev]);
-          console.log("[AppContext] Created notification for assigned task");
-        }
-
-        // Then update the tasks list
-        setTasks((prev) => {
-          if (!prev.some((t) => t._id === taskData._id)) {
-            console.log("[AppContext] Adding new task to global context");
-            return [taskData, ...prev];
+        // Only process if task belongs to current driver
+        if (taskData.driverId === DRIVER_ID) {
+          // Create the notification first
+          const notification = createNotificationFromTask(taskData, "assign");
+          if (notification) {
+            setNotifications((prev) => [notification, ...prev]);
+            console.log("[AppContext] Created notification for assigned task");
           }
-          return prev;
-        });
+
+          // Then update the tasks list
+          setTasks((prev) => {
+            if (!prev.some((t) => t._id === taskData._id)) {
+              console.log("[AppContext] Adding new task to global context");
+              return [taskData, ...prev];
+            }
+            console.log("[AppContext] Task already exists in context");
+            return prev;
+          });
+        }
       },
 
       onTaskUpdated: (taskData) => {
-        console.log("[AppContext] Task updated event received:", taskData.taskNumber);
-
-        // Create the notification first
-        const notification = createNotificationFromTask(taskData, "update");
-        if (notification) {
-          setNotifications((prev) => [notification, ...prev]);
-          console.log("[AppContext] Created notification for updated task");
-        }
-
-        // Then update the task in the list
-        setTasks((prev) =>
-          prev.map((t) => (t._id === taskData._id ? taskData : t))
+        console.log(
+          "[AppContext] Task updated event received:",
+          taskData.taskNumber
         );
+
+        // Only process if task belongs to current driver
+        if (taskData.driverId === DRIVER_ID) {
+          // Create the notification first
+          const notification = createNotificationFromTask(taskData, "update");
+          if (notification) {
+            setNotifications((prev) => [notification, ...prev]);
+            console.log("[AppContext] Created notification for updated task");
+          }
+
+          // Then update the task in the list
+          setTasks((prev) =>
+            prev.map((t) => (t._id === taskData._id ? taskData : t))
+          );
+        }
       },
 
       onTaskDeleted: (taskData) => {
-        console.log("[AppContext] Task deleted event received:", taskData.taskNumber);
+        console.log(
+          "[AppContext] Task deleted event received:",
+          taskData.taskNumber
+        );
 
-        // Create the notification first
-        const notification = createNotificationFromTask(taskData, "delete");
-        if (notification) {
-          setNotifications((prev) => [notification, ...prev]);
-          console.log("[AppContext] Created notification for deleted task");
+        // Only process if task belongs to current driver
+        if (taskData.driverId === DRIVER_ID) {
+          // Create the notification first
+          const notification = createNotificationFromTask(taskData, "delete");
+          if (notification) {
+            setNotifications((prev) => [notification, ...prev]);
+            console.log("[AppContext] Created notification for deleted task");
+          }
+
+          // Then remove the task from the list
+          setTasks((prev) => prev.filter((t) => t._id !== taskData._id));
         }
-
-        // Then remove the task from the list
-        setTasks((prev) => prev.filter((t) => t._id !== taskData._id));
       },
 
       onTaskReminder: (taskData) => {
@@ -171,10 +190,17 @@ export const AppProvider = ({ children }) => {
           "[AppContext] Task reminder event received:",
           taskData.taskNumber
         );
-        handleTaskReminder(taskData);
+        if (taskData.driverId === DRIVER_ID) {
+          const notification = createNotificationFromTask(taskData, "reminder");
+          if (notification) {
+            setNotifications((prev) => [notification, ...prev]);
+          }
+        }
       },
       onConnect: () => {
-        console.log("[AppContext] Socket connected");
+        console.log("[AppContext] Socket connected, joining driver room");
+        // Join driver-specific room
+        socketService.socket?.emit("driver-connect", DRIVER_ID);
       },
       onDisconnect: () => {
         console.log("[AppContext] Socket disconnected");

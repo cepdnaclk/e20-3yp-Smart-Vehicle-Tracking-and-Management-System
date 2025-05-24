@@ -155,6 +155,45 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// PATCH task status only (for mobile app)
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const task = await Task.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Emit socket event if socketServer is available
+    if (req.socketServer) {
+      console.log(
+        "Emitting task:updated event for status change:",
+        task.taskNumber
+      );
+      req.socketServer.emitTaskUpdated(task);
+    } else {
+      console.warn(
+        "Socket server not available, couldn't emit task:updated event"
+      );
+    }
+
+    res.json(task);
+  } catch (err) {
+    console.error("Error updating task status:", err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // DELETE a task
 router.delete("/:id", async (req, res) => {
   try {

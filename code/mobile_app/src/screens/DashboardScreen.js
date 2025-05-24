@@ -69,22 +69,21 @@ const DashboardScreen = ({ navigation }) => {
     try {
       // Check if vehicle exists using your backend API
       const vehicleCheckResponse = await api.get(
-        `/api/vehicles/check?licensePlate=${inputVehicle.trim()}`
+        `/api/vehicles/license/${inputVehicle.trim()}`
       );
 
-      if (!vehicleCheckResponse.data.exists) {
+      if (!vehicleCheckResponse.data) {
         Alert.alert("Error", "The vehicle is not registered in the system.");
         setLoading(false);
         return;
       }
 
       // Update the driver with the new vehicle assignment
-      const formData = new FormData();
-      formData.append("vehicleNumber", inputVehicle.trim());
+      const updateData = {
+        assignedVehicle: inputVehicle.trim(),
+      };
 
-      await api.put(`/api/drivers/${DRIVER_ID}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.put(`/api/drivers/${DRIVER_ID}`, updateData);
 
       setVehicleNumber(inputVehicle.trim());
       await AsyncStorage.setItem("vehicleNumber", inputVehicle.trim());
@@ -105,12 +104,11 @@ const DashboardScreen = ({ navigation }) => {
   const handleRemoveVehicle = async () => {
     try {
       // Clear vehicle assignment in backend
-      const formData = new FormData();
-      formData.append("vehicleNumber", "");
+      const updateData = {
+        assignedVehicle: "",
+      };
 
-      await api.put(`/api/drivers/${DRIVER_ID}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.put(`/api/drivers/${DRIVER_ID}`, updateData);
 
       setVehicleNumber(null);
       await AsyncStorage.removeItem("vehicleNumber");

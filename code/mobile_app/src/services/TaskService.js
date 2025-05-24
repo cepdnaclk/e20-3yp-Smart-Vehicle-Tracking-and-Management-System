@@ -62,7 +62,12 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
 
           // Call the provided callback with the new task
           if (taskData.driverId === DRIVER_ID) {
+            console.log(
+              "[TaskService] Task belongs to current driver, updating UI"
+            );
             onTaskUpdate("add", taskData);
+          } else {
+            console.log("[TaskService] Task for different driver, ignoring");
           }
         } catch (err) {
           console.error(
@@ -75,7 +80,12 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
         try {
           console.log("[TaskService] Task updated:", taskData.taskNumber);
           if (taskData.driverId === DRIVER_ID) {
+            console.log(
+              "[TaskService] Task belongs to current driver, updating UI"
+            );
             onTaskUpdate("update", taskData);
+          } else {
+            console.log("[TaskService] Task for different driver, ignoring");
           }
         } catch (err) {
           console.error(
@@ -88,7 +98,12 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
         try {
           console.log("[TaskService] Task deleted:", taskData.taskNumber);
           if (taskData.driverId === DRIVER_ID) {
+            console.log(
+              "[TaskService] Task belongs to current driver, updating UI"
+            );
             onTaskUpdate("delete", taskData);
+          } else {
+            console.log("[TaskService] Task for different driver, ignoring");
           }
         } catch (err) {
           console.error(
@@ -98,7 +113,9 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
         }
       },
       onConnect: () => {
-        console.log("[TaskService] Socket connected");
+        console.log("[TaskService] Socket connected, joining driver room");
+        // Join driver-specific room
+        socketService.socket?.emit("driver-connect", DRIVER_ID);
       },
       onDisconnect: () => {
         console.log("[TaskService] Socket disconnected");

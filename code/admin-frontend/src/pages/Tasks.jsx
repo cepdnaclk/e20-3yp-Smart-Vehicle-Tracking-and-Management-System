@@ -166,7 +166,13 @@ const Tasks = () => {
       setAlertMessage("Task deleted successfully");
       setAlertType("success");
       setShowAlert(true);
-      fetchTasks(); // Refresh the task list
+      
+      // Refresh the appropriate task list
+      if (selectedDriverId) {
+        fetchTasksForDriver(selectedDriverId);
+      } else {
+        fetchAllTasks();
+      }
     } catch (err) {
       console.error("Error deleting task:", err);
       

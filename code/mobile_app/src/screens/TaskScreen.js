@@ -29,30 +29,43 @@ export const TaskScreen = ({ navigation }) => {
   const [showCompleted, setShowCompleted] = useState(false);
 
   // Handle real-time task updates
-  const handleTaskUpdate = useCallback((action, task) => {
-    console.log(`TaskScreen: Real-time task ${action}:`, task.taskNumber);
+  const handleTaskUpdate = useCallback(
+    (action, task) => {
+      console.log(`TaskScreen: Real-time task ${action}:`, task.taskNumber);
 
-    switch (action) {
-      case "add":
-        setContextTasks((prev) => {
-          // Check if task already exists in the list
-          if (prev.some((t) => t._id === task._id)) return prev;
-          // Add new task at the beginning
-          return [task, ...prev];
-        });
-        break;
+      switch (action) {
+        case "add":
+          setContextTasks((prev) => {
+            // Check if task already exists in the list
+            if (prev.some((t) => t._id === task._id)) {
+              console.log("TaskScreen: Task already exists, ignoring add");
+              return prev;
+            }
+            // Add new task at the beginning
+            console.log("TaskScreen: Adding new task to list");
+            return [task, ...prev];
+          });
+          break;
 
-      case "update":
-        setContextTasks((prev) =>
-          prev.map((t) => (t._id === task._id ? task : t))
-        );
-        break;
+        case "update":
+          setContextTasks((prev) => {
+            const updated = prev.map((t) => (t._id === task._id ? task : t));
+            console.log("TaskScreen: Updated task in list");
+            return updated;
+          });
+          break;
 
-      case "delete":
-        setContextTasks((prev) => prev.filter((t) => t._id !== task._id));
-        break;
-    }
-  }, []);
+        case "delete":
+          setContextTasks((prev) => {
+            const filtered = prev.filter((t) => t._id !== task._id);
+            console.log("TaskScreen: Removed task from list");
+            return filtered;
+          });
+          break;
+      }
+    },
+    [setContextTasks]
+  );
 
   // Set up subscription to task updates
   useEffect(() => {
