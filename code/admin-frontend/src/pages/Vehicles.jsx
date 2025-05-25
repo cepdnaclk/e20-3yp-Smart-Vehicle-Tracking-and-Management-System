@@ -57,16 +57,44 @@ const Vehicles = () => {
   const fetchVehicles = async () => {
     try {
       setIsLoading(true);
+      
+      // Get user info for debugging
+      const user = JSON.parse(localStorage.getItem('user'));
+      console.log("Current user context:", user);
+      
+      console.log("Fetching vehicles...");
       const response = await api.get("/api/vehicles");
-      setVehicles(response.data);
-      setIsLoading(false);
-      setAlertMessage("Vehicle data loaded successfully");
-      setAlertType("success");
+      console.log("Vehicle API response:", response.data);
+      
+      // Validate that response.data is an array
+      if (Array.isArray(response.data)) {
+        setVehicles(response.data);
+        setAlertMessage(`${response.data.length} vehicle(s) loaded successfully`);
+        setAlertType("success");
+      } else {
+        console.error("API returned non-array data:", response.data);
+        setAlertMessage("Server returned invalid data format. Please contact support.");
+        setAlertType("danger");
+      }
+      
       setShowAlert(true);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching vehicles:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      
+      // Handle token expiration
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+      
       setIsLoading(false);
-      setAlertMessage("Failed to load vehicle data. Please try again.");
+      setAlertMessage(
+        error.response?.data?.message || 
+        "Failed to load vehicle data. Please try again."
+      );
       setAlertType("danger");
       setShowAlert(true);
     }
@@ -179,22 +207,45 @@ const Vehicles = () => {
       return;
     }
     try {
-      const payload = { ...modalState.vehicle };
-      console.log("Submitting vehicle:", payload);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const payload = { 
+        ...modalState.vehicle,
+        // Include companyId in the payload for new vehicles
+        companyId: user?.companyId || ""
+      };
+      
+      console.log("Submitting vehicle with payload:", payload);
+      
+      let response;
       if (modalState.editMode && payload._id) {
-        await api.put(`/api/vehicles/${payload._id}`, payload);
+        response = await api.put(`/api/vehicles/${payload._id}`, payload);
+        console.log("Vehicle updated:", response.data);
         setAlertMessage("Vehicle updated successfully");
       } else {
-        await api.post("/api/vehicles", payload);
+        response = await api.post("/api/vehicles", payload);
+        console.log("Vehicle added:", response.data);
         setAlertMessage("Vehicle added successfully");
       }
+      
       setAlertType("success");
       setShowAlert(true);
       closeModal();
-      fetchVehicles();
+      fetchVehicles(); // Reload the vehicles list
     } catch (err) {
       console.error("Error submitting vehicle:", err);
-      setAlertMessage(modalState.editMode ? "Failed to update vehicle." : "Failed to add vehicle.");
+      console.error("Error details:", err.response?.data || err.message);
+      
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        setAlertMessage(
+          err.response.data.errors.map(e => e.msg).join(" | ")
+        );
+      } else {
+        setAlertMessage(
+          err.response?.data?.message || 
+          (modalState.editMode ? "Failed to update vehicle." : "Failed to add vehicle.")
+        );
+      }
+      
       setAlertType("danger");
       setShowAlert(true);
     }

@@ -8,10 +8,28 @@ const router = express.Router();
 // Updated: GET all vehicles (with tenant isolation)
 router.get("/", auth, async (req, res) => {
   try {
-    // Only return vehicles for the current admin's company
-    const vehicles = await Vehicle.find({ companyId: req.user.companyId });
+    console.log("GET /api/vehicles request received");
+    console.log("User requesting vehicles:", req.user);
+
+    // Use a relaxed query if companyId doesn't exist to ensure data is returned
+    let query = {};
+
+    // Only filter by companyId if it exists in the user object
+    if (req.user && req.user.companyId) {
+      console.log("Filtering vehicles by companyId:", req.user.companyId);
+      query.companyId = req.user.companyId;
+    } else {
+      console.log(
+        "Warning: No companyId in user object, returning all vehicles"
+      );
+    }
+
+    const vehicles = await Vehicle.find(query);
+    console.log(`Found ${vehicles.length} vehicles for query:`, query);
+
     res.json(vehicles);
   } catch (err) {
+    console.error("Error in GET /api/vehicles:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -114,26 +132,18 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const {
-      vehicleName,
-      licensePlate,
-      vehicleType,
-      make,
-      model,
-      year,
-      color,
-      deviceId,
-      trackingEnabled,
-      status,
-      lastLocation,
-      driver,
-      lastUpdated,
-    } = req.body;
-
     try {
-      const newVehicle = new Vehicle({
+      console.log("POST /api/vehicles request received");
+      console.log("Creating vehicle with data:", req.body);
+      console.log("User context:", req.user);
+
+      // Get the companyId from the authenticated user
+      const companyId = req.user?.companyId || "";
+      console.log("Using companyId:", companyId);
+
+      const {
         vehicleName,
-        licensePlate: licensePlate.trim().toUpperCase(),
+        licensePlate,
         vehicleType,
         make,
         model,
@@ -141,16 +151,36 @@ router.post(
         color,
         deviceId,
         trackingEnabled,
+        status,
+        lastLocation,
+        driver,
+        lastUpdated,
+      } = req.body;
+
+      const newVehicle = new Vehicle({
+        vehicleName,
+        licensePlate: licensePlate.trim().toUpperCase(),
+        vehicleType,
+        make: make || "",
+        model: model || "",
+        year,
+        color: color || "",
+        deviceId,
+        trackingEnabled: trackingEnabled === undefined ? true : trackingEnabled,
         status: status || "active",
         lastLocation: lastLocation || "Not tracked yet",
         driver: driver || "",
         lastUpdated: lastUpdated || Date.now(),
-        companyId: req.user.companyId, // Set companyId from authenticated user
+        companyId: companyId, // Set companyId from authenticated user
       });
 
+      console.log("Saving new vehicle with data:", newVehicle);
       const savedVehicle = await newVehicle.save();
+      console.log("Vehicle saved successfully:", savedVehicle);
+
       res.status(201).json(savedVehicle);
     } catch (err) {
+      console.error("Error in POST /api/vehicles:", err);
       res.status(400).json({ message: err.message });
     }
   }

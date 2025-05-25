@@ -31,6 +31,7 @@ const vehicleSchema = new mongoose.Schema(
     lastLocation: { type: String, default: "Not tracked yet" },
     assignedDriver: { type: String, default: "" },
     lastUpdated: { type: Date, default: Date.now },
+    companyId: { type: String, default: "" }, // Add this field to store companyId
   },
   { timestamps: true }
 );

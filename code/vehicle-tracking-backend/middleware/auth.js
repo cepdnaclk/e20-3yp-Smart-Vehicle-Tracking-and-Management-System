@@ -40,14 +40,15 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Add user info to request object
+    // Add user info to request object with companyId
     req.user = {
       userId: decoded.userId,
       role: user.role,
       email: user.email,
-      companyId: user.companyId, // Add companyId to request
+      companyId: user.companyId, // Make sure companyId is included
     };
 
+    console.log("Auth middleware set user context:", req.user);
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
