@@ -8,6 +8,7 @@ import { AppProvider, useAppContext } from "./context/AppContext";
 import { SocketProvider } from "./context/SocketContext";
 import DashboardScreen from "./screens/DashboardScreen";
 import LoginScreen from "./screens/LoginScreen";
+import SignupScreen from "./screens/SignupScreen"; // Import the new SignupScreen
 import NotificationsScreen from "./screens/NotificationsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import { TaskScreen } from "./screens/TaskScreen";
@@ -105,31 +106,6 @@ const MainApp = () => {
   const handlersSetUp = useRef(false);
 
   useEffect(() => {
-    // Only set up handlers once - but we don't need this anymore since we're using AppContext handlers
-    /*
-    if (handlersSetUp.current) {
-      console.log("Socket handlers already set up, skipping");
-      return;
-    }
-
-    console.log("Setting up socket handlers for real-time updates");
-
-    // Set up socket handlers
-    socketService.setHandlers({
-      onTaskAssigned: (taskData) => {...},
-      onTaskUpdated: (taskData) => {...}, 
-      onTaskDeleted: (taskData) => {...},
-      onTaskReminder: (taskData) => {...},
-      // ...other handlers...
-    });
-
-    // Connect to socket server
-    socketService.connect();
-
-    // Mark that we've set up handlers
-    handlersSetUp.current = true;
-    */
-
     // Just connect to ensure socket is connected (handlers are set in AppContext)
     socketService.connect();
 
@@ -145,6 +121,11 @@ const MainApp = () => {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Signup"
+        component={SignupScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

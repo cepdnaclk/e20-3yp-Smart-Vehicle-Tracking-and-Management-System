@@ -22,7 +22,7 @@ const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { setDriverId } = useAppContext();
+  const { setDriverId, setDriverName } = useAppContext();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -46,24 +46,37 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert("Login Error", "Please enter both username and password.");
+      Alert.alert("Login Error", "Please enter username and password.");
       return;
     }
 
     setIsLoading(true);
     try {
-      // Mock authentication for development
-      if (
-        username === DEFAULT_CREDENTIALS.username &&
-        password === DEFAULT_CREDENTIALS.password
-      ) {
-        // Use centralized driver ID
-        await AsyncStorage.setItem("driverId", DRIVER_ID);
-        await AsyncStorage.setItem("driverToken", "mock-token-123");
-        await AsyncStorage.setItem("driverName", DRIVER_NAME);
+      // Modify the login API call to remove companyId
+      const response = await api.post("/api/mobile/login", {
+        username,
+        password,
+      });
+
+      if (response.data.success) {
+        // Save user data to AsyncStorage
+        await AsyncStorage.setItem(
+          "driverId",
+          response.data.data.user.driverId
+        );
+        await AsyncStorage.setItem("driverToken", response.data.data.token);
+        await AsyncStorage.setItem(
+          "driverName",
+          response.data.data.user.fullName
+        );
+        await AsyncStorage.setItem(
+          "companyId",
+          response.data.data.user.companyId
+        );
 
         // Update context
-        setDriverId(DRIVER_ID);
+        setDriverId(response.data.data.user.driverId);
+        setDriverName(response.data.data.user.fullName);
 
         // Navigate to main app
         navigation.replace("MainTabs");
@@ -123,6 +136,17 @@ const LoginScreen = ({ navigation }) => {
 
         <TouchableOpacity style={styles.forgotPasswordContainer}>
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        {/* Add a link to the signup screen */}
+        <TouchableOpacity
+          style={styles.signupContainer}
+          onPress={() => navigation.navigate("Signup")}
+        >
+          <Text style={styles.signupText}>
+            Don't have an account?{" "}
+            <Text style={styles.signupLink}>Sign up</Text>
+          </Text>
         </TouchableOpacity>
       </View>
 

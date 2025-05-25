@@ -42,16 +42,18 @@ mongoose
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
 // Import routes
-const vehicleRoutes = require("./routes/vehicleRoutes");
-const driverRoutes = require("./routes/driverRoutes");
-const taskRoutes = require("./routes/taskRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const driverRoutes = require("./routes/driverRoutes");
+const vehicleRoutes = require("./routes/vehicleRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const mobileUserRoutes = require("./routes/mobileUserRoutes"); // Add the new route
 
 // Use routes
-app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/drivers", driverRoutes);
+app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/tasks", taskRoutes);
-app.use("/api/admin", adminRoutes); // Make sure this line is present
+app.use("/api/mobile", mobileUserRoutes); // Register the new route
 
 app.get("/", (req, res) => {
   res.send("Vehicle Tracking Backend");

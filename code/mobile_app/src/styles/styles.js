@@ -618,4 +618,16 @@ export const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+  signupContainer: {
+    marginTop: 15,
+    alignItems: "center",
+  },
+  signupText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  signupLink: {
+    color: "#4DA6FF",
+    fontWeight: "bold",
+  },
 });
