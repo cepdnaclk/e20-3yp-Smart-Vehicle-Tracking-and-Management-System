@@ -1,6 +1,7 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const { Driver, Task } = require("../models/Driver"); // Import Task from Driver model instead of separate file
+const Driver = require("../models/Driver");
+const Task = require("../models/Task");
 const router = express.Router();
 
 // GET all drivers

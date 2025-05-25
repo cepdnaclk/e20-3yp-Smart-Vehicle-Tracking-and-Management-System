@@ -1,6 +1,7 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const { Task, Driver, DriverTaskCounter } = require("../models/Driver");
+const Task = require("../models/Task");
+const Driver = require("../models/Driver");
 const router = express.Router();
 
 // GET all tasks
