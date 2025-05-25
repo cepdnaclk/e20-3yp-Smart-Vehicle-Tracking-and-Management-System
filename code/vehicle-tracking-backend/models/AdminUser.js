@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-// User schema
-const userSchema = new mongoose.Schema(
+// AdminUser schema
+const adminUserSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true, // This already creates an index, so we don't need the explicit index below
+      unique: true,
       lowercase: true,
       trim: true,
       match: [
@@ -39,6 +39,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 8,
+    },
+    companyId: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 20,
     },
     role: {
       type: String,
@@ -75,16 +82,17 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for performance - removed duplicate email index
-userSchema.index({ createdAt: -1 });
+// Indexes for performance
+adminUserSchema.index({ createdAt: -1 });
+adminUserSchema.index({ companyId: 1 }); // Add index for companyId for faster queries
 
 // Virtual for full name
-userSchema.virtual("fullName").get(function () {
+adminUserSchema.virtual("fullName").get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
 // Pre-save hook to hash password
-userSchema.pre("save", async function (next) {
+adminUserSchema.pre("save", async function (next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified("password")) return next();
 
@@ -99,7 +107,7 @@ userSchema.pre("save", async function (next) {
 });
 
 // Instance method to check password
-userSchema.methods.comparePassword = async function (candidatePassword) {
+adminUserSchema.methods.comparePassword = async function (candidatePassword) {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -108,7 +116,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 // Static method to find user by email and validate password
-userSchema.statics.findByCredentials = async function (email, password) {
+adminUserSchema.statics.findByCredentials = async function (email, password) {
   const user = await this.findOne({
     email: email.toLowerCase(),
     isActive: true,
@@ -157,22 +165,22 @@ userSchema.statics.findByCredentials = async function (email, password) {
 };
 
 // Static method for password validation
-userSchema.statics.validatePassword = function (password) {
+adminUserSchema.statics.validatePassword = function (password) {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return passwordRegex.test(password);
 };
 
 // Static method for email validation
-userSchema.statics.validateEmail = function (email) {
+adminUserSchema.statics.validateEmail = function (email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
 // Static method for phone validation
-userSchema.statics.validatePhone = function (phone) {
+adminUserSchema.statics.validatePhone = function (phone) {
   const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
   return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ""));
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("AdminUser", adminUserSchema);

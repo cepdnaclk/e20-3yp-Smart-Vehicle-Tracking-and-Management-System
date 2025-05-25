@@ -18,7 +18,8 @@ class AuthService {
   // Register new user
   async register(userData) {
     try {
-      const response = await api.post("/api/users/register", userData);
+      console.log("Attempting to register user with data:", userData);
+      const response = await api.post("/api/admin/register", userData);
 
       if (response.data.success) {
         const { user, token } = response.data.data;
@@ -34,6 +35,7 @@ class AuthService {
       }
     } catch (error) {
       console.error("Registration error:", error);
+      console.error("Error response:", error.response?.data);
 
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
@@ -51,7 +53,7 @@ class AuthService {
   // Login user
   async login(email, password) {
     try {
-      const response = await api.post("/api/users/login", { email, password });
+      const response = await api.post("/api/admin/login", { email, password });
 
       if (response.data.success) {
         const { user, token } = response.data.data;
@@ -88,7 +90,7 @@ class AuthService {
       if (token) {
         this.setAuthToken(token);
         try {
-          await api.post("/api/users/logout");
+          await api.post("/api/admin/logout"); // Update to use admin endpoint
         } catch (err) {
           // Ignore error, still proceed with logout
           console.error("Logout API error:", err);
@@ -115,7 +117,7 @@ class AuthService {
       }
 
       this.setAuthToken(token);
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/api/admin/profile"); // Update to use admin endpoint
 
       if (response.data.success) {
         const user = response.data.data.user;
@@ -150,7 +152,7 @@ class AuthService {
       }
 
       this.setAuthToken(token);
-      const response = await api.put("/api/users/profile", userData);
+      const response = await api.put("/api/admin/profile", userData); // Update to use admin endpoint
 
       if (response.data.success) {
         const user = response.data.data.user;
@@ -184,7 +186,8 @@ class AuthService {
       }
 
       this.setAuthToken(token);
-      const response = await api.post("/api/users/change-password", {
+      const response = await api.post("/api/admin/change-password", {
+        // Update to use admin endpoint
         currentPassword,
         newPassword,
       });

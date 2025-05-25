@@ -1,12 +1,15 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const Vehicle = require("../models/Vehicle");
+const AdminUser = require("../models/AdminUser"); // Update this if User is being imported
+const auth = require("../middleware/auth"); // Import the auth middleware
 const router = express.Router();
 
-// GET all vehicles
-router.get("/", async (req, res) => {
+// Updated: GET all vehicles (with tenant isolation)
+router.get("/", auth, async (req, res) => {
   try {
-    const vehicles = await Vehicle.find();
+    // Only return vehicles for the current admin's company
+    const vehicles = await Vehicle.find({ companyId: req.user.companyId });
     res.json(vehicles);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -69,7 +72,7 @@ router.get("/license/:licensePlate", async (req, res) => {
   }
 });
 
-// POST a new vehicle
+// Updated: POST a new vehicle (with tenant isolation)
 router.post(
   "/",
   [
@@ -102,7 +105,9 @@ router.post(
     body("driver").optional().isString(),
     body("lastLocation").optional().isString(),
     body("lastUpdated").optional().isISO8601(),
+    body("companyId").optional(), // Make optional in validation since we'll set it from auth
   ],
+  auth,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -140,6 +145,7 @@ router.post(
         lastLocation: lastLocation || "Not tracked yet",
         driver: driver || "",
         lastUpdated: lastUpdated || Date.now(),
+        companyId: req.user.companyId, // Set companyId from authenticated user
       });
 
       const savedVehicle = await newVehicle.save();
@@ -185,6 +191,7 @@ router.put(
     body("lastLocation").optional().isString(),
     body("lastUpdated").optional().isISO8601(),
   ],
+  auth,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -195,6 +202,11 @@ router.put(
       const vehicle = await Vehicle.findById(req.params.id);
       if (!vehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
+      }
+
+      // Check if the vehicle belongs to the user's company
+      if (vehicle.companyId.toString() !== req.user.companyId) {
+        return res.status(403).json({ message: "Access denied" });
       }
 
       const {
@@ -239,12 +251,19 @@ router.put(
 );
 
 // DELETE a vehicle by ID
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const deletedVehicle = await Vehicle.findByIdAndDelete(req.params.id);
-    if (!deletedVehicle) {
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) {
       return res.status(404).json({ message: "Vehicle not found" });
     }
+
+    // Check if the vehicle belongs to the user's company
+    if (vehicle.companyId.toString() !== req.user.companyId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    await Vehicle.findByIdAndDelete(req.params.id);
     res.json({ message: "Vehicle deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });

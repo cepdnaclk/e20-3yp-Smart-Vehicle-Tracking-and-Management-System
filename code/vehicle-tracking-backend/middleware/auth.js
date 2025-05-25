@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const AdminUser = require("../models/AdminUser");
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
@@ -32,7 +32,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
 
     // Check if user still exists and is active
-    const user = await User.findById(decoded.userId);
+    const user = await AdminUser.findById(decoded.userId);
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
@@ -45,6 +45,7 @@ const auth = async (req, res, next) => {
       userId: decoded.userId,
       role: user.role,
       email: user.email,
+      companyId: user.companyId, // Add companyId to request
     };
 
     next();

@@ -41,15 +41,17 @@ mongoose
   .then(() => console.log("MongoDB Atlas Connected"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-const driverRoutes = require("./routes/driverRoutes");
+// Import routes
 const vehicleRoutes = require("./routes/vehicleRoutes");
-const userRoutes = require("./routes/userRoutes");
+const driverRoutes = require("./routes/driverRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
-app.use("/api/drivers", driverRoutes);
+// Use routes
 app.use("/api/vehicles", vehicleRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/drivers", driverRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/admin", adminRoutes); // Make sure this line is present
 
 app.get("/", (req, res) => {
   res.send("Vehicle Tracking Backend");

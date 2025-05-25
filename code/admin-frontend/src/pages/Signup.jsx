@@ -13,7 +13,8 @@ import {
   faCheckCircle,
   faArrowLeft,
   faEye,
-  faEyeSlash
+  faEyeSlash,
+  faBuilding // Add building icon for companyId
 } from "@fortawesome/free-solid-svg-icons";
 import { authService } from "../services/authService";
 import { User } from "../models/User";
@@ -24,6 +25,7 @@ function Signup() {
     lastName: "",
     email: "",
     phone: "",
+    companyId: "", // Add companyId field
     password: "",
     confirmPassword: ""
   });
@@ -82,6 +84,13 @@ function Signup() {
       errors.phone = "Please enter a valid phone number";
     }
     
+    // Company ID validation
+    if (!formData.companyId.trim()) {
+      errors.companyId = "Company ID is required";
+    } else if (formData.companyId.length < 3 || formData.companyId.length > 20) {
+      errors.companyId = "Company ID must be between 3 and 20 characters";
+    }
+    
     // Password validation
     if (!formData.password) {
       errors.password = "Password is required";
@@ -117,6 +126,7 @@ function Signup() {
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
+        companyId: formData.companyId.trim(), // Add companyId to the payload
         password: formData.password,
         role: 'owner'
       };
@@ -130,6 +140,7 @@ function Signup() {
         lastName: "",
         email: "",
         phone: "",
+        companyId: "", // Reset companyId
         password: "",
         confirmPassword: ""
       });
@@ -375,6 +386,34 @@ function Signup() {
                           {validationErrors.phone}
                         </div>
                       )}
+                    </div>
+                  </motion.div>
+
+                  {/* Company ID Field - Add this new field */}
+                  <motion.div className="mb-3" variants={slideUp}>
+                    <label htmlFor="companyId" className="form-label">Company ID *</label>
+                    <div className="input-group">
+                      <span className="input-group-text">
+                        <FontAwesomeIcon icon={faBuilding} />
+                      </span>
+                      <input
+                        type="text"
+                        id="companyId"
+                        name="companyId"
+                        className={`form-control ${validationErrors.companyId ? 'is-invalid' : ''}`}
+                        placeholder="Enter your company ID"
+                        value={formData.companyId}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      {validationErrors.companyId && (
+                        <div className="invalid-feedback">
+                          {validationErrors.companyId}
+                        </div>
+                      )}
+                    </div>
+                    <div className="form-text">
+                      This ID will be used to identify your company and connect your fleet
                     </div>
                   </motion.div>
 

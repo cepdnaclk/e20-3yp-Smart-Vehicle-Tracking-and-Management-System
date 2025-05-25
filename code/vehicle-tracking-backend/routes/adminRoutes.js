@@ -1,7 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
-const User = require("../models/User");
+const AdminUser = require("../models/AdminUser");
 const auth = require("../middleware/auth");
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-// POST /api/users/register - Register new user
+// POST /api/admin/register - Register new admin user
 router.post(
   "/register",
   [
@@ -44,12 +44,14 @@ router.post(
       .withMessage(
         "Password must contain uppercase, lowercase, number, and special character"
       ),
+    body("companyId").trim().notEmpty().withMessage("Company ID is required"),
     body("role")
       .optional()
       .isIn(["owner", "admin", "manager"])
       .withMessage("Invalid role"),
   ],
   async (req, res) => {
+    console.log("Register endpoint hit with data:", req.body);
     try {
       // Check validation errors
       const errors = validationResult(req);
@@ -61,10 +63,13 @@ router.post(
         });
       }
 
-      const { firstName, lastName, email, phone, password, role } = req.body;
+      const { firstName, lastName, email, phone, password, companyId, role } =
+        req.body;
 
       // Check if user already exists
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      const existingUser = await AdminUser.findOne({
+        email: email.toLowerCase(),
+      });
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -73,12 +78,13 @@ router.post(
       }
 
       // Create new user
-      const user = new User({
+      const user = new AdminUser({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.toLowerCase().trim(),
         phone: phone.trim(),
         password,
+        companyId: companyId.trim(),
         role: role || "owner",
       });
 
@@ -97,6 +103,7 @@ router.post(
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
+            companyId: user.companyId,
             role: user.role,
             fullName: user.fullName,
             createdAt: user.createdAt,
@@ -114,7 +121,7 @@ router.post(
   }
 );
 
-// POST /api/users/login - User login
+// POST /api/admin/login - User login
 router.post(
   "/login",
   [
@@ -139,7 +146,7 @@ router.post(
       const { email, password } = req.body;
 
       // Find user and validate credentials
-      const user = await User.findByCredentials(email, password);
+      const user = await AdminUser.findByCredentials(email, password);
 
       // Generate JWT token
       const token = generateToken(user._id);
@@ -154,6 +161,7 @@ router.post(
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
+            companyId: user.companyId,
             role: user.role,
             fullName: user.fullName,
             lastLogin: user.lastLogin,
@@ -171,10 +179,10 @@ router.post(
   }
 );
 
-// GET /api/users/profile - Get user profile (protected route)
+// GET /api/admin/profile - Get user profile (protected route)
 router.get("/profile", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await AdminUser.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -191,6 +199,7 @@ router.get("/profile", auth, async (req, res) => {
           lastName: user.lastName,
           email: user.email,
           phone: user.phone,
+          companyId: user.companyId,
           role: user.role,
           fullName: user.fullName,
           createdAt: user.createdAt,
@@ -207,7 +216,7 @@ router.get("/profile", auth, async (req, res) => {
   }
 });
 
-// PUT /api/users/profile - Update user profile (protected route)
+// PUT /api/admin/profile - Update user profile (protected route)
 router.put(
   "/profile",
   auth,
@@ -227,6 +236,11 @@ router.put(
       .trim()
       .matches(/^[\+]?[1-9][\d]{0,15}$/)
       .withMessage("Please enter a valid phone number"),
+    body("companyId")
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage("Company ID cannot be empty"),
   ],
   async (req, res) => {
     try {
@@ -240,9 +254,9 @@ router.put(
         });
       }
 
-      const { firstName, lastName, phone } = req.body;
+      const { firstName, lastName, phone, companyId } = req.body;
 
-      const user = await User.findById(req.user.userId);
+      const user = await AdminUser.findById(req.user.userId);
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -254,6 +268,7 @@ router.put(
       if (firstName) user.firstName = firstName.trim();
       if (lastName) user.lastName = lastName.trim();
       if (phone) user.phone = phone.trim();
+      if (companyId) user.companyId = companyId.trim();
 
       await user.save();
 
@@ -267,6 +282,7 @@ router.put(
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
+            companyId: user.companyId,
             role: user.role,
             fullName: user.fullName,
           },
@@ -282,7 +298,7 @@ router.put(
   }
 );
 
-// POST /api/users/change-password - Change password (protected route)
+// POST /api/admin/change-password - Change password (protected route)
 router.post(
   "/change-password",
   auth,
@@ -314,7 +330,7 @@ router.post(
 
       const { currentPassword, newPassword } = req.body;
 
-      const user = await User.findById(req.user.userId);
+      const user = await AdminUser.findById(req.user.userId);
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -351,19 +367,23 @@ router.post(
   }
 );
 
-// GET /api/users - Get all users (admin only)
-router.get("/", auth, async (req, res) => {
+// Updated GET /api/admin/users - Get all users by company (admin only)
+router.get("/users", auth, async (req, res) => {
   try {
-    // Check if user is admin (you can implement role-based middleware)
-    const currentUser = await User.findById(req.user.userId);
-    if (currentUser.role !== "admin") {
+    // Check if user is admin or owner
+    const currentUser = await AdminUser.findById(req.user.userId);
+    if (currentUser.role !== "admin" && currentUser.role !== "owner") {
       return res.status(403).json({
         success: false,
         message: "Access denied. Admin role required.",
       });
     }
 
-    const users = await User.find({ isActive: true })
+    // Find users from the same company - enforces tenant isolation
+    const users = await AdminUser.find({
+      companyId: currentUser.companyId,
+      isActive: true,
+    })
       .sort({ createdAt: -1 })
       .select("-password");
 
@@ -383,7 +403,41 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// POST /api/users/logout - Logout (protected route)
+// Add a new route to get company info - for dashboard and other needs
+router.get("/company", auth, async (req, res) => {
+  try {
+    const user = await AdminUser.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Get all users from the same company to count admins, etc.
+    const companyUsers = await AdminUser.find({
+      companyId: user.companyId,
+      isActive: true,
+    }).select("-password");
+
+    res.json({
+      success: true,
+      data: {
+        companyId: user.companyId,
+        adminCount: companyUsers.length,
+        // Add other company-related stats as needed
+      },
+    });
+  } catch (error) {
+    console.error("Company info fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+// POST /api/admin/logout - Logout (protected route)
 router.post("/logout", auth, async (req, res) => {
   try {
     // In a more sophisticated setup, you might want to blacklist the token

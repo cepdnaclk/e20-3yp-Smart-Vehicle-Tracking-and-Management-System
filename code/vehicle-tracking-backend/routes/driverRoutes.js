@@ -2,12 +2,14 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const Driver = require("../models/Driver");
 const Task = require("../models/Task");
+const auth = require("../middleware/auth"); // Assuming you have an auth middleware
 const router = express.Router();
 
-// GET all drivers
-router.get("/", async (req, res) => {
+// Updated: GET all drivers (with tenant isolation)
+router.get("/", auth, async (req, res) => {
   try {
-    const drivers = await Driver.find();
+    // Only return drivers for the current admin's company
+    const drivers = await Driver.find({ companyId: req.user.companyId });
     res.json(drivers);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -25,7 +27,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST a new driver
+// Updated: POST a new driver (with tenant isolation)
 router.post(
   "/",
   [
@@ -55,7 +57,9 @@ router.post(
       .isIn(["active", "inactive"])
       .withMessage("Invalid employment status"),
     body("lastLocation").optional().isString(),
+    body("companyId").optional(), // Make optional in validation since we'll set it from auth
   ],
+  auth,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -83,6 +87,7 @@ router.post(
         joinDate: joinDate ? new Date(joinDate) : undefined,
         employmentStatus: employmentStatus || "active",
         lastLocation: lastLocation || "",
+        companyId: req.user.companyId, // Set companyId from authenticated user
       });
 
       const savedDriver = await newDriver.save();
@@ -112,6 +117,7 @@ router.put(
       .withMessage("Invalid employment status"),
     body("lastLocation").optional().isString(),
   ],
+  auth,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -151,7 +157,7 @@ router.put(
 );
 
 // DELETE driver by ID
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     const driver = await Driver.findOne({ driverId: req.params.id });
     if (!driver) {
