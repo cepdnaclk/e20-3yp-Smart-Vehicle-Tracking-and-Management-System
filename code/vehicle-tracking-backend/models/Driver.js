@@ -1,8 +1,16 @@
 const mongoose = require("mongoose");
 
+// Drop any existing schema for Driver if it exists
+mongoose.models = {};
+mongoose.modelSchemas = {};
+
 const driverSchema = new mongoose.Schema(
   {
-    driverId: { type: String, unique: true, required: true },
+    driverId: {
+      type: String,
+      required: true,
+      // Make sure there's NO unique: true here
+    },
     fullName: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
@@ -17,10 +25,23 @@ const driverSchema = new mongoose.Schema(
     assignedVehicle: { type: String, default: "" },
     companyId: {
       type: String,
-      required: false, // Optional field to associate with a company
+      required: true, // Changed to required to ensure tenant isolation
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Driver", driverSchema);
+// IMPORTANT: Do not create any index here that would interfere with our manual compound index
+// We'll create the indexes manually after model definition
+
+const Driver = mongoose.model("Driver", driverSchema);
+
+// Now create the proper indexes manually
+Driver.collection.createIndex(
+  { driverId: 1, companyId: 1 },
+  { unique: true, background: true }
+);
+
+Driver.collection.createIndex({ companyId: 1 }, { background: true });
+
+module.exports = Driver;

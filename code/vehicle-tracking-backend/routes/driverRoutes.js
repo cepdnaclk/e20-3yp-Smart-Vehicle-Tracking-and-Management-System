@@ -16,11 +16,19 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// GET driver by driverId
-router.get("/:id", async (req, res) => {
+// GET driver by driverId - Updated with tenant isolation
+router.get("/:id", auth, async (req, res) => {
   try {
-    const driver = await Driver.findOne({ driverId: req.params.id });
-    if (!driver) return res.status(404).json({ message: "Driver not found" });
+    // Make sure to filter by companyId for proper tenant isolation
+    const driver = await Driver.findOne({
+      driverId: req.params.id,
+      companyId: req.user.companyId,
+    });
+
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
     res.json(driver);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -30,19 +38,13 @@ router.get("/:id", async (req, res) => {
 // Updated: POST a new driver (with tenant isolation)
 router.post(
   "/",
+  auth, // First run the auth middleware to ensure req.user is available
   [
     body("driverId")
       .notEmpty()
       .withMessage("Driver ID is required")
       .matches(/^DR\d{3}$/)
-      .withMessage("Driver ID must be DR followed by 3 digits (e.g., DR001)")
-      .custom(async (value) => {
-        const driver = await Driver.findOne({ driverId: value.trim() });
-        if (driver) {
-          throw new Error("Driver ID already exists");
-        }
-        return true;
-      }),
+      .withMessage("Driver ID must be DR followed by 3 digits (e.g., DR001)"),
     body("fullName").notEmpty().withMessage("Full Name is required"),
     body("email").isEmail().withMessage("Invalid email"),
     body("phone").notEmpty().withMessage("Phone number is required"),
@@ -57,9 +59,7 @@ router.post(
       .isIn(["active", "inactive"])
       .withMessage("Invalid employment status"),
     body("lastLocation").optional().isString(),
-    body("companyId").optional(), // Make optional in validation since we'll set it from auth
   ],
-  auth,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -67,6 +67,10 @@ router.post(
     }
 
     try {
+      // Get the company ID from the authenticated user
+      const companyId = req.user.companyId;
+      console.log("Creating new driver with company ID:", companyId);
+
       const {
         driverId,
         fullName,
@@ -78,6 +82,20 @@ router.post(
         lastLocation,
       } = req.body;
 
+      // First check if driver ID exists within this company
+      const existingDriver = await Driver.findOne({
+        driverId: driverId.trim(),
+        companyId: companyId,
+      });
+
+      if (existingDriver) {
+        return res
+          .status(400)
+          .json({
+            message: `Driver ID ${driverId} already exists in your company`,
+          });
+      }
+
       const newDriver = new Driver({
         driverId: driverId.trim(),
         fullName,
@@ -87,12 +105,30 @@ router.post(
         joinDate: joinDate ? new Date(joinDate) : undefined,
         employmentStatus: employmentStatus || "active",
         lastLocation: lastLocation || "",
-        companyId: req.user.companyId, // Set companyId from authenticated user
+        companyId: companyId, // Set companyId from authenticated user
+      });
+
+      console.log("Saving new driver:", {
+        ...newDriver.toObject(),
+        companyId: companyId,
       });
 
       const savedDriver = await newDriver.save();
+      console.log("Driver saved successfully with ID:", savedDriver._id);
+
       res.status(201).json(savedDriver);
     } catch (err) {
+      console.error("Error creating driver:", err);
+
+      // Better error handling for duplicate key errors
+      if (err.code === 11000 && err.keyPattern && err.keyPattern.driverId) {
+        return res
+          .status(400)
+          .json({
+            message: `Driver ID ${req.body.driverId} already exists in your company`,
+          });
+      }
+
       res.status(400).json({ message: err.message });
     }
   }

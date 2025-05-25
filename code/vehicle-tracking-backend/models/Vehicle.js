@@ -13,7 +13,11 @@ const vehicleSchema = new mongoose.Schema(
   {
     vehicleId: { type: Number, unique: true },
     vehicleName: { type: String, required: true },
-    licensePlate: { type: String, required: true, unique: true },
+    licensePlate: {
+      type: String,
+      required: true,
+      // Remove unique: true here
+    },
     vehicleType: {
       type: String,
       enum: ["car", "truck", "van", "bus", "motorcycle", "other"],
@@ -31,7 +35,10 @@ const vehicleSchema = new mongoose.Schema(
     lastLocation: { type: String, default: "Not tracked yet" },
     assignedDriver: { type: String, default: "" },
     lastUpdated: { type: Date, default: Date.now },
-    companyId: { type: String, default: "" }, // Add this field to store companyId
+    companyId: {
+      type: String,
+      required: true, // Changed to required to ensure tenant isolation
+    },
   },
   { timestamps: true }
 );
@@ -56,6 +63,10 @@ vehicleSchema.pre("save", function (next) {
     next();
   }
 });
+
+// Add compound index for proper tenant isolation
+vehicleSchema.index({ licensePlate: 1, companyId: 1 }, { unique: true });
+vehicleSchema.index({ companyId: 1 });
 
 // Export the Vehicle model
 module.exports = mongoose.model("Vehicle", vehicleSchema);

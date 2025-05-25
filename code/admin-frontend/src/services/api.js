@@ -15,7 +15,26 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
-      console.log("Adding token to request", config.url);
+      console.log("Adding token to request:", config.url);
+      console.log("Token value:", token);
+
+      // Let's also log the decoded token content to verify it has companyId
+      try {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split("")
+            .map(function (c) {
+              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join("")
+        );
+
+        console.log("Decoded token payload:", JSON.parse(jsonPayload));
+      } catch (err) {
+        console.error("Error decoding token:", err);
+      }
     } else {
       console.log("No token found in localStorage for request", config.url);
     }

@@ -10,9 +10,34 @@ const JWT_SECRET =
   process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
-// Helper function to generate JWT token
+// Generate JWT token helper function
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  // Get user from database to include required fields
+  return new Promise(async (resolve, reject) => {
+    try {
+      const user = await AdminUser.findById(userId);
+      if (!user) {
+        reject(new Error("User not found"));
+        return;
+      }
+
+      // Make sure to include companyId in the token payload
+      const payload = {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId,
+      };
+
+      console.log("Generating token with payload:", payload);
+
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
+
+      resolve(token);
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
 
 // POST /api/admin/register - Register new admin user
@@ -91,7 +116,7 @@ router.post(
       await user.save();
 
       // Generate JWT token
-      const token = generateToken(user._id);
+      const token = await generateToken(user._id);
 
       res.status(201).json({
         success: true,
@@ -149,7 +174,7 @@ router.post(
       const user = await AdminUser.findByCredentials(email, password);
 
       // Generate JWT token
-      const token = generateToken(user._id);
+      const token = await generateToken(user._id);
 
       res.json({
         success: true,
@@ -161,7 +186,7 @@ router.post(
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
-            companyId: user.companyId,
+            companyId: user.companyId, // Make sure companyId is included in response
             role: user.role,
             fullName: user.fullName,
             lastLogin: user.lastLogin,

@@ -199,7 +199,8 @@ const Drivers = () => {
         phone: newDriver.phone,
         licenseNumber: newDriver.licenseNumber,
         joinDate: newDriver.joinDate,
-        employmentStatus: newDriver.employmentStatus
+        employmentStatus: newDriver.employmentStatus,
+        // No need to add companyId here - it's extracted from JWT token in the backend
       };
 
       if (
@@ -221,6 +222,7 @@ const Drivers = () => {
         await api.put(`/api/drivers/${newDriver.driverId}`, payload);
         setAlertMessage("Driver updated successfully");
       } else {
+        console.log("Submitting new driver:", payload);
         await api.post("/api/drivers", payload);
         setAlertMessage("New driver added successfully");
       }
@@ -230,6 +232,9 @@ const Drivers = () => {
       setShowAddModal(false);
       fetchDrivers();
     } catch (err) {
+      console.error("Error saving driver:", err);
+      
+      // Better error handling with more details
       if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
         setAlertMessage(
           err.response.data.errors.map(e => e.msg).join(" | ")
