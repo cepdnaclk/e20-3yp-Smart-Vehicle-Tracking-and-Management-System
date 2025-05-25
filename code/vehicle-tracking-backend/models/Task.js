@@ -5,7 +5,7 @@ const taskSchema = new mongoose.Schema(
     taskNumber: {
       type: String,
       required: true,
-      unique: true,
+      // Remove the unique: true constraint here
     },
     cargoType: { type: String, required: true },
     weight: { type: Number, required: true, min: 0 },
@@ -34,7 +34,11 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Add an index on companyId for better query performance
+// Replace the simple index with a compound index for proper tenant isolation
+// This makes taskNumber unique ONLY within the same companyId
+taskSchema.index({ taskNumber: 1, companyId: 1 }, { unique: true });
+
+// Add a separate index on just companyId for better query performance
 taskSchema.index({ companyId: 1 });
 
 module.exports = mongoose.model("Task", taskSchema);

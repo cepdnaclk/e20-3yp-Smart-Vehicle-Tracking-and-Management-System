@@ -219,16 +219,15 @@ router.post(
           .json({ message: "Driver not found or not authorized" });
       }
 
-      // Check if this task number already exists for this specific driver
+      // Check if this task number already exists for this specific company (not just driver)
       const existingTask = await Task.findOne({
-        driverId: req.params.id,
         taskNumber: req.body.taskNumber,
         companyId: req.user.companyId,
       });
 
       if (existingTask) {
         return res.status(400).json({
-          message: `Task number ${req.body.taskNumber} already exists for driver ${req.params.id}`,
+          message: `Task number ${req.body.taskNumber} already exists for this company`,
         });
       }
 

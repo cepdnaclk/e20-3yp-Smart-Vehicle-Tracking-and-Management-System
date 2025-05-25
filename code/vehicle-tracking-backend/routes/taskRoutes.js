@@ -87,7 +87,7 @@ router.get("/next-number/:driverId", auth, async (req, res) => {
         .json({ message: "Driver not found or not authorized" });
     }
 
-    // Find the latest task number for this company
+    // Find the latest task number for this company specifically
     const latestTask = await Task.findOne({ companyId: req.user.companyId })
       .sort({ createdAt: -1 })
       .select("taskNumber");
@@ -101,6 +101,45 @@ router.get("/next-number/:driverId", auth, async (req, res) => {
       if (!isNaN(currentNum)) {
         const nextNum = currentNum + 1;
         nextNumber = `TSK${nextNum.toString().padStart(4, "0")}`;
+      }
+    }
+
+    // Check if this task number already exists for this company
+    // This is a safety check to avoid conflicts even with the compound index
+    const existingTask = await Task.findOne({
+      taskNumber: nextNumber,
+      companyId: req.user.companyId,
+    });
+
+    // If it exists (somehow), increment the number until we find an unused one
+    if (existingTask) {
+      console.log(
+        `Task number ${nextNumber} already exists, generating a new one`
+      );
+      let num = parseInt(nextNumber.substring(3), 10);
+      let isUnique = false;
+
+      // Try up to 100 times to find a unique number
+      for (let i = 0; i < 100; i++) {
+        num++;
+        const candidateNumber = `TSK${num.toString().padStart(4, "0")}`;
+        const exists = await Task.findOne({
+          taskNumber: candidateNumber,
+          companyId: req.user.companyId,
+        });
+
+        if (!exists) {
+          nextNumber = candidateNumber;
+          isUnique = true;
+          break;
+        }
+      }
+
+      if (!isUnique) {
+        return res.status(500).json({
+          message:
+            "Failed to generate a unique task number after multiple attempts",
+        });
       }
     }
 
