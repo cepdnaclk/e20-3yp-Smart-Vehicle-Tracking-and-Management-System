@@ -2,48 +2,93 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const Task = require("../models/Task");
 const Driver = require("../models/Driver");
+const auth = require("../middleware/auth"); // Add auth middleware
 const router = express.Router();
 
-// GET all tasks
-router.get("/", async (req, res) => {
+// GET all tasks - now with tenant isolation
+router.get("/", auth, async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    console.log("GET /api/tasks - User Context:", req.user);
 
-// GET tasks by driver ID
-router.get("/driver/:driverId", async (req, res) => {
-  try {
-    const tasks = await Task.find({ driverId: req.params.driverId }).sort({
+    // Filter tasks by companyId for tenant isolation
+    const tasks = await Task.find({ companyId: req.user.companyId }).sort({
       createdAt: -1,
     });
+    console.log(
+      `Found ${tasks.length} tasks for company ${req.user.companyId}`
+    );
+
     res.json(tasks);
   } catch (err) {
+    console.error("Error fetching tasks:", err);
     res.status(500).json({ message: err.message });
   }
 });
 
-// GET task by ID
-router.get("/:id", async (req, res) => {
+// GET tasks by driver ID - with tenant isolation
+router.get("/driver/:driverId", auth, async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    // First verify this driver belongs to the admin's company
+    const driver = await Driver.findOne({
+      driverId: req.params.driverId,
+      companyId: req.user.companyId,
+    });
+
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ message: "Driver not found or not authorized" });
+    }
+
+    // Then fetch tasks for this driver
+    const tasks = await Task.find({
+      driverId: req.params.driverId,
+      companyId: req.user.companyId,
+    }).sort({ createdAt: -1 });
+
+    res.json(tasks);
+  } catch (err) {
+    console.error("Error fetching driver tasks:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET task by ID - with tenant isolation
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId, // Ensure task belongs to admin's company
+    });
+
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
+
     res.json(task);
   } catch (err) {
+    console.error("Error fetching task:", err);
     res.status(500).json({ message: err.message });
   }
 });
 
-// Generate next task number (simple sequential numbering for all drivers)
-router.get("/next-number/:driverId", async (req, res) => {
+// Generate next task number (sequential numbering for company)
+router.get("/next-number/:driverId", auth, async (req, res) => {
   try {
-    // Find the latest task number regardless of driver
-    const latestTask = await Task.findOne()
+    // Verify this driver belongs to the admin's company
+    const driver = await Driver.findOne({
+      driverId: req.params.driverId,
+      companyId: req.user.companyId,
+    });
+
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ message: "Driver not found or not authorized" });
+    }
+
+    // Find the latest task number for this company
+    const latestTask = await Task.findOne({ companyId: req.user.companyId })
       .sort({ createdAt: -1 })
       .select("taskNumber");
 
@@ -59,6 +104,9 @@ router.get("/next-number/:driverId", async (req, res) => {
       }
     }
 
+    console.log(
+      `Generated next task number: ${nextNumber} for company ${req.user.companyId}`
+    );
     res.json({ nextTaskNumber: nextNumber });
   } catch (err) {
     console.error("Error generating task number:", err);
@@ -66,9 +114,10 @@ router.get("/next-number/:driverId", async (req, res) => {
   }
 });
 
-// POST a new task
+// POST a new task (with tenant isolation)
 router.post(
   "/",
+  auth,
   [
     body("taskNumber").notEmpty().withMessage("Task number is required"),
     body("cargoType").notEmpty().withMessage("Cargo type is required"),
@@ -86,12 +135,30 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
+      console.log("Creating new task with company ID:", req.user.companyId);
+
+      // Get the companyId from the authenticated user
+      const companyId = req.user.companyId;
+
+      // Check if driver exists and belongs to the same company
+      if (req.body.driverId) {
+        const driver = await Driver.findOne({
+          driverId: req.body.driverId,
+          companyId: companyId,
+        });
+
+        if (!driver) {
+          return res.status(400).json({
+            message: "Driver not found or doesn't belong to your company",
+          });
+        }
+      }
+
       const newTask = new Task({
         taskNumber: req.body.taskNumber,
         cargoType: req.body.cargoType,
@@ -103,22 +170,18 @@ router.post(
         additionalNotes: req.body.additionalNotes || "",
         driverId: req.body.driverId,
         licensePlate: req.body.licensePlate,
-        status: "Pending",
+        status: req.body.status || "Pending",
+        companyId: companyId, // Set companyId from authenticated user
       });
 
+      console.log("Saving new task:", newTask);
       const savedTask = await newTask.save();
+      console.log("Task saved successfully with ID:", savedTask._id);
 
       // Emit socket event if socketServer is available
       if (req.socketServer) {
-        console.log(
-          "Emitting task:assigned event for new task:",
-          savedTask.taskNumber
-        );
+        console.log("Emitting task:assigned event for new task");
         req.socketServer.emitTaskAssigned(savedTask);
-      } else {
-        console.warn(
-          "Socket server not available, couldn't emit task:assigned event"
-        );
       }
 
       res.status(201).json(savedTask);
@@ -129,16 +192,42 @@ router.post(
   }
 );
 
-// PUT (update) a task
-router.put("/:id", async (req, res) => {
+// PUT (update) a task - with tenant isolation
+router.put("/:id", auth, async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    // First verify this task belongs to admin's company
+    const existingTask = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
     });
 
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+    if (!existingTask) {
+      return res
+        .status(404)
+        .json({ message: "Task not found or not authorized" });
     }
+
+    // If driverId is changing, verify new driver belongs to admin's company
+    if (req.body.driverId && req.body.driverId !== existingTask.driverId) {
+      const driver = await Driver.findOne({
+        driverId: req.body.driverId,
+        companyId: req.user.companyId,
+      });
+
+      if (!driver) {
+        return res.status(400).json({
+          message: "Driver not found or not authorized for this company",
+        });
+      }
+    }
+
+    // Don't allow changing the companyId
+    const updateData = { ...req.body };
+    delete updateData.companyId; // Prevent changing companyId
+
+    const task = await Task.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+    });
 
     // Emit socket event if socketServer is available
     if (req.socketServer) {
@@ -152,12 +241,13 @@ router.put("/:id", async (req, res) => {
 
     res.json(task);
   } catch (err) {
+    console.error("Error updating task:", err);
     res.status(400).json({ message: err.message });
   }
 });
 
-// PATCH task status only (for mobile app)
-router.patch("/:id/status", async (req, res) => {
+// PATCH task status only (for mobile app) - with tenant isolation
+router.patch("/:id/status", auth, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -165,15 +255,23 @@ router.patch("/:id/status", async (req, res) => {
       return res.status(400).json({ message: "Status is required" });
     }
 
+    // First verify this task belongs to admin's company
+    const existingTask = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    });
+
+    if (!existingTask) {
+      return res
+        .status(404)
+        .json({ message: "Task not found or not authorized" });
+    }
+
     const task = await Task.findByIdAndUpdate(
       req.params.id,
       { status },
       { new: true }
     );
-
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
 
     // Emit socket event if socketServer is available
     if (req.socketServer) {
@@ -195,13 +293,19 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
-// DELETE a task
-router.delete("/:id", async (req, res) => {
+// DELETE a task - with tenant isolation
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    // First verify this task belongs to admin's company
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res
+        .status(404)
+        .json({ message: "Task not found or not authorized" });
     }
 
     await Task.findByIdAndDelete(req.params.id);
@@ -218,6 +322,7 @@ router.delete("/:id", async (req, res) => {
 
     res.json({ message: "Task deleted" });
   } catch (err) {
+    console.error("Error deleting task:", err);
     res.status(500).json({ message: err.message });
   }
 });

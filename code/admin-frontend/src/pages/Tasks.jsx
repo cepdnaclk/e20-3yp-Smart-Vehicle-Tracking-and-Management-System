@@ -72,7 +72,11 @@ const Tasks = () => {
   const fetchTasks = async () => {
     try {
       setIsLoading(true);
+      console.log("Fetching all tasks for current admin...");
       const response = await api.get("/api/tasks");
+      
+      // Log the response to help debug
+      console.log("Tasks response:", response.data);
       
       // Sort tasks by taskNumber for consistent display
       const sortedTasks = response.data.sort((a, b) => {
@@ -81,8 +85,19 @@ const Tasks = () => {
       
       setTasks(sortedTasks);
       setIsLoading(false);
+      
+      setAlertMessage(`Successfully loaded ${sortedTasks.length} tasks`);
+      setAlertType("success");
+      setShowAlert(true);
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      
+      // More detailed error logging
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+      }
+      
       setAlertMessage("Failed to load task data. Please try again.");
       setAlertType("danger");
       setShowAlert(true);
@@ -93,15 +108,8 @@ const Tasks = () => {
   const fetchAllTasks = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get("/api/tasks");
-      setTasks(response.data);
-      setIsLoading(false);
-      
-      setAlertMessage("Task data loaded successfully");
-      setAlertType("success");
-      setShowAlert(true);
+      await fetchTasks();
     } catch (error) {
-      console.error("Error fetching tasks:", error);
       setIsLoading(false);
       
       setAlertMessage("Failed to load task data");
@@ -257,6 +265,7 @@ const Tasks = () => {
       };
       
       if (editMode) {
+        console.log("Updating task:", selectedTask._id, payload);
         await api.put(`/api/tasks/${selectedTask._id}`, payload);
         setAlertMessage("Task updated successfully");
       }
@@ -273,6 +282,13 @@ const Tasks = () => {
       }
     } catch (error) {
       console.error("Error saving task:", error);
+      
+      // More detailed error logging
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+      }
+      
       setAlertMessage(editMode ? "Failed to update task" : "Failed to save task");
       setAlertType("danger");
       setShowAlert(true);

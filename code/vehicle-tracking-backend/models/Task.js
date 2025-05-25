@@ -28,10 +28,13 @@ const taskSchema = new mongoose.Schema(
     },
     companyId: {
       type: String,
-      required: false, // Optional field to associate with a company
+      required: true, // Changed to required to ensure tenant isolation
     },
   },
   { timestamps: true }
 );
+
+// Add an index on companyId for better query performance
+taskSchema.index({ companyId: 1 });
 
 module.exports = mongoose.model("Task", taskSchema);

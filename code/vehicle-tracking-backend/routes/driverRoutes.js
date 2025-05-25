@@ -204,18 +204,26 @@ router.post(
       .withMessage("Expected delivery must be a valid date"),
     body("licensePlate").notEmpty().withMessage("License plate is required"),
   ],
+  auth, // Add auth middleware to get companyId
   async (req, res) => {
     try {
       // Check if driver exists
-      const driver = await Driver.findOne({ driverId: req.params.id });
+      const driver = await Driver.findOne({
+        driverId: req.params.id,
+        companyId: req.user.companyId, // Ensure driver belongs to admin's company
+      });
+
       if (!driver) {
-        return res.status(404).json({ message: "Driver not found" });
+        return res
+          .status(404)
+          .json({ message: "Driver not found or not authorized" });
       }
 
       // Check if this task number already exists for this specific driver
       const existingTask = await Task.findOne({
         driverId: req.params.id,
         taskNumber: req.body.taskNumber,
+        companyId: req.user.companyId,
       });
 
       if (existingTask) {
@@ -236,6 +244,12 @@ router.post(
         licensePlate: req.body.licensePlate,
         driverId: req.params.id,
         status: "Pending",
+        companyId: req.user.companyId, // Add the companyId from authenticated user
+      });
+
+      console.log("Creating new task with data:", {
+        ...newTask.toObject(),
+        companyId: req.user.companyId,
       });
 
       const savedTask = await newTask.save();
@@ -264,52 +278,71 @@ router.post(
   }
 );
 
-// POST task assignment to driver
-router.post("/:driverId/tasks", async (req, res) => {
-  try {
-    const driverId = req.params.driverId;
+// POST task assignment to driver - fix this duplicate route
+router.post(
+  "/:driverId/tasks",
+  auth, // Add auth middleware to get companyId
+  async (req, res) => {
+    try {
+      const driverId = req.params.driverId;
 
-    // Verify driver exists
-    const driver = await Driver.findOne({ driverId });
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
+      // Verify driver exists and belongs to admin's company
+      const driver = await Driver.findOne({
+        driverId,
+        companyId: req.user.companyId,
+      });
+
+      if (!driver) {
+        return res
+          .status(404)
+          .json({ message: "Driver not found or not authorized" });
+      }
+
+      const newTask = new Task({
+        taskNumber: req.body.taskNumber,
+        cargoType: req.body.cargoType,
+        weight: req.body.weight,
+        pickup: req.body.pickup,
+        delivery: req.body.delivery,
+        deliveryPhone: req.body.deliveryPhone,
+        expectedDelivery: new Date(req.body.expectedDelivery),
+        additionalNotes: req.body.additionalNotes || "",
+        driverId: driverId,
+        licensePlate: req.body.licensePlate || "Not assigned",
+        status: "Pending",
+        companyId: req.user.companyId, // Add the companyId from authenticated user
+      });
+
+      console.log("Creating new task with data:", {
+        ...newTask.toObject(),
+        companyId: req.user.companyId,
+      });
+
+      const savedTask = await newTask.save();
+
+      // Emit socket event if socketServer is available
+      if (req.socketServer) {
+        console.log(
+          "Emitting task:assigned event for new task:",
+          savedTask.taskNumber
+        );
+        req.socketServer.emitTaskAssigned(savedTask);
+      } else {
+        console.warn(
+          "Socket server not available, couldn't emit task:assigned event"
+        );
+      }
+
+      res.status(201).json(savedTask);
+    } catch (err) {
+      console.error("Error assigning task:", err);
+      res.status(400).json({
+        message: err.message || "Failed to assign task",
+        details: err.toString(),
+      });
     }
-
-    const newTask = new Task({
-      taskNumber: req.body.taskNumber,
-      cargoType: req.body.cargoType,
-      weight: req.body.weight,
-      pickup: req.body.pickup,
-      delivery: req.body.delivery,
-      deliveryPhone: req.body.deliveryPhone,
-      expectedDelivery: new Date(req.body.expectedDelivery),
-      additionalNotes: req.body.additionalNotes || "",
-      driverId: driverId,
-      licensePlate: req.body.licensePlate || "Not assigned",
-      status: "Pending",
-    });
-
-    const savedTask = await newTask.save();
-
-    // Emit socket event if socketServer is available
-    if (req.socketServer) {
-      console.log(
-        "Emitting task:assigned event for new task:",
-        savedTask.taskNumber
-      );
-      req.socketServer.emitTaskAssigned(savedTask);
-    } else {
-      console.warn(
-        "Socket server not available, couldn't emit task:assigned event"
-      );
-    }
-
-    res.status(201).json(savedTask);
-  } catch (err) {
-    console.error("Error assigning task:", err);
-    res.status(400).json({ message: err.message });
   }
-});
+);
 
 // Catch-all for missing/incorrect endpoints
 router.use((req, res) => {

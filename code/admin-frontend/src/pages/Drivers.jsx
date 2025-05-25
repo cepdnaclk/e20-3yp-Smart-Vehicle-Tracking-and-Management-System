@@ -332,7 +332,12 @@ const Drivers = () => {
         licensePlate: selectedDriverForTask.assignedVehicle || "Not assigned"
       };
 
-      const response = await api.post(`/api/drivers/${selectedDriverForTask.driverId}/tasks`, payload);
+      // Directly use the task creation endpoint to ensure companyId is set properly
+      const response = await api.post(`/api/tasks`, {
+        ...payload,
+        status: "Pending" // Set initial status explicitly
+      });
+      
       console.log("Task created successfully:", response.data);
       
       setAlertMessage("Task assigned successfully! The driver will be notified in real-time.");

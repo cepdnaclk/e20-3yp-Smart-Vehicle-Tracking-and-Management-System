@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an axios instance with default configuration
 export const api = axios.create({
-  baseURL: "http://localhost:5000", // Use a hardcoded value instead of process.env
+  baseURL: "http://localhost:5000", // Use a hardcoded value
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -15,6 +15,9 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+      console.log("Adding token to request", config.url);
+    } else {
+      console.log("No token found in localStorage for request", config.url);
     }
     return config;
   },
@@ -39,6 +42,7 @@ api.interceptors.response.use(
 
       // If token is invalid/expired, redirect to login
       if (error.response.status === 401) {
+        console.log("Authentication error, redirecting to login");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         if (window.location.pathname !== "/login") {
