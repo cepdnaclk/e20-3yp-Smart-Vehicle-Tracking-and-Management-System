@@ -166,6 +166,9 @@ const Vehicles = () => {
       deviceId: vehicle.deviceId || "",
       trackingEnabled: typeof vehicle.trackingEnabled === "boolean" ? vehicle.trackingEnabled : true,
       status: vehicle.status || "active",
+      temperatureLimit: vehicle.temperatureLimit || 0,
+      humidityLimit: vehicle.humidityLimit || 0,
+      speedLimit: vehicle.speedLimit || 0,
       _id: vehicle._id,
     });
   };
@@ -181,6 +184,9 @@ const Vehicles = () => {
       deviceId: vehicle.deviceId || "",
       trackingEnabled: typeof vehicle.trackingEnabled === "boolean" ? vehicle.trackingEnabled : true,
       status: vehicle.status || "active",
+      temperatureLimit: vehicle.temperatureLimit || 0,
+      humidityLimit: vehicle.humidityLimit || 0,
+      speedLimit: vehicle.speedLimit || 0,
       _id: vehicle._id,
     });
   };
