@@ -123,6 +123,9 @@ router.post(
     body("driver").optional().isString(),
     body("lastLocation").optional().isString(),
     body("lastUpdated").optional().isISO8601(),
+    body("temperatureLimit").optional().isInt({ min: 0, max: 100 }),
+    body("humidityLimit").optional().isInt({ min: 0, max: 100 }),
+    body("speedLimit").optional().isInt({ min: 0, max: 100 }),
     body("companyId").optional(), // Make optional in validation since we'll set it from auth
   ],
   auth,
@@ -155,6 +158,9 @@ router.post(
         lastLocation,
         driver,
         lastUpdated,
+        temperatureLimit,
+        humidityLimit,
+        speedLimit,
       } = req.body;
 
       const newVehicle = new Vehicle({
@@ -172,6 +178,9 @@ router.post(
         driver: driver || "",
         lastUpdated: lastUpdated || Date.now(),
         companyId: companyId, // Set companyId from authenticated user
+        temperatureLimit: temperatureLimit ?? 90,
+        humidityLimit: humidityLimit ?? 60,
+        speedLimit: speedLimit ?? 80,
       });
 
       console.log("Saving new vehicle with data:", newVehicle);
@@ -220,6 +229,9 @@ router.put(
     body("driver").optional().isString(),
     body("lastLocation").optional().isString(),
     body("lastUpdated").optional().isISO8601(),
+    body("temperatureLimit").optional().isInt({ min: 0, max: 100 }),
+    body("humidityLimit").optional().isInt({ min: 0, max: 100 }),
+    body("speedLimit").optional().isInt({ min: 0, max: 100 }),
   ],
   auth,
   async (req, res) => {
@@ -253,6 +265,9 @@ router.put(
         lastLocation,
         driver,
         lastUpdated,
+        temperatureLimit,
+        humidityLimit,
+        speedLimit,
       } = req.body;
 
       vehicle.vehicleName = vehicleName;
@@ -271,6 +286,9 @@ router.put(
       vehicle.lastLocation = lastLocation || vehicle.lastLocation;
       vehicle.driver = driver || vehicle.driver;
       vehicle.lastUpdated = lastUpdated || Date.now();
+      vehicle.temperatureLimit = temperatureLimit ?? vehicle.temperatureLimit;
+      vehicle.humidityLimit = humidityLimit ?? vehicle.humidityLimit;
+      vehicle.speedLimit = speedLimit ?? vehicle.speedLimit;
 
       const updatedVehicle = await vehicle.save();
       res.json(updatedVehicle);
@@ -328,7 +346,10 @@ router.post("/check-registration", async (req, res) => {
         vehicleName: vehicle.vehicleName,
         vehicleType: vehicle.vehicleType,
         status: vehicle.status,
-        trackingEnabled: vehicle.trackingEnabled
+        trackingEnabled: vehicle.trackingEnabled,
+        temperatureLimit: vehicle.temperatureLimit,
+        humidityLimit: vehicle.humidityLimit,
+        speedLimit: vehicle.speedLimit
       } : null
     });
   } catch (error) {

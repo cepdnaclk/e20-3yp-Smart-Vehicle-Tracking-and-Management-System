@@ -8,20 +8,20 @@ export const getAlerts = async () => {
         devices: {
           "1": {
             sensor: {
-              temperature_C: 95,
-              humidity: 90
+              temperature_C: 5,
+              humidity: 50
             },
             gps: {
               latitude: 1.23456,
               longitude: 7.89012,
-              speed_kmh: 100
+              speed_kmh: 40
             },
             accidentalerts: {
-              accident_detected: true,
+              accident_detected: false,
               timestamp: "2025-05-26T14:35:00Z"
             },
             tamperingAlerts: {
-              tampering_detected: true,
+              tampering_detected: false,
               timestamp: "2025-05-26T14:40:00Z"
             }
           }
@@ -48,7 +48,7 @@ export const getAlerts = async () => {
         // Only generate alerts if the device is registered
         if (isRegistered && vehicle) {
           // Temperature Alert (Medium Severity)
-          if (device.sensor.temperature_C > 90) {
+          if (device.sensor.temperature_C > (vehicle.temperatureLimit)) {
             alerts.push({
               id: `temp_${deviceId}`,
               type: "temperature",
@@ -66,9 +66,9 @@ export const getAlerts = async () => {
               },
               timestamp: new Date().toISOString(),
               status: "active",
-              details: `Temperature exceeded threshold of 10°C. Current temperature: ${device.sensor.temperature_C}°C`,
+              details: `Temperature exceeded threshold of ${vehicle.temperatureLimit}°C. Current temperature: ${device.sensor.temperature_C}°C`,
               triggerCondition: {
-                threshold: 10,
+                threshold: vehicle.temperatureLimit,
                 currentValue: device.sensor.temperature_C,
                 unit: "°C"
               }
@@ -76,7 +76,7 @@ export const getAlerts = async () => {
           }
 
           // Humidity Alert (Medium Severity)
-          if (device.sensor.humidity > 60) {
+          if (device.sensor.humidity > (vehicle.humidityLimit)) {
             alerts.push({
               id: `hum_${deviceId}`,
               type: "humidity",
@@ -94,9 +94,9 @@ export const getAlerts = async () => {
               },
               timestamp: new Date().toISOString(),
               status: "active",
-              details: `Humidity exceeded threshold of 60%. Current humidity: ${device.sensor.humidity}%`,
+              details: `Humidity exceeded threshold of ${vehicle.humidityLimit}%. Current humidity: ${device.sensor.humidity}%`,
               triggerCondition: {
-                threshold: 60,
+                threshold: vehicle.humidityLimit,
                 currentValue: device.sensor.humidity,
                 unit: "%"
               }
@@ -104,7 +104,7 @@ export const getAlerts = async () => {
           }
 
           // Speed Alert (Low Severity)
-          if (device.gps.speed_kmh > 80) {
+          if (device.gps.speed_kmh > (vehicle.speedLimit)) {
             alerts.push({
               id: `speed_${deviceId}`,
               type: "speed",
@@ -122,9 +122,9 @@ export const getAlerts = async () => {
               },
               timestamp: new Date().toISOString(),
               status: "active",
-              details: `Speed exceeded limit of 80 km/h. Current speed: ${device.gps.speed_kmh} km/h`,
+              details: `Speed exceeded limit of ${vehicle.speedLimit} km/h. Current speed: ${device.gps.speed_kmh} km/h`,
               triggerCondition: {
-                threshold: 80,
+                threshold: vehicle.speedLimit,
                 currentValue: device.gps.speed_kmh,
                 unit: "km/h"
               }

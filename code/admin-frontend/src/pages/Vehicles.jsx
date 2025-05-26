@@ -577,6 +577,45 @@ const Vehicles = () => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
+                  <Form.Label>Temperature Limit (°C)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="temperatureLimit"
+                    value={modalState.vehicle.temperatureLimit || ""}
+                    onChange={handleInputChange}
+                    min={0}
+                    max={100}
+                    required
+                    disabled={modalState.viewMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Humidity Limit (%)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="humidityLimit"
+                    value={modalState.vehicle.humidityLimit || ""}
+                    onChange={handleInputChange}
+                    min={0}
+                    max={100}
+                    required
+                    disabled={modalState.viewMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Speed Limit (km/h)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="speedLimit"
+                    value={modalState.vehicle.speedLimit || ""}
+                    onChange={handleInputChange}
+                    min={0}
+                    max={100}
+                    required
+                    disabled={modalState.viewMode}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Check
                     type="switch"
                     id="trackingEnabled"

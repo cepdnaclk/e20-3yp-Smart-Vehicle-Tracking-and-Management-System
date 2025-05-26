@@ -39,6 +39,9 @@ const vehicleSchema = new mongoose.Schema(
       type: String,
       required: true, // Changed to required to ensure tenant isolation
     },
+    temperatureLimit: { type: Number, default: 90 },
+    humidityLimit: { type: Number, default: 60 },
+    speedLimit: { type: Number, default: 80 },
   },
   { timestamps: true }
 );
