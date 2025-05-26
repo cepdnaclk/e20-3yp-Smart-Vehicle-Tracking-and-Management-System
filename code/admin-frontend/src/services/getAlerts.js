@@ -43,10 +43,10 @@ export const getAlerts = async () => {
           deviceId
         });
 
-        const { isRegistered } = response.data;
+        const { isRegistered, vehicle } = response.data;
 
         // Only generate alerts if the device is registered
-        if (isRegistered) {
+        if (isRegistered && vehicle) {
           // Temperature Alert (Medium Severity)
           if (device.sensor.temperature_C > 90) {
             alerts.push({
@@ -56,8 +56,8 @@ export const getAlerts = async () => {
               message: "High temperature detected",
               vehicle: {
                 id: deviceId,
-                name: `Vehicle ${deviceId}`,
-                licensePlate: `CAT-${deviceId.slice(-4)}`
+                name: vehicle.vehicleName,
+                licensePlate: vehicle.licensePlate
               },
               location: {
                 lat: device.gps.latitude,
@@ -84,8 +84,8 @@ export const getAlerts = async () => {
               message: "High humidity detected",
               vehicle: {
                 id: deviceId,
-                name: `Vehicle ${deviceId}`,
-                licensePlate: `CAT-${deviceId.slice(-4)}`
+                name: vehicle.vehicleName,
+                licensePlate: vehicle.licensePlate
               },
               location: {
                 lat: device.gps.latitude,
@@ -112,8 +112,8 @@ export const getAlerts = async () => {
               message: "Speed limit exceeded",
               vehicle: {
                 id: deviceId,
-                name: `Vehicle ${deviceId}`,
-                licensePlate: `CAT-${deviceId.slice(-4)}`
+                name: vehicle.vehicleName,
+                licensePlate: vehicle.licensePlate
               },
               location: {
                 lat: device.gps.latitude,
@@ -140,8 +140,8 @@ export const getAlerts = async () => {
               message: "Accident detected!",
               vehicle: {
                 id: deviceId,
-                name: `Vehicle ${deviceId}`,
-                licensePlate: `CAT-${deviceId.slice(-4)}`
+                name: vehicle.vehicleName,
+                licensePlate: vehicle.licensePlate
               },
               location: {
                 lat: device.gps.latitude,
@@ -168,8 +168,8 @@ export const getAlerts = async () => {
               message: "Vehicle tampering detected",
               vehicle: {
                 id: deviceId,
-                name: `Vehicle ${deviceId}`,
-                licensePlate: `CAT-${deviceId.slice(-4)}`
+                name: vehicle.vehicleName,
+                licensePlate: vehicle.licensePlate
               },
               location: {
                 lat: device.gps.latitude,

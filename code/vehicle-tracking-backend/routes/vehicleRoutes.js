@@ -316,12 +316,20 @@ router.post("/check-registration", async (req, res) => {
     const vehicle = await Vehicle.findOne({
       companyId: companyId,
       deviceId: deviceId,
-      status: "active" // Only consider active vehicles
+      status: "active", // Only consider active vehicles
+      trackingEnabled: true // Only consider vehicles with tracking enabled
     });
 
     res.json({
       isRegistered: !!vehicle,
-      message: vehicle ? "Device is registered" : "Device is not registered"
+      message: vehicle ? "Device is registered and tracking is enabled" : "Device is not registered or tracking is disabled",
+      vehicle: vehicle ? {
+        licensePlate: vehicle.licensePlate,
+        vehicleName: vehicle.vehicleName,
+        vehicleType: vehicle.vehicleType,
+        status: vehicle.status,
+        trackingEnabled: vehicle.trackingEnabled
+      } : null
     });
   } catch (error) {
     console.error("Error checking vehicle registration:", error);
