@@ -1,13 +1,9 @@
 
-
-
-
-
 export const getAlerts = async () => {
   // Mock data structure
   const mockData = {
-    branches: {
-      branchId_1: {
+    companies: {
+      companyId_1: {
         devices: {
           deviceId_1: {
             sensor: {
@@ -37,8 +33,8 @@ export const getAlerts = async () => {
   const alerts = [];
 
   // Process each branch and device
-  Object.entries(mockData.branches).forEach(([branchId, branch]) => {
-    Object.entries(branch.devices).forEach(([deviceId, device]) => {
+  Object.entries(mockData.companies).forEach(([companyId, company]) => {
+    Object.entries(company.devices).forEach(([deviceId, device]) => {
       // Temperature Alert (Medium Severity)
       if (device.sensor.temperature_C > 90) {
         alerts.push({
@@ -184,59 +180,3 @@ export const getAlerts = async () => {
   return alerts;
 };
 
-// Helper function to check if an alert should be triggered based on sensor data
-export const checkAlertTriggers = (sensorData) => {
-  const alerts = [];
-
-  // Temperature trigger conditions
-  if (sensorData.temperature_C > 10) {
-    alerts.push({
-      type: "temperature",
-      severity: "medium",
-      message: "High temperature detected",
-      details: `Temperature exceeded threshold of 10°C. Current temperature: ${sensorData.temperature_C}°C`
-    });
-  }
-
-  // Humidity trigger conditions
-  if (sensorData.humidity > 60) {
-    alerts.push({
-      type: "humidity",
-      severity: "medium",
-      message: "High humidity detected",
-      details: `Humidity exceeded threshold of 60%. Current humidity: ${sensorData.humidity}%`
-    });
-  }
-
-  // Speed trigger conditions
-  if (sensorData.speed_kmh > 80) {
-    alerts.push({
-      type: "speed",
-      severity: "low",
-      message: "Speed limit exceeded",
-      details: `Speed exceeded limit of 80 km/h. Current speed: ${sensorData.speed_kmh} km/h`
-    });
-  }
-
-  // Accident trigger conditions
-  if (sensorData.accident_detected) {
-    alerts.push({
-      type: "accident",
-      severity: "critical",
-      message: "Accident detected!",
-      details: "Sudden impact detected. Possible accident. Immediate attention required."
-    });
-  }
-
-  // Tamper trigger conditions
-  if (sensorData.tampering_detected) {
-    alerts.push({
-      type: "tampering",
-      severity: "high",
-      message: "Vehicle tampering detected",
-      details: "Multiple tampering attempts detected. Security breach possible."
-    });
-  }
-
-  return alerts;
-};
