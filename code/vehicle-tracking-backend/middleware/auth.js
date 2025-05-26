@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const AdminUser = require("../models/AdminUser");
+const MobileUser = require("../models/MobileUser");
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
@@ -31,8 +32,15 @@ const auth = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Check if user still exists and is active
-    const user = await AdminUser.findById(decoded.userId);
+    // Try to find user in both AdminUser and MobileUser collections
+    let user = await AdminUser.findById(decoded.userId);
+    let userType = 'admin';
+
+    if (!user) {
+      user = await MobileUser.findById(decoded.userId);
+      userType = 'mobile';
+    }
+
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
@@ -40,12 +48,18 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Add user info to request object with companyId
+    // Add user info to request object
     req.user = {
       userId: decoded.userId,
       role: user.role,
       email: user.email,
-      companyId: user.companyId, // Make sure companyId is included
+      companyId: user.companyId,
+      userType: userType,
+      // Add mobile-specific fields if it's a mobile user
+      ...(userType === 'mobile' && {
+        driverId: user.driverId,
+        username: user.username
+      })
     };
 
     console.log("Auth middleware set user context:", req.user);

@@ -8,11 +8,34 @@ const router = express.Router();
 // Updated: GET all drivers (with tenant isolation)
 router.get("/", auth, async (req, res) => {
   try {
-    // Only return drivers for the current admin's company
+    console.log("GET /api/drivers - User Context:", req.user);
+    
+    // If it's a mobile user, only return their own driver record
+    if (req.user.userType === 'mobile') {
+      const driver = await Driver.findOne({ 
+        driverId: req.user.driverId,
+        companyId: req.user.companyId 
+      });
+      
+      if (!driver) {
+        return res.status(404).json({ 
+          success: false,
+          message: "Driver not found" 
+        });
+      }
+      
+      return res.json([driver]);
+    }
+    
+    // For admin users, return all drivers for their company
     const drivers = await Driver.find({ companyId: req.user.companyId });
     res.json(drivers);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Error fetching drivers:", err);
+    res.status(500).json({ 
+      success: false,
+      message: err.message 
+    });
   }
 });
 

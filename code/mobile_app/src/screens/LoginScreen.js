@@ -52,31 +52,58 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      // Modify the login API call to remove companyId
+      console.log("Attempting login for user:", username);
       const response = await api.post("/api/mobile/login", {
         username,
         password,
       });
 
       if (response.data.success) {
-        // Save user data to AsyncStorage
-        await AsyncStorage.setItem(
-          "driverId",
-          response.data.data.user.driverId
-        );
-        await AsyncStorage.setItem("driverToken", response.data.data.token);
-        await AsyncStorage.setItem(
-          "driverName",
-          response.data.data.user.fullName
-        );
-        await AsyncStorage.setItem(
-          "companyId",
-          response.data.data.user.companyId
-        );
+        console.log("Login successful, response data:", response.data);
+        
+        // Extract data from response
+        const { token, user } = response.data.data;
+        const { driverId, fullName, companyId } = user;
+
+        // Verify token format
+        if (!token || typeof token !== 'string') {
+          throw new Error("Invalid token received from server");
+        }
+
+        console.log("Storing credentials...");
+        // Store credentials in AsyncStorage
+        const storagePromises = [
+          AsyncStorage.setItem("driverId", driverId),
+          AsyncStorage.setItem("driverToken", token),
+          AsyncStorage.setItem("driverName", fullName),
+          AsyncStorage.setItem("companyId", companyId)
+        ];
+
+        await Promise.all(storagePromises);
+        console.log("Credentials stored successfully");
+
+        // Verify all stored data
+        const [storedDriverId, storedToken, storedName, storedCompanyId] = await Promise.all([
+          AsyncStorage.getItem("driverId"),
+          AsyncStorage.getItem("driverToken"),
+          AsyncStorage.getItem("driverName"),
+          AsyncStorage.getItem("companyId")
+        ]);
+
+        if (!storedToken || !storedDriverId || !storedName || !storedCompanyId) {
+          throw new Error("Failed to store all required credentials");
+        }
+
+        console.log("Verification successful:", {
+          driverId: storedDriverId,
+          hasToken: !!storedToken,
+          name: storedName,
+          companyId: storedCompanyId
+        });
 
         // Update context
-        setDriverId(response.data.data.user.driverId);
-        setDriverName(response.data.data.user.fullName);
+        setDriverId(driverId);
+        setDriverName(fullName);
 
         // Navigate to main app
         navigation.replace("MainTabs");
@@ -85,6 +112,9 @@ const LoginScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error("Login error:", error);
+      // Clear any partial stored data
+      await AsyncStorage.multiRemove(["driverId", "driverToken", "driverName", "companyId"]);
+      
       Alert.alert(
         "Login Error",
         error.response?.data?.message ||

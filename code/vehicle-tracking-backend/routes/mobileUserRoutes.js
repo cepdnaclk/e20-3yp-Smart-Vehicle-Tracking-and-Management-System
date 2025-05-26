@@ -7,7 +7,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 // Environment variables
-const JWT_SECRET = process.env.JWT_SECRET || "your-mobile-jwt-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "30d";
 
 // Helper function to generate token

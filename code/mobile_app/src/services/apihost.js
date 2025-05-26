@@ -26,6 +26,8 @@ if (Platform.OS === "android") {
   }
 }
 
+console.log("API Base URL:", baseURL);
+
 // Create an axios instance with the platform-specific base URL
 export const api = axios.create({
   baseURL,
@@ -40,8 +42,13 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const token = await AsyncStorage.getItem("driverToken");
+      console.log("Current token:", token ? "Token exists" : "No token found");
+      
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log("Request headers:", config.headers);
+      } else {
+        console.warn("No authentication token found for request:", config.url);
       }
     } catch (e) {
       console.error("Error setting auth token:", e);
@@ -49,6 +56,32 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error("Request interceptor error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor to handle token errors
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    if (error.response) {
+      // Log the full error response for debugging
+      console.error("API Error Response:", {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers,
+        url: error.config.url
+      });
+
+      // Handle 401 errors
+      if (error.response.status === 401) {
+        console.log("Authentication error detected, clearing token");
+        await AsyncStorage.removeItem("driverToken");
+      }
+    }
     return Promise.reject(error);
   }
 );

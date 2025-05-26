@@ -1,21 +1,47 @@
 import { api } from "./apihost";
-import { DRIVER_ID } from "../config/constants";
+import {
+  DRIVER_ID,
+  COMPANY_ID,
+  initializeFromStorage,
+  logTaskOwnership,
+} from "../config/constants";
 import socketService from "./SocketService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Track if we've already set up task handlers
 let taskHandlersSet = false;
 
 export const fetchDriverTasks = async () => {
   try {
-    console.log("[TaskService] Fetching tasks for driver:", DRIVER_ID);
-    const response = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
+    // Ensure constants are up to date
+    await initializeFromStorage();
+
+    // Verify we have a valid token
+    const token = await AsyncStorage.getItem("driverToken");
+    if (!token) {
+      console.error("[TaskService] No authentication token found");
+      throw new Error("Authentication token not found. Please log in again.");
+    }
+
+    console.log(
+      `[TaskService] Fetching tasks for driver=${DRIVER_ID}, company=${COMPANY_ID}`
+    );
+
+    // Include companyId in the query parameters
+    const response = await api.get(`/api/tasks/driver/${DRIVER_ID}`, {
+      params: { companyId: COMPANY_ID },
+    });
 
     if (response.data && Array.isArray(response.data)) {
       console.log(
-        "[TaskService] Successfully fetched",
-        response.data.length,
-        "tasks"
+        `[TaskService] Successfully fetched ${response.data.length} tasks for driver=${DRIVER_ID}, company=${COMPANY_ID}`
       );
+
+      // Log ownership for each task
+      response.data.forEach((task) => {
+        logTaskOwnership(task);
+      });
+
       return response.data;
     } else {
       console.warn(
@@ -26,8 +52,14 @@ export const fetchDriverTasks = async () => {
   } catch (error) {
     console.error("[TaskService] Error fetching tasks:", error);
 
-    // Provide more specific error information
+    // Handle specific error cases
     if (error.response) {
+      if (error.response.status === 401) {
+        console.error("[TaskService] Authentication error - token may be invalid or expired");
+        // Clear invalid token
+        await AsyncStorage.removeItem("driverToken");
+        throw new Error("Session expired. Please log in again.");
+      }
       console.error(
         "[TaskService] Server responded with:",
         error.response.status,
@@ -45,7 +77,24 @@ export const fetchDriverTasks = async () => {
 
 export const updateTaskStatus = async (taskId, status) => {
   try {
-    const response = await api.patch(`/api/tasks/${taskId}/status`, { status });
+    // Ensure constants are up to date
+    await initializeFromStorage();
+
+    console.log(
+      `[TaskService] Updating task ${taskId} status to ${status} for driver=${DRIVER_ID}, company=${COMPANY_ID}`
+    );
+
+    // Include companyId in the request body
+    const response = await api.patch(`/api/tasks/${taskId}/status`, {
+      status,
+      companyId: COMPANY_ID, // Add companyId to all task updates
+    });
+
+    // Log ownership of the updated task
+    if (response.data) {
+      logTaskOwnership(response.data);
+    }
+
     return response.data;
   } catch (error) {
     console.error("[TaskService] Error updating task status:", error);
@@ -88,14 +137,22 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
         try {
           console.log("[TaskService] New task assigned:", taskData.taskNumber);
 
-          // Call the provided callback with the new task
-          if (taskData.driverId === DRIVER_ID) {
+          // Log ownership information
+          logTaskOwnership(taskData);
+
+          // Check both driverId and companyId match for compound key filtering
+          if (
+            taskData.driverId === DRIVER_ID &&
+            taskData.companyId === COMPANY_ID
+          ) {
             console.log(
-              "[TaskService] Task belongs to current driver, updating UI"
+              "[TaskService] Task belongs to current driver and company, updating UI"
             );
             onTaskUpdate("add", taskData);
           } else {
-            console.log("[TaskService] Task for different driver, ignoring");
+            console.log(
+              "[TaskService] Task NOT for current driver or company, ignoring"
+            );
           }
         } catch (err) {
           console.error(
@@ -104,16 +161,27 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
           );
         }
       },
+
       onTaskUpdated: (taskData) => {
         try {
           console.log("[TaskService] Task updated:", taskData.taskNumber);
-          if (taskData.driverId === DRIVER_ID) {
+
+          // Log ownership information
+          logTaskOwnership(taskData);
+
+          // Check both driverId and companyId match for compound key filtering
+          if (
+            taskData.driverId === DRIVER_ID &&
+            taskData.companyId === COMPANY_ID
+          ) {
             console.log(
-              "[TaskService] Task belongs to current driver, updating UI"
+              "[TaskService] Task belongs to current driver and company, updating UI"
             );
             onTaskUpdate("update", taskData);
           } else {
-            console.log("[TaskService] Task for different driver, ignoring");
+            console.log(
+              "[TaskService] Task NOT for current driver or company, ignoring"
+            );
           }
         } catch (err) {
           console.error(
@@ -122,16 +190,27 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
           );
         }
       },
+
       onTaskDeleted: (taskData) => {
         try {
           console.log("[TaskService] Task deleted:", taskData.taskNumber);
-          if (taskData.driverId === DRIVER_ID) {
+
+          // Log ownership information
+          logTaskOwnership(taskData);
+
+          // Check both driverId and companyId match for compound key filtering
+          if (
+            taskData.driverId === DRIVER_ID &&
+            taskData.companyId === COMPANY_ID
+          ) {
             console.log(
-              "[TaskService] Task belongs to current driver, updating UI"
+              "[TaskService] Task belongs to current driver and company, updating UI"
             );
             onTaskUpdate("delete", taskData);
           } else {
-            console.log("[TaskService] Task for different driver, ignoring");
+            console.log(
+              "[TaskService] Task NOT for current driver or company, ignoring"
+            );
           }
         } catch (err) {
           console.error(
@@ -140,6 +219,7 @@ export const subscribeToTaskUpdates = (onTaskUpdate) => {
           );
         }
       },
+
       onConnect: () => {
         console.log("[TaskService] Socket connected, joining driver room");
         // Join driver-specific room

@@ -15,6 +15,12 @@ import {
   subscribeToTaskUpdates,
   fetchDriverTasks,
 } from "../services/TaskService";
+import {
+  DRIVER_ID,
+  COMPANY_ID,
+  initializeFromStorage,
+  logTaskOwnership,
+} from "../config/constants";
 
 export const TaskScreen = ({ navigation }) => {
   const {
@@ -84,7 +90,24 @@ export const TaskScreen = ({ navigation }) => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
+      // Ensure constants are up to date
+      await initializeFromStorage();
+
+      console.log(
+        `TaskScreen: Refreshing tasks for driver=${DRIVER_ID}, company=${COMPANY_ID}`
+      );
+
       const freshTasks = await fetchDriverTasks();
+
+      // Log task ownership for debugging
+      if (freshTasks && Array.isArray(freshTasks)) {
+        console.log(`TaskScreen: Received ${freshTasks.length} tasks`);
+
+        freshTasks.forEach((task) => {
+          logTaskOwnership(task);
+        });
+      }
+
       setContextTasks(freshTasks); // Update directly to context
     } catch (error) {
       console.error("Failed to refresh tasks:", error);

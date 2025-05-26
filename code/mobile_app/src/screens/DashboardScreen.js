@@ -110,15 +110,44 @@ const DashboardScreen = ({ navigation }) => {
             vehicleError
           );
         }
-
-        console.log("Dashboard: Synchronization completed successfully");
       }
     } catch (error) {
       console.error("Dashboard: Error refreshing tasks:", error);
-      Alert.alert(
-        "Sync Error",
-        "Failed to synchronize tasks. Please check your connection and try again."
-      );
+      
+      // Handle authentication errors
+      if (error.message === "Session expired. Please log in again." || 
+          error.message === "Authentication token not found. Please log in again.") {
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please log in again.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Clear all stored credentials
+                AsyncStorage.multiRemove([
+                  "driverId",
+                  "driverToken",
+                  "driverName",
+                  "companyId",
+                  "vehicleNumber"
+                ]).then(() => {
+                  // Navigate to login screen
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "Login" }],
+                  });
+                });
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          "Failed to refresh tasks. Please try again."
+        );
+      }
     } finally {
       setRefreshing(false);
     }
