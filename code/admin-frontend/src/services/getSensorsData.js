@@ -1,8 +1,15 @@
 // Mock function to get sensor data
 export const getSensorsData = async () => {
-  // Mock data
+  // Mock data matching Firebase structure
   return {
-    humidity: 60,
-    temperature: 25,
+    gps: {
+      latitude: 6.9271,
+      longitude: 79.8612,
+      speed_kmh: 45
+    },
+    sensor: {
+      temperature_C: 29,
+      humidity: 90
+    }
   };
 };

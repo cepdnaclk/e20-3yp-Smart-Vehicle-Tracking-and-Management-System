@@ -27,7 +27,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
-import { api } from "../services/api";
+import { getAlerts } from "../services/getAlerts";
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -52,139 +52,8 @@ const Alerts = () => {
   const fetchAlerts = async () => {
     try {
       setIsLoading(true);
-      // In a real app, this would be an actual API call
-      // const response = await api.get("/api/alerts");
-      
-      // For now, using mock data
-      const mockAlerts = [
-        {
-          id: "1",
-          type: "tampering",
-          severity: "high",
-          message: "Vehicle tampering detected",
-          vehicle: {
-            id: "v1",
-            name: "Delivery Van 1",
-            licensePlate: "CAM-8086"
-          },
-          location: {
-            lat: 6.9271,
-            lng: 79.8612,
-            address: "Colombo, Sri Lanka"
-          },
-          timestamp: new Date(Date.now() - 10 * 60000).toISOString(),
-          status: "active",
-          details: "The vehicle's security system has detected potential tampering attempts."
-        },
-        {
-          id: "2",
-          type: "temperature",
-          severity: "medium",
-          message: "High temperature alert",
-          vehicle: {
-            id: "v2",
-            name: "Refrigerated Truck",
-            licensePlate: "CAT-1234"
-          },
-          location: {
-            lat: 6.9723,
-            lng: 79.8885,
-            address: "Kirulapone, Colombo"
-          },
-          timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
-          status: "active",
-          details: "Temperature exceeded threshold of 10°C. Current temperature: 14.5°C."
-        },
-        {
-          id: "3",
-          type: "geofence",
-          severity: "low",
-          message: "Vehicle left assigned route",
-          vehicle: {
-            id: "v3",
-            name: "Delivery Truck 3",
-            licensePlate: "CAB-9753"
-          },
-          location: {
-            lat: 6.0535,
-            lng: 80.2210,
-            address: "Galle, Sri Lanka"
-          },
-          timestamp: new Date(Date.now() - 3 * 3600000).toISOString(),
-          status: "resolved",
-          details: "Vehicle has deviated from the assigned route by more than 500 meters."
-        },
-        {
-          id: "4",
-          type: "battery",
-          severity: "medium",
-          message: "Low battery alert",
-          vehicle: {
-            id: "v4",
-            name: "Pickup Truck",
-            licensePlate: "CBC-4567"
-          },
-          location: {
-            lat: 7.2906,
-            lng: 80.6337,
-            address: "Kandy, Sri Lanka"
-          },
-          timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-          status: "active",
-          details: "Vehicle battery level is below 20%. Please charge soon."
-        },
-        {
-          id: "5",
-          type: "humidity",
-          severity: "low",
-          message: "High humidity alert",
-          vehicle: {
-            id: "v2",
-            name: "Refrigerated Truck",
-            licensePlate: "CAT-1234"
-          },
-          location: {
-            lat: 6.9271,
-            lng: 79.8612,
-            address: "Colombo, Sri Lanka"
-          },
-          timestamp: new Date(Date.now() - 2 * 24 * 3600000).toISOString(),
-          status: "resolved",
-          details: "Humidity exceeded threshold of 60%. Current humidity: 72%."
-        },
-        {
-          id: "6",
-          type: "system",
-          severity: "info",
-          message: "System maintenance completed",
-          vehicle: null,
-          location: null,
-          timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),
-          status: "resolved",
-          details: "System maintenance has been successfully completed. All services are now operational."
-        },
-        {
-          id: "7",
-          type: "tampering",
-          severity: "critical",
-          message: "Severe tampering detected",
-          vehicle: {
-            id: "v5",
-            name: "Cargo Truck",
-            licensePlate: "CBB-7890"
-          },
-          location: {
-            lat: 7.4818,
-            lng: 80.3609,
-            address: "Kurunegala, Sri Lanka"
-          },
-          timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-          status: "active",
-          details: "Multiple tampering attempts detected. Security breach possible. Immediate attention required."
-        }
-      ];
-      
-      setAlerts(mockAlerts);
+      const alertsData = await getAlerts();
+      setAlerts(alertsData);
       setIsLoading(false);
       
       setToastMessage("Alert data loaded successfully");
@@ -254,18 +123,16 @@ const Alerts = () => {
 
   const getAlertIcon = (type) => {
     switch (type) {
-      case 'tampering':
-        return <ShieldAlert size={18} className="text-danger" />;
       case 'temperature':
         return <ThermometerIcon size={18} className="text-warning" />;
       case 'humidity':
         return <DropletIcon size={18} className="text-info" />;
-      case 'battery':
-        return <BatteryIcon size={18} className="text-warning" />;
-      case 'geofence':
-        return <MapPin size={18} className="text-primary" />;
-      case 'system':
-        return <Settings size={18} className="text-secondary" />;
+      case 'speed':
+        return <Truck size={18} className="text-info" />;
+      case 'accident':
+        return <AlertTriangle size={18} className="text-danger" />;
+      case 'tampering':
+        return <ShieldAlert size={18} className="text-danger" />;
       default:
         return <Info size={18} className="text-info" />;
     }
@@ -330,11 +197,11 @@ const Alerts = () => {
       render: (value, row) => (
         <div className="d-flex align-items-center">
           <div className="rounded-circle p-2 me-2" style={{ 
-            backgroundColor: value === 'tampering' 
+            backgroundColor: value === 'tampering' || value === 'accident'
               ? 'rgba(239, 68, 68, 0.1)' 
-              : value === 'temperature' || value === 'battery'
+              : value === 'temperature'
                 ? 'rgba(245, 158, 11, 0.1)'
-                : value === 'humidity' || value === 'geofence'
+                : value === 'humidity' || value === 'speed'
                   ? 'rgba(14, 165, 233, 0.1)'
                   : 'rgba(107, 114, 128, 0.1)'
           }}>

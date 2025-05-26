@@ -2,9 +2,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const TemperatureChart = ({ data }) => (
-  <div className="text-center p-4" style={{ height: '300px' }}>
-    <p>Temperature Chart - Data visualization will appear here</p>
-    <small className="text-muted">Install chart.js and react-chartjs-2 to implement real charts</small>
+  <div className="text-center p-4" style={{ height: '300px' }}>   
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
