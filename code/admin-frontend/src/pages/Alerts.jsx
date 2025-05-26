@@ -243,23 +243,6 @@ const Alerts = () => {
       )
     },
     {
-      key: 'location',
-      header: 'Location',
-      sortable: true,
-      render: (value) => (
-        <div>
-          {value ? (
-            <div className="d-flex align-items-center">
-              <MapPin size={14} className="text-muted me-1" />
-              <span>{value.address}</span>
-            </div>
-          ) : (
-            <span className="text-muted">N/A</span>
-          )}
-        </div>
-      )
-    },
-    {
       key: 'timestamp',
       header: 'Time',
       sortable: true,
