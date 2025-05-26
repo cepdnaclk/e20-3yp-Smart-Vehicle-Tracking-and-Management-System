@@ -300,4 +300,36 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
+// Add this new route to check vehicle registration
+router.post("/check-registration", async (req, res) => {
+  try {
+    const { companyId, deviceId } = req.body;
+
+    if (!companyId || !deviceId) {
+      return res.status(400).json({
+        isRegistered: false,
+        message: "Both companyId and deviceId are required"
+      });
+    }
+
+    // Check if a vehicle exists with the given companyId and deviceId
+    const vehicle = await Vehicle.findOne({
+      companyId: companyId,
+      deviceId: deviceId,
+      status: "active" // Only consider active vehicles
+    });
+
+    res.json({
+      isRegistered: !!vehicle,
+      message: vehicle ? "Device is registered" : "Device is not registered"
+    });
+  } catch (error) {
+    console.error("Error checking vehicle registration:", error);
+    res.status(500).json({
+      isRegistered: false,
+      message: "Error checking vehicle registration"
+    });
+  }
+});
+
 module.exports = router;
