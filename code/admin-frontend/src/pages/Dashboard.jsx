@@ -21,7 +21,9 @@ import {
   Thermometer,
   Droplets,
   Gauge,
-  Hash
+  Hash,
+  ClipboardCheck,
+  CheckCircle
 } from "lucide-react";
 import { Card, Row, Col, Alert } from 'react-bootstrap';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -101,8 +103,10 @@ const Dashboard = () => {
   const [activeVehicles, setActiveVehicles] = useState([]);
   const [totalDrivers, setTotalDrivers] = useState(0);
   const [activeDrivers, setActiveDrivers] = useState(0);
+  const [totalTasks,setTotaltasks] = useState(0);
+  const [CompletedTasks,setCompletedTasks] = useState(0);
   const [activeAlerts, setActiveAlerts] = useState(0);
-  const [alert, setAlert] = useState(null);
+  const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -160,6 +164,8 @@ const Dashboard = () => {
           fetchActiveVehicles(),
           fetchTotalDrivers(),
           fetchActiveDrivers(),
+          fetchTotalTasks(),
+          fetchCompltedTasks(),
           fetchSensors(),
           fetchAlerts()
         ]);
@@ -265,6 +271,32 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTotalTasks = async () => {
+    try {
+      const response = await api.get("/api/tasks");
+      if (response.data && response.data.length >= 0) {
+        setTotaltasks(response.data.length);
+      }
+    } catch (error) {
+      console.error("Error fetching total tasks:", error);
+      setTotaltasks(0);
+    }
+  };
+
+  const fetchCompltedTasks = async () => {
+    try {
+      const response = await api.get("/api/tasks");
+      if (response.data && Array.isArray(response.data)) {
+        // Filter tasks where status is 'completed'
+        const completedTasks = response.data.filter(task => task.status === 'Completed');
+        setCompletedTasks(completedTasks.length);
+      }
+    } catch (error) {
+      console.error("Error fetching completed tasks:", error);
+      setCompletedTasks(0);
+    }
+  };
+
   // Fetch sensors
   const fetchSensors = async () => {
     try {
@@ -279,18 +311,18 @@ const Dashboard = () => {
   const fetchAlerts = async () => {
     try {
       const alertsData = await getAlerts();
-      if (alertsData && alertsData.tampering_timestamp) {
-        const alert = {
-          type: 'Tamper',
-          vehicle: "CAM-8087",
-          time: alertsData.tampering_timestamp.split(" ")[1],
-          location: `${alertsData.tampering_latitude}° N, ${alertsData.tampering_longitude}° E`,
-        };
-        setAlert(alert);
-        setActiveAlerts(1);
+      if (Array.isArray(alertsData)) {
+        setAlerts(alertsData);
+        setActiveAlerts(alertsData.filter(a => a.status === 'active').length);
+      } else {
+        console.error("getAlerts did not return an array:", alertsData);
+        setAlerts([]);
+        setActiveAlerts(0);
       }
     } catch (error) {
       console.error("Error fetching alerts:", error);
+      setAlerts([]);
+      setActiveAlerts(0);
     }
   };
 
@@ -305,20 +337,24 @@ const Dashboard = () => {
       variants={itemVariants}
     >
       <div className="card border-0 shadow-sm h-100 stats-card">
-        <div className="card-body">
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <div className={`rounded-circle p-3 ${color}`} style={{ opacity: 0.2 }}>
-              {icon}
-            </div>
-            {percentage && (
-              <div className={`badge ${isUp ? 'bg-success' : 'bg-danger'} d-flex align-items-center`}>
-                {isUp ? <TrendingUp size={14} className="me-1" /> : <TrendingUp size={14} className="me-1" style={{ transform: 'rotate(180deg)' }} />}
-                {percentage}%
-              </div>
-            )}
+        <div className="card-body d-flex align-items-center">
+          {/* Icon */}
+          <div className={`rounded-circle p-3 me-3 d-flex align-items-center justify-content-center ${color}`} style={{ width: '60px', height: '60px' }}>
+            {React.cloneElement(icon, { size: 28, color: 'white' })}
           </div>
-          <div className="d-flex flex-column">
-            <h5 className="card-title text-gray-900 mb-1">{value}</h5>
+          
+          {/* Value and Title */}
+          <div className="flex-grow-1">
+            <div className="d-flex align-items-center justify-content-between">
+              <h5 className="card-title text-gray-900 mb-1">{value}</h5>
+              {/* Percentage Badge */}
+              {percentage !== undefined && ( // Check if percentage is provided
+                <div className={`badge ${isUp ? 'bg-success' : 'bg-danger'} d-flex align-items-center`}>
+                  {isUp ? <TrendingUp size={14} className="me-1" /> : <TrendingUp size={14} className="me-1" style={{ transform: 'rotate(180deg)' }} />}
+                  {percentage}%
+                </div>
+              )}
+            </div>
             <p className="card-text text-muted small mb-0">{title}</p>
           </div>
         </div>
@@ -479,47 +515,6 @@ const Dashboard = () => {
           onClose={() => setShowToast(false)}
         />
         
-        {/* Stats Cards */}
-        <motion.div 
-          className="row mb-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <StatsCardNew 
-            icon={<Truck size={24} className="text-primary" />} 
-            title="Total Vehicles" 
-            value={totalVehicles} 
-            color="bg-primary"
-            percentage="12"
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<Zap size={24} className="text-success" />} 
-            title="Active Vehicles" 
-            value={activeVehicles.length} 
-            color="bg-success"
-            percentage="5"
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<Users size={24} className="text-info" />} 
-            title="Total Drivers" 
-            value={totalDrivers} 
-            color="bg-info"
-            percentage="8"
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<User size={24} className="text-warning" />} 
-            title="Active Drivers" 
-            value={activeDrivers} 
-            color="bg-warning"
-            percentage="10"
-            isUp={true}
-          />
-        </motion.div>
-
         {/* Interactive Map Section with Title */}
         <motion.div 
           className="card shadow-sm border-0 mb-4 overflow-hidden"
@@ -579,68 +574,6 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Recent Alerts and Active Vehicles in Cards */}
-        <div className="row">
-          <div className="col-lg-6 mb-4">
-            <motion.div 
-              className="card border-0 shadow-sm h-100"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className="card-header bg-white">
-                <div className="d-flex align-items-center">
-                  <AlertTriangle size={18} className="me-2 text-danger" />
-                  <h5 className="mb-0">Recent Alerts</h5>
-                </div>
-              </div>
-              <div className="card-body" style={{ maxHeight: '370px', overflowY: 'auto' }}>
-                {alert !== null && <AlertCardNew alert={alert} />}
-                {!alert && (
-                  <div className="text-center py-5 text-muted">
-                    <AlertTriangle size={40} className="mb-3 text-muted" />
-                    <p>No active alerts at this time.</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-
-          <div className="col-lg-6 mb-4">
-            <motion.div 
-              className="card border-0 shadow-sm h-100"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div className="card-header bg-white">
-                <div className="d-flex align-items-center">
-                  <Truck size={18} className="me-2 text-primary" />
-                  <h5 className="mb-0">Active Vehicles</h5>
-                </div>
-              </div>
-              <div className="card-body" style={{ maxHeight: '370px', overflowY: 'auto' }}>
-                {activeVehicles.map((vehicle) => (
-                  <VehicleCardNew
-                    key={vehicle._id}
-                    vehicle={vehicle}
-                    onClick={() => {
-                      setSelectedVehicle(vehicle);
-                      setShowVehicleDetails(true);
-                    }}
-                  />
-                ))}
-                {activeVehicles.length === 0 && (
-                  <div className="text-center py-5 text-muted">
-                    <Truck size={40} className="mb-3 text-muted" />
-                    <p>No active vehicles at this time.</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-        
         {/* Performance Analytics Section */}
         <motion.div 
           className="card border-0 shadow-sm mb-4"
@@ -655,6 +588,80 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="card-body">
+            {/* Stats Cards */}
+            <motion.div 
+              className="row mb-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <StatsCardNew 
+                icon={<Truck size={24} className="text-primary" />} 
+                title="Total Vehicles" 
+                value={totalVehicles} 
+                color="bg-primary"
+                percentage={totalVehicles > 0 ? Math.round((activeVehicles.length / totalVehicles) * 100) : 0}
+                isUp={true}
+              />
+              <StatsCardNew 
+                icon={<Zap size={24} className="text-success" />} 
+                title="Active Vehicles" 
+                value={activeVehicles.length} 
+                color="bg-success"
+                //percentage={totalVehicles > 0 ? Math.round((activeVehicles.length / totalVehicles) * 100) : 0}
+                isUp={true}
+              />
+              <StatsCardNew 
+                icon={<Users size={24} className="text-info" />} 
+                title="Total Drivers" 
+                value={totalDrivers} 
+                color="bg-info"
+                percentage={totalDrivers > 0 ? Math.round((activeDrivers / totalDrivers) * 100) : 0}
+                isUp={true}
+              />
+              <StatsCardNew 
+                icon={<User size={24} className="text-warning" />} 
+                title="Active Drivers" 
+                value={activeDrivers} 
+                color="bg-warning"
+                //percentage={totalDrivers > 0 ? Math.round((activeDrivers / totalDrivers) * 100) : 0}
+                isUp={true}
+              />
+              <StatsCardNew 
+                icon={<ClipboardCheck size={24} className="text-info" />} 
+                title="Total Tasks" 
+                value={totalTasks} 
+                color="bg-info"
+                percentage={totalTasks > 0 ? Math.round((CompletedTasks / totalTasks) * 100) : 0}
+                isUp={true}
+              />
+              <StatsCardNew 
+                icon={<CheckCircle size={24} className="text-success" />} 
+                title="Completed Tasks" 
+                value={CompletedTasks} 
+                color="bg-success"
+                //percentage={totalTasks > 0 ? Math.round((CompletedTasks / totalTasks) * 100) : 0}
+                isUp={true}
+              />
+              <StatsCardNew 
+                icon={<AlertTriangle size={24} className="text-danger" />} 
+                title="Active Alerts" 
+                value={alerts.filter(a => a.status === 'active').length}
+                color="bg-danger"
+                percentage={alerts.length > 0 ? Math.round((alerts.filter(a => a.status === 'active').length / alerts.length) * 100) : 0}
+                isUp={false}
+              />
+              <StatsCardNew 
+                icon={<CheckCircle size={24} className="text-success" />} 
+                title="Resolved Alerts" 
+                value={alerts.filter(a => a.status === 'resolved').length}
+                color="bg-success"
+                percentage={alerts.length > 0 ? Math.round((alerts.filter(a => a.status === 'resolved').length / alerts.length) * 100) : 0}
+                isUp={true}
+              />
+            </motion.div>
+
+            {/* Analytics Content */}
             <div className="text-center py-5">
               <p className="text-muted">Analytics data will be displayed here</p>
             </div>
