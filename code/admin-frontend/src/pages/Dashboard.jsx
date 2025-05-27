@@ -17,15 +17,25 @@ import {
   Activity,
   User,
   Menu,
-  X
+  X,
+  Thermometer,
+  Droplets,
+  Gauge,
+  Hash
 } from "lucide-react";
+import { Card, Row, Col, Alert } from 'react-bootstrap';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 import Sidebar from "../components/Sidebar";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AnimatedAlert from "../components/AnimatedAlert";
 import { getSensorsData } from "../services/getSensorsData";
-import LeafletMap from "../components/LeafletMap";
 import { getAlerts } from "../services/getAlerts";
 import { api } from "../services/api";
 import { authService } from '../services/authService';
@@ -45,6 +55,41 @@ const containerVariants = {
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: { y: 0, opacity: 1 }
+};
+
+// Fix for default marker icons in Leaflet with React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+// Create custom vehicle icon
+const createVehicleIcon = () => {
+  return L.divIcon({
+    className: 'custom-vehicle-icon',
+    html: `
+      <div style="
+        background-color: #3388ff;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      ">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+          <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  });
 };
 
 const Dashboard = () => {
@@ -89,6 +134,18 @@ const Dashboard = () => {
     minute: '2-digit'
   });
 
+  const [sensorData, setSensorData] = useState({
+    temperature: 0,
+    humidity: 0,
+    speed: 0,
+    location: {
+      lat: 6.9271,
+      lng: 79.8612
+    }
+  });
+
+  const [vehicleIcon] = useState(createVehicleIcon());
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -126,6 +183,29 @@ const Dashboard = () => {
     
     fetchData();
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchSensorData = async () => {
+      try {
+        const data = await getSensorsData();
+        setSensorData({
+          temperature: data.sensor.temperature_C,
+          humidity: data.sensor.humidity,
+          speed: data.gps.speed_kmh,
+          location: {
+            lat: data.gps.latitude,
+            lng: data.gps.longitude
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching sensor data:', error);
+      }
+    };
+
+    fetchSensorData();
+    const interval = setInterval(fetchSensorData, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -458,7 +538,44 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="card-body p-0" style={{ height: '400px' }}>
-            <LeafletMap />
+            <div style={{ height: '380px', width: '100%' }}>
+              <MapContainer
+                center={[sensorData.location.lat, sensorData.location.lng]}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <Marker 
+                  position={[sensorData.location.lat, sensorData.location.lng]}
+                  icon={vehicleIcon}
+                >
+                  <Popup>
+                    <div>
+                      <h6 className="mb-2">Vehicle Status</h6>
+                      <p className="mb-1">
+                        <Hash className="text-secondary me-2" size={16} />
+                        License: {activeVehicles[0]?.licensePlate || 'N/A'}
+                      </p>
+                      <p className="mb-1">
+                        <Gauge className="text-primary me-2" size={16} />
+                        Speed: {sensorData.speed} km/h
+                      </p>
+                      <p className="mb-1">
+                        <Thermometer className="text-danger me-2" size={16} />
+                        Temperature: {sensorData.temperature}°C
+                      </p>
+                      <p className="mb-0">
+                        <Droplets className="text-info me-2" size={16} />
+                        Humidity: {sensorData.humidity}%
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              </MapContainer>
+            </div>
           </div>
         </motion.div>
 

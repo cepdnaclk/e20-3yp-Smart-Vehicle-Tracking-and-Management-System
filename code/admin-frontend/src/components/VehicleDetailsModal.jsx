@@ -8,6 +8,7 @@ import SpeedChart from './SpeedChart';
 import TemperatureChart from './TemperatureChart';
 import HumidityChart from './HumidityChart';
 import { getSensorsData } from '../services/getSensorsData';
+import LeafletMap from './LeafletMap';
 
 // Create custom vehicle icon
 const createVehicleIcon = () => {
@@ -43,7 +44,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
     humidity: 0,
     speed: 0,
     location: { lat: 6.9271, lng: 79.8612 }, // Default to Colombo coordinates
-    status: 'Idle',
+    status: 'active',
     tampering: false,
     speedHistory: [],
     temperatureHistory: [],
@@ -184,47 +185,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
         </Card>
 
         {/* Map */}
-        <Card>
-          <Card.Header>Vehicle Location on Map</Card.Header>
-          <Card.Body>
-            <div style={{ height: '300px', width: '100%' }}>
-              <MapContainer
-                center={[sensorData.location.lat, sensorData.location.lng]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <Marker 
-                  position={[sensorData.location.lat, sensorData.location.lng]}
-                  icon={vehicleIcon}
-                >
-                  <Popup>
-                    <div className="text-center">
-                      <h6 className="mb-2">Vehicle Location</h6>
-                      <div className="d-flex flex-column gap-1">
-                        <div>
-                          <Truck size={16} className="text-success me-1" />
-                          Speed: {sensorData.speed} km/h
-                        </div>
-                        <div>
-                          <Thermometer size={16} className="text-danger me-1" />
-                          Temperature: {sensorData.temperature}°C
-                        </div>
-                        <div>
-                          <Droplets size={16} className="text-primary me-1" />
-                          Humidity: {sensorData.humidity}%
-                        </div>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              </MapContainer>
-            </div>
-          </Card.Body>
-        </Card>
+        <LeafletMap />
       </Modal.Body>
       
       <Modal.Footer>

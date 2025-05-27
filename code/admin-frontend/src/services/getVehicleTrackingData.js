@@ -1,5 +1,8 @@
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { app } from '../lib/firebase';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const database = getDatabase(app);
 
