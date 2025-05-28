@@ -1,5 +1,5 @@
 import { api } from './api';  // Import the configured API instance
-import { getDatabase, ref, onValue, off } from 'firebase/database';
+import { getDatabase, ref, onValue, off, update } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { app } from '../lib/firebase';  // Import the existing Firebase app instance
 
@@ -219,6 +219,11 @@ export const getAlerts = async (onAlertsUpdate) => {
                     details: "Sudden impact detected. Possible accident. Immediate attention required.",
                     triggerCondition: { impactForce: "high", airbagDeployed: true, gpsSignal: "active" }
                   });
+
+                  // Reset Firebase flag after processing
+                  const updates = {};
+                  updates['/accidentAlerts/accident_detected'] = false;
+                  update(deviceRef, updates);
                 }
 
                 // Tamper Alert
@@ -235,6 +240,11 @@ export const getAlerts = async (onAlertsUpdate) => {
                     details: "Multiple tampering attempts detected. Security breach possible.",
                     triggerCondition: { doorOpened: true, ignitionOff: true, securitySystem: "breached" }
                   });
+
+                  // Reset Firebase flag after processing
+                  const updates = {};
+                  updates['/tamperingAlerts/tampering_detected'] = false;
+                  update(deviceRef, updates);
                 }
 
                 // Store new alerts only if no active alert of the same type/vehicle exists in the latest data
