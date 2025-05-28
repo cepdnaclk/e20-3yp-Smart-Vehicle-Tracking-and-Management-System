@@ -69,6 +69,12 @@ alertHistorySchema.index({ companyId: 1, timestamp: -1 });
 alertHistorySchema.index({ type: 1, status: 1 });
 alertHistorySchema.index({ vehicle: 1 });
 
+// Add unique partial index to prevent duplicate active alerts
+alertHistorySchema.index(
+  { companyId: 1, type: 1, 'vehicle.id': 1 },
+  { unique: true, partialFilterExpression: { status: 'active' } }
+);
+
 const AlertHistory = mongoose.model('AlertHistory', alertHistorySchema);
 
 module.exports = AlertHistory; 

@@ -11,6 +11,33 @@ router.post('/', auth, async (req, res) => {
       companyId: req.user.companyId // Get companyId from authenticated user
     };
 
+    // Log the data being used for the check
+    console.log('Checking for existing active alert with criteria:', {
+      companyId: alertData.companyId,
+      type: alertData.type,
+      'vehicle.id': alertData.vehicle.id,
+      status: 'active'
+    });
+
+    // Check if an active alert of the same type for the same vehicle already exists
+    const existingActiveAlert = await AlertHistory.findOne({
+      companyId: alertData.companyId,
+      type: alertData.type,
+      'vehicle.id': alertData.vehicle.id,
+      status: 'active'
+    });
+
+    if (existingActiveAlert) {
+      // If an active alert already exists, don't create a new one
+      console.log('Duplicate active alert detected, not storing new one:', alertData);
+      return res.status(200).json({
+        success: true,
+        message: 'Duplicate active alert ignored',
+        data: existingActiveAlert // Optionally return the existing alert
+      });
+    }
+
+    console.log('No active alert found, storing new one:', alertData);
     const alert = new AlertHistory(alertData);
     await alert.save();
 
