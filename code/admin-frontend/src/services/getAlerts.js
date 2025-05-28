@@ -31,10 +31,15 @@ const authenticateFirebase = async () => {
 const storeAlertInHistory = async (alert) => {
   try {
     const response = await api.post('/api/alerts', alert);
-    // Return the stored alert with its MongoDB _id
     return response.data.data;
   } catch (error) {
     console.error('Error storing alert in history:', error);
+    // If it's a duplicate key error (from unique index), it's expected, don't log as a critical error
+    if (error.response && error.response.status === 500 && error.response.data?.message?.includes('duplicate key error')){
+       console.log('Attempted to store duplicate active alert (blocked by DB unique index).');
+    } else {
+       console.error('Failed to store alert:', error);
+    }
     return null;
   }
 };
@@ -105,39 +110,27 @@ export const stopPolling = () => {
   }
 };
 
-export const getAlerts = async () => {
+export const getAlerts = async (onAlertsUpdate) => {
+  // getAlerts is now responsible for setting up the Firebase listener
+  // The initial fetch and subsequent updates to the UI state are handled by startPolling
+  // onAlertsUpdate callback is not directly used by the listener for state updates anymore
+
   try {
-    // Clean up any existing listener
     if (activeListener) {
       off(activeListener);
       activeListener = null;
     }
 
-    // First, get all alerts from the database
-    const alerts = await fetchAlertsFromAPI();
-    
-    // Then authenticate with Firebase to get real-time updates
     await authenticateFirebase();
-    
-    // Use a Set to track unique alerts by their type and vehicle ID
-    const uniqueAlerts = new Set();
-    
-    // Add existing alerts to the Set
-    alerts.forEach(alert => {
-      uniqueAlerts.add(`${alert.type}-${alert.vehicle.id}`);
-    });
     
     try {
       const deviceRef = ref(database, 'companies/TANGALLEB001/devices/1');
 
-      // Store the listener reference
       activeListener = onValue(deviceRef, async (snapshot) => {
-        // Clear previous debounce timer
         if (debounceTimer) {
           clearTimeout(debounceTimer);
         }
 
-        // Set a new debounce timer
         debounceTimer = setTimeout(async () => {
           try {
             const deviceData = snapshot.val();
@@ -146,12 +139,8 @@ export const getAlerts = async () => {
               return;
             }
 
-            // Re-fetch alerts from API to get the latest state including newly stored ones
-            const currentAlerts = await fetchAlertsFromAPI();
-            const uniqueAlerts = new Set();
-             currentAlerts.forEach(alert => {
-               uniqueAlerts.add(`${alert.type}-${alert.vehicle.id}`);
-             });
+            // Fetch the *latest* alerts from the API to check for active ones
+            const latestAlerts = await fetchAlertsFromAPI();
 
             // Check if device is registered
             try {
@@ -163,7 +152,6 @@ export const getAlerts = async () => {
               const { isRegistered, vehicle } = response.data;
 
               if (isRegistered && vehicle) {
-                // Check alert conditions and store if necessary
                 const potentialAlerts = [];
 
                 // Temperature Alert
@@ -249,17 +237,19 @@ export const getAlerts = async () => {
                   });
                 }
 
-                // Store new alerts after checking for duplicates against current state
+                // Store new alerts only if no active alert of the same type/vehicle exists in the latest data
                 for (const alert of potentialAlerts) {
-                   const alertKey = `${alert.type}-${alert.vehicle.id}`;
-                   if (!uniqueAlerts.has(alertKey)) {
-                     const storedAlert = await storeAlertInHistory(alert);
-                     // Note: The polling mechanism will eventually pick up this newly stored alert
-                     // No need to push to the local 'alerts' array here to avoid immediate display
-                     // that might be out of sync with the next poll.
+                   const existingActiveAlert = latestAlerts.find(latestAlert => 
+                     latestAlert.type === alert.type && 
+                     latestAlert.vehicle.id === alert.vehicle.id &&
+                     latestAlert.status === 'active'
+                   );
+
+                   if (!existingActiveAlert) {
+                     await storeAlertInHistory(alert);
+                     // The polling mechanism will fetch this new alert and update the UI.
                    }
                  }
-
               }
             } catch (error) {
               console.error(`Error checking registration for device 1:`, error);
@@ -267,7 +257,7 @@ export const getAlerts = async () => {
           } catch (error) {
             console.error("Error processing Firebase data (debounced):", error);
           }
-        }, DEBOUNCE_DELAY); // End of debounce timer
+        }, DEBOUNCE_DELAY);
 
       }, (error) => {
         console.error("Error reading from Firebase:", error);
@@ -276,9 +266,13 @@ export const getAlerts = async () => {
       console.error("Error setting up Firebase listener:", error);
     }
 
-    return alerts;
+    // getAlerts now primarily sets up the listener. The initial data fetch and updates
+    // are handled by startPolling in the component.
+    // We don't need to return alerts here directly as they are managed by the polling callback.
+    return []; // Return empty array or null as initial state is handled by polling
+
   } catch (error) {
-    console.error("Error in getAlerts:", error);
+    console.error("Error in getAlerts setup:", error);
     throw error;
   }
 };
