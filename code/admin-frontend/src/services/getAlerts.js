@@ -7,8 +7,10 @@ import { app } from '../lib/firebase';  // Import the existing Firebase app inst
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-// Keep track of active listeners
+// Keep track of active listeners and polling interval
 let activeListener = null;
+let pollingInterval = null;
+const POLLING_INTERVAL = 10000; // 10 seconds
 
 // Function to authenticate with Firebase
 const authenticateFirebase = async () => {
@@ -43,6 +45,53 @@ const hasRecentAlert = (alerts, newAlert) => {
   );
 };
 
+// Function to fetch alerts from the API
+const fetchAlertsFromAPI = async () => {
+  try {
+    const response = await api.get('/api/alerts');
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching alerts from API:', error);
+    return [];
+  }
+};
+
+// Function to start polling
+export const startPolling = (callback) => {
+  // Clear any existing polling interval
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
+
+  // Initial fetch
+  fetchAlertsFromAPI().then(callback);
+
+  // Set up polling interval
+  pollingInterval = setInterval(async () => {
+    try {
+      const alerts = await fetchAlertsFromAPI();
+      callback(alerts);
+    } catch (error) {
+      console.error('Error in polling:', error);
+    }
+  }, POLLING_INTERVAL);
+
+  return () => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  };
+};
+
+// Function to stop polling
+export const stopPolling = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+};
+
 export const getAlerts = async () => {
   try {
     // Clean up any existing listener
@@ -52,13 +101,18 @@ export const getAlerts = async () => {
     }
 
     // First, get all alerts from the database
-    const response = await api.get('/api/alerts');
-    const storedAlerts = response.data.data || [];
-
+    const alerts = await fetchAlertsFromAPI();
+    
     // Then authenticate with Firebase to get real-time updates
     await authenticateFirebase();
     
-    const alerts = [...storedAlerts]; // Start with stored alerts
+    // Use a Set to track unique alerts by their type and vehicle ID
+    const uniqueAlerts = new Set();
+    
+    // Add existing alerts to the Set
+    alerts.forEach(alert => {
+      uniqueAlerts.add(`${alert.type}-${alert.vehicle.id}`);
+    });
     
     try {
       const deviceRef = ref(database, 'companies/TANGALLEB001/devices/1');
@@ -111,11 +165,13 @@ export const getAlerts = async () => {
                   }
                 };
 
-                // Only store if there's no recent alert of the same type
-                if (!hasRecentAlert(alerts, alert)) {
+                // Check if this alert type is already in the Set
+                const alertKey = `${alert.type}-${alert.vehicle.id}`;
+                if (!uniqueAlerts.has(alertKey)) {
                   const storedAlert = await storeAlertInHistory(alert);
                   if (storedAlert) {
                     alerts.push(storedAlert);
+                    uniqueAlerts.add(alertKey);
                   }
                 }
               }
@@ -148,11 +204,13 @@ export const getAlerts = async () => {
                   }
                 };
 
-                // Only store if there's no recent alert of the same type
-                if (!hasRecentAlert(alerts, alert)) {
+                // Check if this alert type is already in the Set
+                const alertKey = `${alert.type}-${alert.vehicle.id}`;
+                if (!uniqueAlerts.has(alertKey)) {
                   const storedAlert = await storeAlertInHistory(alert);
                   if (storedAlert) {
                     alerts.push(storedAlert);
+                    uniqueAlerts.add(alertKey);
                   }
                 }
               }
@@ -185,11 +243,13 @@ export const getAlerts = async () => {
                   }
                 };
 
-                // Only store if there's no recent alert of the same type
-                if (!hasRecentAlert(alerts, alert)) {
+                // Check if this alert type is already in the Set
+                const alertKey = `${alert.type}-${alert.vehicle.id}`;
+                if (!uniqueAlerts.has(alertKey)) {
                   const storedAlert = await storeAlertInHistory(alert);
                   if (storedAlert) {
                     alerts.push(storedAlert);
+                    uniqueAlerts.add(alertKey);
                   }
                 }
               }
@@ -221,11 +281,13 @@ export const getAlerts = async () => {
                   }
                 };
 
-                // Only store if there's no recent alert of the same type
-                if (!hasRecentAlert(alerts, alert)) {
+                // Check if this alert type is already in the Set
+                const alertKey = `${alert.type}-${alert.vehicle.id}`;
+                if (!uniqueAlerts.has(alertKey)) {
                   const storedAlert = await storeAlertInHistory(alert);
                   if (storedAlert) {
                     alerts.push(storedAlert);
+                    uniqueAlerts.add(alertKey);
                   }
                 }
               }
@@ -257,11 +319,13 @@ export const getAlerts = async () => {
                   }
                 };
 
-                // Only store if there's no recent alert of the same type
-                if (!hasRecentAlert(alerts, alert)) {
+                // Check if this alert type is already in the Set
+                const alertKey = `${alert.type}-${alert.vehicle.id}`;
+                if (!uniqueAlerts.has(alertKey)) {
                   const storedAlert = await storeAlertInHistory(alert);
                   if (storedAlert) {
                     alerts.push(storedAlert);
+                    uniqueAlerts.add(alertKey);
                   }
                 }
               }

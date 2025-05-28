@@ -27,8 +27,9 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
-import { getAlerts } from "../services/getAlerts";
+import { getAlerts, startPolling, stopPolling } from "../services/getAlerts";
 import { api } from "../services/api";
+import './Alerts.css';  // Import the CSS file
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -41,34 +42,46 @@ const Alerts = () => {
   const [toastType, setToastType] = useState("info");
   const [filter, setFilter] = useState('all');
 
+  // Function to fetch alerts manually
+  const fetchAlerts = async () => {
+    try {
+      setIsLoading(true);
+      const alertsData = await getAlerts();
+      setAlerts(alertsData);
+      setToastMessage("Alerts refreshed successfully");
+      setToastType("success");
+      setShowToast(true);
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+      setToastMessage("Failed to refresh alerts");
+      setToastType("danger");
+      setShowToast(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
     }
     
+    // Initial fetch
     fetchAlerts();
-  }, [navigate]);
+    
+    // Start polling for alerts
+    const stopPollingFn = startPolling((newAlerts) => {
+      setAlerts(newAlerts);
+      setIsLoading(false);
+    });
 
-  const fetchAlerts = async () => {
-    try {
-      setIsLoading(true);
-      const alertsData = await getAlerts();
-      setAlerts(alertsData);
-      setIsLoading(false);
-      
-      setToastMessage("Alert data loaded successfully");
-      setToastType("success");
-      setShowToast(true);
-    } catch (error) {
-      console.error("Error fetching alerts:", error);
-      setIsLoading(false);
-      
-      setToastMessage("Failed to load alert data. Please try again.");
-      setToastType("danger");
-      setShowToast(true);
-    }
-  };
+    // Cleanup function to stop polling when component unmounts
+    return () => {
+      stopPollingFn();
+      stopPolling();
+    };
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -359,9 +372,10 @@ const Alerts = () => {
                 variant="outline-primary" 
                 className="d-flex align-items-center"
                 onClick={fetchAlerts}
+                disabled={isLoading}
               >
-                <RefreshCw size={16} className="me-2" />
-                Refresh
+                <RefreshCw size={16} className={`me-2 ${isLoading ? 'spinning' : ''}`} />
+                {isLoading ? 'Refreshing...' : 'Refresh'}
               </Button>
               
               <Button 
