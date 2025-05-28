@@ -28,6 +28,7 @@ import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
 import { getAlerts } from "../services/getAlerts";
+import { api } from "../services/api";
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -290,13 +291,25 @@ const Alerts = () => {
                 e.stopPropagation();
                 // Mark as resolved
                 const updatedAlerts = alerts.map(alert => 
-                  alert.id === row.id ? { ...alert, status: 'resolved' } : alert
+                  alert._id === row._id ? { ...alert, status: 'resolved' } : alert
                 );
                 setAlerts(updatedAlerts);
                 
-                setToastMessage("Alert marked as resolved");
-                setToastType("success");
-                setShowToast(true);
+                // Call backend API to update status
+                api.put(`/api/alerts/${row._id}/status`, { status: 'resolved' })
+                  .then(() => {
+                    setToastMessage("Alert marked as resolved");
+                    setToastType("success");
+                    setShowToast(true);
+                  })
+                  .catch(error => {
+                    console.error("Error updating alert status:", error);
+                    // Revert the frontend state if the API call fails
+                    setAlerts(alerts);
+                    setToastMessage("Failed to update alert status");
+                    setToastType("danger");
+                    setShowToast(true);
+                  });
               }}
             >
               <CheckCircle size={14} className="me-1" />

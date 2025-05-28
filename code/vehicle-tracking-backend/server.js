@@ -46,14 +46,16 @@ const adminRoutes = require("./routes/adminRoutes");
 const driverRoutes = require("./routes/driverRoutes");
 const vehicleRoutes = require("./routes/vehicleRoutes");
 const taskRoutes = require("./routes/taskRoutes");
-const mobileUserRoutes = require("./routes/mobileUserRoutes"); // Add the new route
+const mobileUserRoutes = require("./routes/mobileUserRoutes");
+const alertRoutes = require("./routes/alertRoutes");
 
 // Use routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/tasks", taskRoutes);
-app.use("/api/mobile", mobileUserRoutes); // Register the new route
+app.use("/api/mobile", mobileUserRoutes);
+app.use("/api/alerts", alertRoutes);
 
 app.get("/", (req, res) => {
   res.send("Vehicle Tracking Backend");
