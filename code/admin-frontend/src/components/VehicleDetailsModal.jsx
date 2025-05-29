@@ -4,9 +4,7 @@ import { Truck, AlertTriangle, Thermometer, Droplets, MapPin } from 'lucide-reac
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import SpeedChart from './SpeedChart';
-import TemperatureChart from './TemperatureChart';
-import HumidityChart from './HumidityChart';
+import CombinedSensorChart from './CombinedSensorChart';
 import { getSensorsData } from '../services/getSensorsData';
 import LeafletMap from './LeafletMap';
 
@@ -89,8 +87,8 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
     // Initial fetch
     fetchData();
 
-    // Set up interval to fetch data every 5 seconds
-    const intervalId = setInterval(fetchData, 5000);
+    // Set up interval to fetch data every 60 seconds
+    const intervalId = setInterval(fetchData, 60000);
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
@@ -162,25 +160,15 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
           </Col>
         </Row>
 
-        {/* History Charts */}
+        {/* Combined Sensor History Chart */}
         <Card className="mb-4">
-          <Card.Header>Speed History</Card.Header>
+          <Card.Header>Sensor Data History</Card.Header>
           <Card.Body>
-            <SpeedChart data={sensorData.speedHistory} />
-          </Card.Body>
-        </Card>
-
-        <Card className="mb-4">
-          <Card.Header>Temperature History</Card.Header>
-          <Card.Body>
-            <TemperatureChart data={sensorData.temperatureHistory} />
-          </Card.Body>
-        </Card>
-
-        <Card className="mb-4">
-          <Card.Header>Humidity History</Card.Header>
-          <Card.Body>
-            <HumidityChart data={sensorData.humidityHistory} />
+            <CombinedSensorChart 
+              speedHistory={sensorData.speedHistory}
+              temperatureHistory={sensorData.temperatureHistory}
+              humidityHistory={sensorData.humidityHistory}
+            />
           </Card.Body>
         </Card>
 
