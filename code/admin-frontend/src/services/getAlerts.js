@@ -54,8 +54,8 @@ const hasRecentAlert = (alerts, newAlert) => {
   );
 };
 
-// Function to fetch alerts from the API
-const fetchAlertsFromAPI = async () => {
+// Function to fetch alerts from the API (exported for manual refresh)
+export const fetchAlertsFromAPI = async () => {
   try {
     const response = await api.get('/api/alerts');
     return response.data.data || [];

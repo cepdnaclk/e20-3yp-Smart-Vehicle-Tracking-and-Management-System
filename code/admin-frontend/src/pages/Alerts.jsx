@@ -27,7 +27,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
-import { getAlerts, startPolling, stopPolling } from "../services/getAlerts";
+import { getAlerts, startPolling, stopPolling, fetchAlertsFromAPI } from "../services/getAlerts";
 import { api } from "../services/api";
 import './Alerts.css';  // Import the CSS file
 
@@ -46,7 +46,7 @@ const Alerts = () => {
   const fetchAlerts = async () => {
     try {
       setIsLoading(true);
-      const alertsData = await getAlerts();
+      const alertsData = await fetchAlertsFromAPI();
       setAlerts(alertsData);
       setToastMessage("Alerts refreshed successfully");
       setToastType("success");
@@ -67,12 +67,14 @@ const Alerts = () => {
       navigate("/login");
     }
     
-    // Initial fetch
+    // Initial fetch is now handled by startPolling internally
+    // We still call fetchAlerts here for consistency and immediate display
     fetchAlerts();
     
     // Start polling for alerts
     const stopPollingFn = startPolling((newAlerts) => {
       setAlerts(newAlerts);
+      // Polling also sets isLoading to false once data is fetched
       setIsLoading(false);
     });
 
