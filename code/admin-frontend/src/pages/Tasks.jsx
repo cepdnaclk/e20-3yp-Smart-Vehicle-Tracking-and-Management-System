@@ -19,6 +19,7 @@ import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { api } from "../services/api";
+import { startTaskPolling, stopTaskPolling } from "../services/getTasks";
 
 const Tasks = () => {
   const navigate = useNavigate();
@@ -56,7 +57,18 @@ const Tasks = () => {
     }
     
     fetchDrivers();
-    fetchAllTasks();
+    
+    // Start polling for tasks
+    const stopPollingFn = startTaskPolling((newTasks) => {
+      setTasks(newTasks);
+      setIsLoading(false);
+    });
+
+    // Cleanup function to stop polling when component unmounts
+    return () => {
+      stopPollingFn();
+      stopTaskPolling();
+    };
   }, [navigate]);
 
   const fetchDrivers = async () => {
@@ -68,7 +80,18 @@ const Tasks = () => {
     }
   };
 
-  // Update the fetchTasks function to sort by taskNumber
+  const handleDriverChange = (e) => {
+    const driverId = e.target.value;
+    setSelectedDriverId(driverId);
+    
+    // Stop current polling and start new polling for selected driver
+    stopTaskPolling();
+    const stopPollingFn = startTaskPolling((newTasks) => {
+      setTasks(newTasks);
+      setIsLoading(false);
+    }, driverId);
+  };
+
   const fetchTasks = async () => {
     try {
       setIsLoading(true);
@@ -137,17 +160,6 @@ const Tasks = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
-  };
-
-  const handleDriverChange = (e) => {
-    const driverId = e.target.value;
-    setSelectedDriverId(driverId);
-    
-    if (driverId) {
-      fetchTasksForDriver(driverId);
-    } else {
-      fetchAllTasks();
-    }
   };
   
   const handleDeleteClick = (task) => {
