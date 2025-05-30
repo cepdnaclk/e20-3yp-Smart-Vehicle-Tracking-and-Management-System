@@ -30,6 +30,7 @@ import AnimatedAlert from "../components/AnimatedAlert";
 import { getAlerts, startPolling, stopPolling, fetchAlertsFromAPI } from "../services/getAlerts";
 import { api } from "../services/api";
 import './Alerts.css';  // Import the CSS file
+import VehicleDetailsModal from "../components/VehicleDetailsModal"; // Import the modal
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -41,6 +42,8 @@ const Alerts = () => {
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState("info");
   const [filter, setFilter] = useState('all');
+  const [showVehicleModal, setShowVehicleModal] = useState(false); // State for modal visibility
+  const [selectedVehicleForModal, setSelectedVehicleForModal] = useState(null); // State for modal data
 
   // Function to fetch alerts manually
   const fetchAlerts = async () => {
@@ -92,7 +95,9 @@ const Alerts = () => {
 
   const handleAlertClick = (alert) => {
     setSelectedAlert(alert);
-    navigate(`/vehicles?highlight=${alert.vehicle?.id}`);
+    // We will handle view action with modal now, so this navigation is not needed for view
+    // If you need navigation for other purposes, keep it.
+    // navigate(`/vehicles?highlight=${alert.vehicle?.id}`);
   };
 
   const toggleSidebar = () => {
@@ -290,7 +295,23 @@ const Alerts = () => {
             className="d-flex align-items-center"
             onClick={(e) => {
               e.stopPropagation();
-              handleAlertClick(row);
+              // Open VehicleDetailsModal
+              if (row.vehicle) {
+                setSelectedVehicleForModal({ 
+                  licensePlate: row.vehicle.licensePlate,
+                  number: row.vehicle.licensePlate, // Assuming vehicle number is license plate for now
+                  driverId: row.vehicle.driverId, // Assuming driverId is available in vehicle object
+                  // Add other vehicle properties if needed by the modal
+                });
+                setShowVehicleModal(true);
+              } else {
+                // Handle cases where alert might not have associated vehicle (e.g., system alerts)
+                console.warn("View button clicked for alert without vehicle data:", row);
+                // Optionally show a message to the user
+                setToastMessage("Vehicle details not available for this alert.");
+                setToastType("info");
+                setShowToast(true);
+              }
             }}
           >
             <Eye size={14} className="me-1" />
@@ -493,6 +514,13 @@ const Alerts = () => {
           />
         </motion.div>
       </div>
+      {/* Render VehicleDetailsModal */}
+      {showVehicleModal && selectedVehicleForModal && (
+        <VehicleDetailsModal
+          vehicle={selectedVehicleForModal}
+          onClose={() => setShowVehicleModal(false)}
+        />
+      )}
     </div>
   );
 };

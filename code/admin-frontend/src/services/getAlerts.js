@@ -21,6 +21,7 @@ const authenticateFirebase = async () => {
   try {
     await signInAnonymously(auth);
     console.log("Firebase authentication successful");
+    return true;
   } catch (error) {
     console.error("Firebase authentication error:", error);
     throw error;
@@ -30,7 +31,9 @@ const authenticateFirebase = async () => {
 // Function to store alert in history
 const storeAlertInHistory = async (alert) => {
   try {
+    console.log("Attempting to store alert:", alert);
     const response = await api.post('/api/alerts', alert);
+    console.log("Alert stored successfully:", response.data);
     return response.data.data;
   } catch (error) {
     console.error('Error storing alert in history:', error);
@@ -121,10 +124,15 @@ export const getAlerts = async (onAlertsUpdate) => {
       activeListener = null;
     }
 
-      await authenticateFirebase();
+    const authSuccess = await authenticateFirebase();
+    if (!authSuccess) {
+      console.error("Failed to authenticate with Firebase");
+      return [];
+    }
       
     try {
       const deviceRef = ref(database, 'companies/TANGALLEB001/devices/1');
+      console.log("Setting up Firebase listener for device data");
 
       activeListener = onValue(deviceRef, async (snapshot) => {
         if (debounceTimer) {
@@ -132,78 +140,121 @@ export const getAlerts = async (onAlertsUpdate) => {
         }
 
         debounceTimer = setTimeout(async () => {
-        try {
-          const deviceData = snapshot.val();
-          if (!deviceData) {
+          try {
+            const deviceData = snapshot.val();
+            console.log("Received device data from Firebase:", deviceData);
+            
+            if (!deviceData) {
               console.log("No data available from Firebase");
-            return;
-          }
+              return;
+            }
 
             // Fetch the *latest* alerts from the API to check for active ones
             const latestAlerts = await fetchAlertsFromAPI();
+            console.log("Latest alerts from API:", latestAlerts);
 
-          // Check if device is registered
-          try {
-            const response = await api.post('/api/vehicles/check-registration', {
-              companyId: 'TANGALLEB001',
-              deviceId: '1'
-            });
+            // Check if device is registered
+            try {
+              const response = await api.post('/api/vehicles/check-registration', {
+                companyId: 'TANGALLEB001',
+                deviceId: '1'
+              });
 
-            const { isRegistered, vehicle } = response.data;
+              const { isRegistered, vehicle } = response.data;
+              console.log("Vehicle registration check:", { isRegistered, vehicle });
 
-            if (isRegistered && vehicle) {
+              if (isRegistered && vehicle) {
                 const potentialAlerts = [];
 
                 // Temperature Alert
                 if (deviceData.sensor && 
                     typeof deviceData.sensor.temperature_C === 'number' && 
-                    deviceData.sensor.temperature_C > (vehicle.temperatureLimit)) {
+                    !isNaN(deviceData.sensor.temperature_C) &&
+                    deviceData.sensor.temperature_C > (vehicle.temperatureLimit || 0)) {
+                  console.log("Temperature alert condition met:", {
+                    current: deviceData.sensor.temperature_C,
+                    limit: vehicle.temperatureLimit,
+                    sensorData: deviceData.sensor
+                  });
                   potentialAlerts.push({
-                  type: "temperature",
-                  severity: "medium",
-                  message: "High temperature detected",
+                    type: "temperature",
+                    severity: "medium",
+                    message: "High temperature detected",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps?.latitude || 0, lng: deviceData.gps?.longitude || 0, address: "Colombo, Sri Lanka" },
-                  timestamp: new Date().toISOString(),
-                  status: "active",
-                  details: `Temperature exceeded threshold of ${vehicle.temperatureLimit}°C. Current temperature: ${deviceData.sensor.temperature_C}°C`,
+                    timestamp: new Date().toISOString(),
+                    status: "active",
+                    details: `Temperature exceeded threshold of ${vehicle.temperatureLimit}°C. Current temperature: ${deviceData.sensor.temperature_C}°C`,
                     triggerCondition: { threshold: vehicle.temperatureLimit, currentValue: deviceData.sensor.temperature_C, unit: "°C" }
                   });
-              }
+                } else {
+                  console.log("Temperature alert condition not met:", {
+                    hasSensor: !!deviceData.sensor,
+                    temperature: deviceData.sensor?.temperature_C,
+                    limit: vehicle.temperatureLimit,
+                    sensorData: deviceData.sensor
+                  });
+                }
 
                 // Humidity Alert
                 if (deviceData.sensor && 
                     typeof deviceData.sensor.humidity === 'number' && 
-                    deviceData.sensor.humidity > (vehicle.humidityLimit)) {
+                    !isNaN(deviceData.sensor.humidity) &&
+                    deviceData.sensor.humidity > (vehicle.humidityLimit || 0)) {
+                  console.log("Humidity alert condition met:", {
+                    current: deviceData.sensor.humidity,
+                    limit: vehicle.humidityLimit,
+                    sensorData: deviceData.sensor
+                  });
                   potentialAlerts.push({
-                  type: "humidity",
-                  severity: "medium",
-                  message: "High humidity detected",
+                    type: "humidity",
+                    severity: "medium",
+                    message: "High humidity detected",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps?.latitude || 0, lng: deviceData.gps?.longitude || 0, address: "Colombo, Sri Lanka" },
-                  timestamp: new Date().toISOString(),
-                  status: "active",
-                  details: `Humidity exceeded threshold of ${vehicle.humidityLimit}%. Current humidity: ${deviceData.sensor.humidity}%`,
+                    timestamp: new Date().toISOString(),
+                    status: "active",
+                    details: `Humidity exceeded threshold of ${vehicle.humidityLimit}%. Current humidity: ${deviceData.sensor.humidity}%`,
                     triggerCondition: { threshold: vehicle.humidityLimit, currentValue: deviceData.sensor.humidity, unit: "%" }
                   });
-              }
+                } else {
+                  console.log("Humidity alert condition not met:", {
+                    hasSensor: !!deviceData.sensor,
+                    humidity: deviceData.sensor?.humidity,
+                    limit: vehicle.humidityLimit,
+                    sensorData: deviceData.sensor
+                  });
+                }
 
                 // Speed Alert
                 if (deviceData.gps && 
                     typeof deviceData.gps.speed_kmh === 'number' && 
-                    deviceData.gps.speed_kmh > (vehicle.speedLimit)) {
+                    !isNaN(deviceData.gps.speed_kmh) &&
+                    deviceData.gps.speed_kmh > (vehicle.speedLimit || 0)) {
+                  console.log("Speed alert condition met:", {
+                    current: deviceData.gps.speed_kmh,
+                    limit: vehicle.speedLimit,
+                    gpsData: deviceData.gps
+                  });
                   potentialAlerts.push({
-                  type: "speed",
-                  severity: "low",
-                  message: "Speed limit exceeded",
+                    type: "speed",
+                    severity: "low",
+                    message: "Speed limit exceeded",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps.latitude || 0, lng: deviceData.gps.longitude || 0, address: "Colombo, Sri Lanka" },
-                  timestamp: new Date().toISOString(),
-                  status: "active",
-                  details: `Speed exceeded limit of ${vehicle.speedLimit} km/h. Current speed: ${deviceData.gps.speed_kmh} km/h`,
+                    timestamp: new Date().toISOString(),
+                    status: "active",
+                    details: `Speed exceeded limit of ${vehicle.speedLimit} km/h. Current speed: ${deviceData.gps.speed_kmh} km/h`,
                     triggerCondition: { threshold: vehicle.speedLimit, currentValue: deviceData.gps.speed_kmh, unit: "km/h" }
                   });
-              }
+                } else {
+                  console.log("Speed alert condition not met:", {
+                    hasGps: !!deviceData.gps,
+                    speed: deviceData.gps?.speed_kmh,
+                    limit: vehicle.speedLimit,
+                    gpsData: deviceData.gps
+                  });
+                }
 
                 // Accident Alert
                 if (deviceData.accidentAlerts && 
@@ -249,17 +300,37 @@ export const getAlerts = async (onAlertsUpdate) => {
 
                 // Store new alerts only if no active alert of the same type/vehicle exists in the latest data
                 for (const alert of potentialAlerts) {
-                   const existingActiveAlert = latestAlerts.find(latestAlert => 
-                     latestAlert.type === alert.type && 
-                     latestAlert.vehicle.id === alert.vehicle.id &&
-                     latestAlert.status === 'active'
-                   );
+                  console.log("Processing potential alert:", alert);
+                  
+                  const existingActiveAlert = latestAlerts.find(latestAlert => {
+                    const isMatch = latestAlert.type === alert.type && 
+                                  latestAlert.vehicle?.id === alert.vehicle?.id &&
+                                  latestAlert.status === 'active';
+                    console.log("Checking existing alert:", {
+                      latestAlert,
+                      isMatch,
+                      alertType: alert.type,
+                      alertVehicleId: alert.vehicle?.id
+                    });
+                    return isMatch;
+                  });
 
-                   if (!existingActiveAlert) {
-                await storeAlertInHistory(alert);
-                     // The polling mechanism will fetch this new alert and update the UI.
-                   }
-                 }
+                  if (!existingActiveAlert) {
+                    console.log("No existing active alert found, storing new alert");
+                    try {
+                      const storedAlert = await storeAlertInHistory(alert);
+                      if (storedAlert) {
+                        console.log("Alert stored successfully:", storedAlert);
+                      } else {
+                        console.error("Failed to store alert - no response data");
+                      }
+                    } catch (error) {
+                      console.error("Error storing alert:", error);
+                    }
+                  } else {
+                    console.log("Skipping alert - active alert of same type exists:", existingActiveAlert);
+                  }
+                }
               }
             } catch (error) {
               console.error(`Error checking registration for device 1:`, error);
