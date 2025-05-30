@@ -58,73 +58,99 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getSensorsData();
-        
-        // Extract data from the mock structure
-        const temperature = data.sensor?.temperature_C || 0;
-        const humidity = data.sensor?.humidity || 0;
-        const speed = data.gps?.speed_kmh || 0;
-        const location = {
-          lat: data.gps?.latitude || 6.9271,
-          lng: data.gps?.longitude || 79.8612
-        };
-
-        setSensorData((prev) => ({
-          ...prev,
-          temperature,
-          humidity,
-          speed,
-          location,
-          speedHistory: [...prev.speedHistory.slice(-6), { time: new Date().toLocaleTimeString(), speed }],
-          temperatureHistory: [...prev.temperatureHistory.slice(-6), { time: new Date().toLocaleTimeString(), temperature }],
-          humidityHistory: [...prev.humidityHistory.slice(-6), { time: new Date().toLocaleTimeString(), humidity }]
-        }));
-
-        // Fetch current task for this vehicle
+        // Get the license plate from the vehicle object
         const licensePlate = vehicle?.licensePlate || vehicle?.number;
-        console.log('Fetching tasks for vehicle:', { licensePlate, vehicle });
-        
-        if (licensePlate && licensePlate !== 'Not assigned') {
-          try {
-            const response = await api.get(`/api/tasks/vehicle/${licensePlate}`);
-            console.log('Tasks response:', response.data);
-            
-            const tasks = response.data;
-            // Find the most recent task that is either in progress or completed
-            const activeTask = tasks.find(task => 
-              task.status === 'In Progress' || 
-              (task.status === 'Completed' && !tasks.some(t => 
-                t.status === 'In Progress' && t._id !== task._id
-              ))
-            );
-            console.log('Active task found:', activeTask);
-            setCurrentTask(activeTask || null);
-            
-            // Fetch driver details if an active task is found or if vehicle has a driver associated
-            const driverIdToFetch = activeTask?.driverId || vehicle?.driverId;
-            if (driverIdToFetch) {
-              console.log('Fetching driver details for ID:', driverIdToFetch);
-              try {
-                const driverResponse = await api.get(`/api/drivers/${driverIdToFetch}`);
-                console.log('Driver details response:', driverResponse.data);
-                setDriverDetails(driverResponse.data);
-              } catch (driverError) {
-                console.error('Error fetching driver details:', driverError);
+        if (!licensePlate) {
+          console.error("No license plate found for vehicle:", vehicle);
+          setLoading(false);
+          return;
+        }
+
+        // First, fetch the vehicle details to get the device ID
+        try {
+          const vehicleResponse = await api.get(`/api/vehicles/license/${licensePlate}`);
+          const vehicleDetails = vehicleResponse.data;
+          console.log(`Backend response for vehicle ${licensePlate}:`, vehicleDetails);
+          
+          if (!vehicleDetails || !vehicleDetails.vehicle || !vehicleDetails.vehicle.deviceId) {
+            console.error(`No device ID found for vehicle with license plate ${licensePlate}`);
+            setLoading(false);
+            return;
+          }
+
+          // Now fetch the sensor data using the device ID
+          const data = await getSensorsData(vehicleDetails.vehicle.deviceId);
+          
+          // Extract data from the mock structure
+          const temperature = data.sensor?.temperature_C || 0;
+          const humidity = data.sensor?.humidity || 0;
+          const speed = data.gps?.speed_kmh || 0;
+          const location = {
+            lat: data.gps?.latitude || 6.9271,
+            lng: data.gps?.longitude || 79.8612
+          };
+
+          setSensorData((prev) => ({
+            ...prev,
+            temperature,
+            humidity,
+            speed,
+            location,
+            tampering: data.tampering || false,
+            speedHistory: [...prev.speedHistory.slice(-6), { time: new Date().toLocaleTimeString(), speed }],
+            temperatureHistory: [...prev.temperatureHistory.slice(-6), { time: new Date().toLocaleTimeString(), temperature }],
+            humidityHistory: [...prev.humidityHistory.slice(-6), { time: new Date().toLocaleTimeString(), humidity }]
+          }));
+
+          // Fetch current task for this vehicle
+          console.log('Fetching tasks for vehicle:', { licensePlate, vehicle });
+          
+          if (licensePlate && licensePlate !== 'Not assigned') {
+            try {
+              const response = await api.get(`/api/tasks/vehicle/${licensePlate}`);
+              console.log('Tasks response:', response.data);
+              
+              const tasks = response.data;
+              // Find the most recent task that is either in progress or completed
+              const activeTask = tasks.find(task => 
+                task.status === 'In Progress' || 
+                (task.status === 'Completed' && !tasks.some(t => 
+                  t.status === 'In Progress' && t._id !== task._id
+                ))
+              );
+              console.log('Active task found:', activeTask);
+              setCurrentTask(activeTask || null);
+              
+              // Fetch driver details if an active task is found or if vehicle has a driver associated
+              const driverIdToFetch = activeTask?.driverId || vehicle?.driverId;
+              if (driverIdToFetch) {
+                console.log('Fetching driver details for ID:', driverIdToFetch);
+                try {
+                  const driverResponse = await api.get(`/api/drivers/${driverIdToFetch}`);
+                  console.log('Driver details response:', driverResponse.data);
+                  setDriverDetails(driverResponse.data);
+                } catch (driverError) {
+                  console.error('Error fetching driver details:', driverError);
+                  setDriverDetails(null);
+                }
+              } else {
                 setDriverDetails(null);
               }
-            } else {
-              setDriverDetails(null);
-            }
 
-          } catch (error) {
-            console.error('Error fetching tasks:', error);
+            } catch (error) {
+              console.error('Error fetching tasks:', error);
+              setCurrentTask(null);
+              setDriverDetails(null); // Reset driver details if task fetching fails
+            }
+          } else {
+            console.log('No valid license plate found for vehicle:', vehicle);
             setCurrentTask(null);
-            setDriverDetails(null); // Reset driver details if task fetching fails
+            setDriverDetails(null); // Reset driver details if no valid license plate
           }
-        } else {
-          console.log('No valid license plate found for vehicle:', vehicle);
-          setCurrentTask(null);
-          setDriverDetails(null); // Reset driver details if no valid license plate
+        } catch (error) {
+          console.error("Error fetching vehicle details:", error);
+          setLoading(false);
+          return;
         }
       } catch (error) {
         console.error("Error fetching data:", error);

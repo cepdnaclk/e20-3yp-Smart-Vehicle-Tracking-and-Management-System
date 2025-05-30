@@ -82,6 +82,7 @@ router.get("/license/:licensePlate", async (req, res) => {
         status: vehicle.status,
         trackingEnabled: vehicle.trackingEnabled,
         assignedDriver: vehicle.assignedDriver,
+        deviceId: vehicle.deviceId,
       },
     });
   } catch (err) {
