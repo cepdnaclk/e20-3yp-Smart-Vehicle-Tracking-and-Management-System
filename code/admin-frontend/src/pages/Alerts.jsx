@@ -6,7 +6,7 @@ import {
   AlertTriangle, 
   Bell,
   Filter, 
-  DownloadCloud, 
+  DownloadCloud,
   RefreshCw,
   Truck,
   MapPin,
@@ -61,6 +61,67 @@ const Alerts = () => {
       setShowToast(true);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Function to handle PDF export
+  const handleExportPdf = async () => {
+    try {
+      // Dynamically import jsPDF and jspdf-autotable
+      const { default: jsPDF } = await import('jspdf');
+      // Dynamically import jspdf-autotable and get the autoTable function
+      const { autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+
+      // Add title
+      doc.setFontSize(18);
+      doc.text("Vehicle Alert Report", 14, 22);
+
+      // Define columns for the table
+      const tableColumn = ["Type", "Severity", "Vehicle", "Message", "Time", "Status"];
+
+      // Define rows from filtered alerts data
+      const tableRows = [];
+
+      filteredAlerts.forEach(alert => {
+        const alertData = [
+          `${alert.type.charAt(0).toUpperCase() + alert.type.slice(1)} Alert`,
+          alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1),
+          alert.vehicle?.licensePlate || alert.vehicle?.number || 'N/A',
+          alert.message,
+          formatDateTime(alert.timestamp),
+          alert.status.charAt(0).toUpperCase() + alert.status.slice(1),
+        ];
+        tableRows.push(alertData);
+      });
+
+      // Add the table using the new calling convention
+      autoTable(doc, { // Changed from doc.autoTable to autoTable(doc, ...)
+        head: [tableColumn],
+        body: tableRows,
+        startY: 30, // Start table below the title
+        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+        bodyStyles: { textColor: 50 },
+        didDrawPage: (data) => {
+          // Footer
+          let pageNumber = doc.internal.getNumberOfPages();
+          doc.setFontSize(10);
+          doc.text(`Page ${pageNumber}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+        }
+      });
+
+      // Save the PDF
+      doc.save(`Vehicle_Alert_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+
+      setToastMessage("PDF report generated");
+      setToastType("success");
+      setShowToast(true);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      setToastMessage("Failed to generate PDF");
+      setToastType("danger");
+      setShowToast(true);
     }
   };
 
@@ -404,9 +465,11 @@ const Alerts = () => {
               <Button 
                 variant="outline-primary" 
                 className="d-flex align-items-center"
+                onClick={handleExportPdf}
+                disabled={filteredAlerts.length === 0}
               >
                 <DownloadCloud size={16} className="me-2" />
-                Export
+                Export PDF
               </Button>
               
               <Button 
