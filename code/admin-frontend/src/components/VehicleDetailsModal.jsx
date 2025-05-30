@@ -204,48 +204,6 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
           </Card>
         )}
 
-        {/* Vehicle Information */}
-        <Row className="mb-4">
-          <Col md={6}>
-            <Card>
-              <Card.Header>Vehicle Information</Card.Header>
-              <Card.Body>
-                <table className="table table-borderless">
-                  <tbody>
-                    <tr><th>Driver:</th><td>{vehicle?.driver || "Unknown"}</td></tr>
-                    <tr><th>Status:</th><td>{sensorData.status}</td></tr>
-                    <tr><th>License Plate:</th><td>{vehicle?.number || vehicle?.licensePlate}</td></tr>
-                  </tbody>
-                </table>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col md={6}>
-            <Card>
-              <Card.Header>Sensor Readings</Card.Header>
-              <Card.Body>
-              <div className="mb-3">
-                <Thermometer className="text-danger me-2" />
-                <strong>Temperature:</strong> {sensorData.temperature} °C
-              </div>
-              <div className="mb-3">
-                <Droplets className="text-primary me-2" />
-                <strong>Humidity:</strong> {sensorData.humidity} %
-              </div>
-              <div className="mb-3">
-                <MapPin className="text-warning me-2" />
-                <strong>Location:</strong> Lat: {sensorData.location.lat.toFixed(6)}, Lng: {sensorData.location.lng.toFixed(6)}
-              </div>
-              <div>
-                <Truck className="text-success me-2" />
-                <strong>Speed:</strong> {sensorData.speed} km/h
-              </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
         {/* Combined Sensor History Chart */}
         <Card className="mb-4">
           <Card.Header>Sensor Data History</Card.Header>
