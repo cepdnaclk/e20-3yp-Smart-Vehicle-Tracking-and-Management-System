@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Card, Row, Col } from 'react-bootstrap';
-import { Truck, AlertTriangle, Thermometer, Droplets, MapPin, Package, Clock, CheckCircle } from 'lucide-react';
+import { Truck, AlertTriangle, Thermometer, Droplets, MapPin, Package, Clock, CheckCircle, Users } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -53,6 +53,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [vehicleIcon] = useState(createVehicleIcon());
   const [currentTask, setCurrentTask] = useState(null);
+  const [driverDetails, setDriverDetails] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,16 +99,36 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
             );
             console.log('Active task found:', activeTask);
             setCurrentTask(activeTask || null);
+            
+            // Fetch driver details if an active task is found or if vehicle has a driver associated
+            const driverIdToFetch = activeTask?.driverId || vehicle?.driverId;
+            if (driverIdToFetch) {
+              console.log('Fetching driver details for ID:', driverIdToFetch);
+              try {
+                const driverResponse = await api.get(`/api/drivers/${driverIdToFetch}`);
+                console.log('Driver details response:', driverResponse.data);
+                setDriverDetails(driverResponse.data);
+              } catch (driverError) {
+                console.error('Error fetching driver details:', driverError);
+                setDriverDetails(null);
+              }
+            } else {
+              setDriverDetails(null);
+            }
+
           } catch (error) {
             console.error('Error fetching tasks:', error);
             setCurrentTask(null);
+            setDriverDetails(null); // Reset driver details if task fetching fails
           }
         } else {
           console.log('No valid license plate found for vehicle:', vehicle);
           setCurrentTask(null);
+          setDriverDetails(null); // Reset driver details if no valid license plate
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        setDriverDetails(null); // Reset driver details on main data fetch error
       } finally {
         setLoading(false);
       }
@@ -157,41 +178,59 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
             <Card.Body>
               <Row>
                 <Col md={6}>
-                  <div className="mb-3">
-                    <strong>Task Number:</strong> {currentTask.taskNumber}
-                  </div>
-                  <div className="mb-3">
-                    <strong>Cargo Type:</strong> {currentTask.cargoType}
-                  </div>
-                  <div className="mb-3">
-                    <strong>Weight:</strong> {currentTask.weight} kg
-                  </div>
-                  <div className="mb-3">
-                    <strong>Pickup Location:</strong> {currentTask.pickup}
-                  </div>
+                   {/* Display Driver Info associated with the task if available */}
+                   {currentTask && driverDetails && driverDetails.driverId === currentTask.driverId && (
+                     <Row className="mb-3">
+                       <Col xs={4} className="text-muted"><strong>Driver:</strong></Col>
+                       <Col xs={8}>{driverDetails.fullName} ({driverDetails.driverId})</Col>
+                       <Col xs={4} className="text-muted"><strong>Contact:</strong></Col>
+                       <Col xs={8}>{driverDetails.phone}</Col>
+                     </Row>
+                   )}
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Task Number:</strong></Col>
+                     <Col xs={8}>{currentTask.taskNumber}</Col>
+                   </Row>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Cargo Type:</strong></Col>
+                     <Col xs={8}>{currentTask.cargoType}</Col>
+                   </Row>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Weight:</strong></Col>
+                     <Col xs={8}>{currentTask.weight} kg</Col>
+                   </Row>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Pickup Location:</strong></Col>
+                     <Col xs={8}>{currentTask.pickup}</Col>
+                   </Row>
                 </Col>
                 <Col md={6}>
-                  <div className="mb-3">
-                    <strong>Delivery Location:</strong> {currentTask.delivery}
-                  </div>
-                  <div className="mb-3">
-                    <strong>Contact:</strong> {currentTask.deliveryPhone}
-                  </div>
-                  <div className="mb-3">
-                    <strong>Expected Delivery:</strong> {new Date(currentTask.expectedDelivery).toLocaleString()}
-                  </div>
-                  <div className="mb-3">
-                    <strong>Status:</strong>{' '}
-                    <span className={`badge ${
-                      currentTask.status === 'In Progress' 
-                        ? 'bg-primary' 
-                        : currentTask.status === 'Completed'
-                        ? 'bg-success'
-                        : 'bg-secondary'
-                    }`}>
-                      {currentTask.status}
-                    </span>
-                  </div>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Delivery Location:</strong></Col>
+                     <Col xs={8}>{currentTask.delivery}</Col>
+                   </Row>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Delivery Contact:</strong></Col>
+                     <Col xs={8}>{currentTask.deliveryPhone}</Col>
+                   </Row>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Expected Delivery:</strong></Col>
+                     <Col xs={8}>{new Date(currentTask.expectedDelivery).toLocaleString()}</Col>
+                   </Row>
+                   <Row className="mb-3">
+                     <Col xs={4} className="text-muted"><strong>Status:</strong></Col>
+                     <Col xs={8}>
+                       <span className={`badge ${
+                         currentTask.status === 'In Progress' 
+                           ? 'bg-primary' 
+                           : currentTask.status === 'Completed'
+                           ? 'bg-success'
+                           : 'bg-secondary'
+                       }`}>
+                         {currentTask.status}
+                       </span>
+                     </Col>
+                   </Row>
                 </Col>
               </Row>
               {currentTask.additionalNotes && (
