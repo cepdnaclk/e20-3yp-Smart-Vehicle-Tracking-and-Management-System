@@ -272,7 +272,6 @@ const LeafletMap = ({ mapType = 'standard' }) => {
                             {error && <span className="text-danger">{error}</span>}
                             {vehicleData && (
                                 <span>
-                                    <strong>Vehicle ID:</strong> {vehicleData.vehicleId || 'Unknown'} |
                                     <strong> Last updated:</strong> {new Date().toLocaleTimeString()}
                                 </span>
                             )}
