@@ -180,7 +180,7 @@ const TaskDetailsScreen = ({ route, navigation }) => {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Vehicle:</Text>
             <Text style={styles.detailValue}>
-              {task.licensePlate || vehicleNumber || "Not assigned"}
+              {task.licensePlate || "Not assigned"}
             </Text>
           </View>
         </View>

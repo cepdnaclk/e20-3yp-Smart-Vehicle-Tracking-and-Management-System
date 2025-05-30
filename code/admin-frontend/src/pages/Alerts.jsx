@@ -313,9 +313,9 @@ const Alerts = () => {
                 // Call backend API to update status
                 api.put(`/api/alerts/${row._id}/status`, { status: 'resolved' })
                   .then(() => {
-                    setToastMessage("Alert marked as resolved");
-                    setToastType("success");
-                    setShowToast(true);
+                setToastMessage("Alert marked as resolved");
+                setToastType("success");
+                setShowToast(true);
                   })
                   .catch(error => {
                     console.error("Error updating alert status:", error);

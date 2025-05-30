@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Card, Row, Col } from 'react-bootstrap';
-import { Truck, AlertTriangle, Thermometer, Droplets, MapPin } from 'lucide-react';
+import { Truck, AlertTriangle, Thermometer, Droplets, MapPin, Package, Clock, CheckCircle } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import CombinedSensorChart from './CombinedSensorChart';
 import { getSensorsData } from '../services/getSensorsData';
 import LeafletMap from './LeafletMap';
+import { api } from '../services/api';
 
 // Create custom vehicle icon
 const createVehicleIcon = () => {
@@ -51,6 +52,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
   
   const [loading, setLoading] = useState(true);
   const [vehicleIcon] = useState(createVehicleIcon());
+  const [currentTask, setCurrentTask] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,13 +74,40 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
           humidity,
           speed,
           location,
-          // Append new data to history arrays (keeping only the last 7 entries)
           speedHistory: [...prev.speedHistory.slice(-6), { time: new Date().toLocaleTimeString(), speed }],
           temperatureHistory: [...prev.temperatureHistory.slice(-6), { time: new Date().toLocaleTimeString(), temperature }],
           humidityHistory: [...prev.humidityHistory.slice(-6), { time: new Date().toLocaleTimeString(), humidity }]
         }));
+
+        // Fetch current task for this vehicle
+        const licensePlate = vehicle?.licensePlate || vehicle?.number;
+        console.log('Fetching tasks for vehicle:', { licensePlate, vehicle });
+        
+        if (licensePlate && licensePlate !== 'Not assigned') {
+          try {
+            const response = await api.get(`/api/tasks/vehicle/${licensePlate}`);
+            console.log('Tasks response:', response.data);
+            
+            const tasks = response.data;
+            // Find the most recent task that is either in progress or completed
+            const activeTask = tasks.find(task => 
+              task.status === 'In Progress' || 
+              (task.status === 'Completed' && !tasks.some(t => 
+                t.status === 'In Progress' && t._id !== task._id
+              ))
+            );
+            console.log('Active task found:', activeTask);
+            setCurrentTask(activeTask || null);
+          } catch (error) {
+            console.error('Error fetching tasks:', error);
+            setCurrentTask(null);
+          }
+        } else {
+          console.log('No valid license plate found for vehicle:', vehicle);
+          setCurrentTask(null);
+        }
       } catch (error) {
-        console.error("Error fetching mock data:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -87,12 +116,12 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
     // Initial fetch
     fetchData();
 
-    // Set up interval to fetch data every 60 seconds
-    const intervalId = setInterval(fetchData, 60000);
+    // Set up interval to fetch data every 15 seconds (reduced from 30 to update more frequently)
+    const intervalId = setInterval(fetchData, 15000);
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
-  }, []); // Empty dependency array
+  }, [vehicle]);
 
   return (
     <Modal show={true} onHide={onClose} size="lg">
@@ -116,6 +145,63 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
             <AlertTriangle className="me-2" />
             <strong>ALERT:</strong> Tampering detected!
           </Alert>
+        )}
+
+        {/* Current Delivery Task Information */}
+        {currentTask && (
+          <Card className="mb-4">
+            <Card.Header className="d-flex align-items-center">
+              <Package className="me-2" />
+              {currentTask.status === 'In Progress' ? 'Current Delivery' : 'Last Completed Delivery'}
+            </Card.Header>
+            <Card.Body>
+              <Row>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <strong>Task Number:</strong> {currentTask.taskNumber}
+                  </div>
+                  <div className="mb-3">
+                    <strong>Cargo Type:</strong> {currentTask.cargoType}
+                  </div>
+                  <div className="mb-3">
+                    <strong>Weight:</strong> {currentTask.weight} kg
+                  </div>
+                  <div className="mb-3">
+                    <strong>Pickup Location:</strong> {currentTask.pickup}
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <strong>Delivery Location:</strong> {currentTask.delivery}
+                  </div>
+                  <div className="mb-3">
+                    <strong>Contact:</strong> {currentTask.deliveryPhone}
+                  </div>
+                  <div className="mb-3">
+                    <strong>Expected Delivery:</strong> {new Date(currentTask.expectedDelivery).toLocaleString()}
+                  </div>
+                  <div className="mb-3">
+                    <strong>Status:</strong>{' '}
+                    <span className={`badge ${
+                      currentTask.status === 'In Progress' 
+                        ? 'bg-primary' 
+                        : currentTask.status === 'Completed'
+                        ? 'bg-success'
+                        : 'bg-secondary'
+                    }`}>
+                      {currentTask.status}
+                    </span>
+                  </div>
+                </Col>
+              </Row>
+              {currentTask.additionalNotes && (
+                <div className="mt-3">
+                  <strong>Additional Notes:</strong>
+                  <p className="mb-0">{currentTask.additionalNotes}</p>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
         )}
 
         {/* Vehicle Information */}

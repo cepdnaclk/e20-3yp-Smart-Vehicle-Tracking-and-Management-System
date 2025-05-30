@@ -121,8 +121,8 @@ export const getAlerts = async (onAlertsUpdate) => {
       activeListener = null;
     }
 
-    await authenticateFirebase();
-    
+      await authenticateFirebase();
+      
     try {
       const deviceRef = ref(database, 'companies/TANGALLEB001/devices/1');
 
@@ -132,26 +132,26 @@ export const getAlerts = async (onAlertsUpdate) => {
         }
 
         debounceTimer = setTimeout(async () => {
-          try {
-            const deviceData = snapshot.val();
-            if (!deviceData) {
+        try {
+          const deviceData = snapshot.val();
+          if (!deviceData) {
               console.log("No data available from Firebase");
-              return;
-            }
+            return;
+          }
 
             // Fetch the *latest* alerts from the API to check for active ones
             const latestAlerts = await fetchAlertsFromAPI();
 
-            // Check if device is registered
-            try {
-              const response = await api.post('/api/vehicles/check-registration', {
-                companyId: 'TANGALLEB001',
-                deviceId: '1'
-              });
+          // Check if device is registered
+          try {
+            const response = await api.post('/api/vehicles/check-registration', {
+              companyId: 'TANGALLEB001',
+              deviceId: '1'
+            });
 
-              const { isRegistered, vehicle } = response.data;
+            const { isRegistered, vehicle } = response.data;
 
-              if (isRegistered && vehicle) {
+            if (isRegistered && vehicle) {
                 const potentialAlerts = [];
 
                 // Temperature Alert
@@ -159,64 +159,64 @@ export const getAlerts = async (onAlertsUpdate) => {
                     typeof deviceData.sensor.temperature_C === 'number' && 
                     deviceData.sensor.temperature_C > (vehicle.temperatureLimit)) {
                   potentialAlerts.push({
-                    type: "temperature",
-                    severity: "medium",
-                    message: "High temperature detected",
+                  type: "temperature",
+                  severity: "medium",
+                  message: "High temperature detected",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps?.latitude || 0, lng: deviceData.gps?.longitude || 0, address: "Colombo, Sri Lanka" },
-                    timestamp: new Date().toISOString(),
-                    status: "active",
-                    details: `Temperature exceeded threshold of ${vehicle.temperatureLimit}°C. Current temperature: ${deviceData.sensor.temperature_C}°C`,
+                  timestamp: new Date().toISOString(),
+                  status: "active",
+                  details: `Temperature exceeded threshold of ${vehicle.temperatureLimit}°C. Current temperature: ${deviceData.sensor.temperature_C}°C`,
                     triggerCondition: { threshold: vehicle.temperatureLimit, currentValue: deviceData.sensor.temperature_C, unit: "°C" }
                   });
-                }
+              }
 
                 // Humidity Alert
                 if (deviceData.sensor && 
                     typeof deviceData.sensor.humidity === 'number' && 
                     deviceData.sensor.humidity > (vehicle.humidityLimit)) {
                   potentialAlerts.push({
-                    type: "humidity",
-                    severity: "medium",
-                    message: "High humidity detected",
+                  type: "humidity",
+                  severity: "medium",
+                  message: "High humidity detected",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps?.latitude || 0, lng: deviceData.gps?.longitude || 0, address: "Colombo, Sri Lanka" },
-                    timestamp: new Date().toISOString(),
-                    status: "active",
-                    details: `Humidity exceeded threshold of ${vehicle.humidityLimit}%. Current humidity: ${deviceData.sensor.humidity}%`,
+                  timestamp: new Date().toISOString(),
+                  status: "active",
+                  details: `Humidity exceeded threshold of ${vehicle.humidityLimit}%. Current humidity: ${deviceData.sensor.humidity}%`,
                     triggerCondition: { threshold: vehicle.humidityLimit, currentValue: deviceData.sensor.humidity, unit: "%" }
                   });
-                }
+              }
 
                 // Speed Alert
                 if (deviceData.gps && 
                     typeof deviceData.gps.speed_kmh === 'number' && 
                     deviceData.gps.speed_kmh > (vehicle.speedLimit)) {
                   potentialAlerts.push({
-                    type: "speed",
-                    severity: "low",
-                    message: "Speed limit exceeded",
+                  type: "speed",
+                  severity: "low",
+                  message: "Speed limit exceeded",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps.latitude || 0, lng: deviceData.gps.longitude || 0, address: "Colombo, Sri Lanka" },
-                    timestamp: new Date().toISOString(),
-                    status: "active",
-                    details: `Speed exceeded limit of ${vehicle.speedLimit} km/h. Current speed: ${deviceData.gps.speed_kmh} km/h`,
+                  timestamp: new Date().toISOString(),
+                  status: "active",
+                  details: `Speed exceeded limit of ${vehicle.speedLimit} km/h. Current speed: ${deviceData.gps.speed_kmh} km/h`,
                     triggerCondition: { threshold: vehicle.speedLimit, currentValue: deviceData.gps.speed_kmh, unit: "km/h" }
                   });
-                }
+              }
 
                 // Accident Alert
                 if (deviceData.accidentAlerts && 
                     deviceData.accidentAlerts.accident_detected === true) {
                   potentialAlerts.push({
-                    type: "accident",
-                    severity: "critical",
-                    message: "Accident detected!",
+                  type: "accident",
+                  severity: "critical",
+                  message: "Accident detected!",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps?.latitude || 0, lng: deviceData.gps?.longitude || 0, address: "Colombo, Sri Lanka" },
-                    timestamp: new Date().toISOString(),
-                    status: "active",
-                    details: "Sudden impact detected. Possible accident. Immediate attention required.",
+                  timestamp: new Date().toISOString(),
+                  status: "active",
+                  details: "Sudden impact detected. Possible accident. Immediate attention required.",
                     triggerCondition: { impactForce: "high", airbagDeployed: true, gpsSignal: "active" }
                   });
 
@@ -224,20 +224,20 @@ export const getAlerts = async (onAlertsUpdate) => {
                   const updates = {};
                   updates['/accidentAlerts/accident_detected'] = false;
                   update(deviceRef, updates);
-                }
+              }
 
                 // Tamper Alert
                 if (deviceData.tamperingAlerts && 
                     deviceData.tamperingAlerts.tampering_detected === true) {
                   potentialAlerts.push({
-                    type: "tampering",
-                    severity: "high",
-                    message: "Vehicle tampering detected",
+                  type: "tampering",
+                  severity: "high",
+                  message: "Vehicle tampering detected",
                     vehicle: { id: '1', name: vehicle.vehicleName, licensePlate: vehicle.licensePlate },
                     location: { lat: deviceData.gps?.latitude || 0, lng: deviceData.gps?.longitude || 0, address: "Colombo, Sri Lanka" },
-                    timestamp: new Date().toISOString(),
-                    status: "active",
-                    details: "Multiple tampering attempts detected. Security breach possible.",
+                  timestamp: new Date().toISOString(),
+                  status: "active",
+                  details: "Multiple tampering attempts detected. Security breach possible.",
                     triggerCondition: { doorOpened: true, ignitionOff: true, securitySystem: "breached" }
                   });
 
@@ -256,7 +256,7 @@ export const getAlerts = async (onAlertsUpdate) => {
                    );
 
                    if (!existingActiveAlert) {
-                     await storeAlertInHistory(alert);
+                await storeAlertInHistory(alert);
                      // The polling mechanism will fetch this new alert and update the UI.
                    }
                  }

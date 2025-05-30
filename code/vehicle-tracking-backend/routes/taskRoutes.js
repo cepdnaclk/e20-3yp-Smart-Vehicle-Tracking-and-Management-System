@@ -196,6 +196,17 @@ router.post(
             message: "Driver not found or doesn't belong to your company",
           });
         }
+
+        // If license plate is not provided, get it from the driver's assigned vehicle
+        if (!req.body.licensePlate || req.body.licensePlate === 'Not assigned') {
+          if (driver.assignedVehicle) {
+            req.body.licensePlate = driver.assignedVehicle;
+          } else {
+            return res.status(400).json({
+              message: "Driver has no assigned vehicle. Please assign a vehicle first.",
+            });
+          }
+        }
       }
 
       const newTask = new Task({
@@ -210,7 +221,7 @@ router.post(
         driverId: req.body.driverId,
         licensePlate: req.body.licensePlate,
         status: req.body.status || "Pending",
-        companyId: companyId, // Set companyId from authenticated user
+        companyId: companyId,
       });
 
       console.log("Saving new task:", newTask);
@@ -289,6 +300,7 @@ router.put("/:id", auth, async (req, res) => {
 router.patch("/:id/status", auth, async (req, res) => {
   try {
     const { status } = req.body;
+    console.log('Updating task status:', { taskId: req.params.id, status });
 
     if (!status) {
       return res.status(400).json({ message: "Status is required" });
@@ -301,10 +313,15 @@ router.patch("/:id/status", auth, async (req, res) => {
     });
 
     if (!existingTask) {
-      return res
-        .status(404)
-        .json({ message: "Task not found or not authorized" });
+      console.log('Task not found or not authorized:', { taskId: req.params.id, companyId: req.user.companyId });
+      return res.status(404).json({ message: "Task not found or not authorized" });
     }
+
+    console.log('Found existing task:', { 
+      taskNumber: existingTask.taskNumber,
+      currentStatus: existingTask.status,
+      newStatus: status 
+    });
 
     const task = await Task.findByIdAndUpdate(
       req.params.id,
@@ -312,17 +329,17 @@ router.patch("/:id/status", auth, async (req, res) => {
       { new: true }
     );
 
+    console.log('Task updated successfully:', { 
+      taskNumber: task.taskNumber,
+      newStatus: task.status 
+    });
+
     // Emit socket event if socketServer is available
     if (req.socketServer) {
-      console.log(
-        "Emitting task:updated event for status change:",
-        task.taskNumber
-      );
+      console.log("Emitting task:updated event for status change:", task.taskNumber);
       req.socketServer.emitTaskUpdated(task);
     } else {
-      console.warn(
-        "Socket server not available, couldn't emit task:updated event"
-      );
+      console.warn("Socket server not available, couldn't emit task:updated event");
     }
 
     res.json(task);
@@ -362,6 +379,22 @@ router.delete("/:id", auth, async (req, res) => {
     res.json({ message: "Task deleted" });
   } catch (err) {
     console.error("Error deleting task:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET tasks by vehicle license plate - with tenant isolation
+router.get("/vehicle/:licensePlate", auth, async (req, res) => {
+  try {
+    // Find tasks for this vehicle that belong to the admin's company
+    const tasks = await Task.find({
+      licensePlate: req.params.licensePlate,
+      companyId: req.user.companyId,
+    }).sort({ createdAt: -1 }); // Sort by newest first
+
+    res.json(tasks);
+  } catch (err) {
+    console.error("Error fetching vehicle tasks:", err);
     res.status(500).json({ message: err.message });
   }
 });

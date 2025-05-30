@@ -65,6 +65,7 @@ const Drivers = () => {
     show: false,
     driver: null
   });
+  const [assignedVehicleForTask, setAssignedVehicleForTask] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -280,17 +281,31 @@ const Drivers = () => {
 
   const handleAssignTask = async (driver) => {
     try {
+      console.log("Attempting to assign task for driver:", driver);
       // Reset task states
       setTaskSubmitted(false);
       setDriverTasks([]);
       
+      // Fetch the latest driver data to get the current assigned vehicle
+      const driverResponse = await api.get(`/api/drivers/${driver.driverId}`);
+      console.log("Fetched latest driver data:", driverResponse.data);
+      const latestDriverData = driverResponse.data;
+      
+      if (!latestDriverData || !latestDriverData.assignedVehicle) {
+        console.warn("Driver has no assigned vehicle or data not fetched correctly.", { latestDriverData });
+        setAlertMessage("Driver has no assigned vehicle. Please ask the driver to set it on the mobile app dashboard.");
+        setAlertType("danger");
+        setShowAlert(true);
+        return;
+      }
+
       // Generate a driver-specific task number
-      const response = await api.get(`/api/tasks/next-number/${driver.driverId}`);
-      const taskNum = response.data.nextTaskNumber;
+      const taskNumberResponse = await api.get(`/api/tasks/next-number/${driver.driverId}`);
+      const taskNum = taskNumberResponse.data.nextTaskNumber;
       
       console.log(`Generated task number for driver ${driver.driverId}: ${taskNum}`);
       
-      setSelectedDriverForTask(driver);
+      setSelectedDriverForTask(latestDriverData); // Use the latest driver data
       setTaskFormData({
         taskNumber: taskNum,
         cargoType: '',
@@ -302,6 +317,8 @@ const Drivers = () => {
         additionalNotes: ''
       });
       
+      setAssignedVehicleForTask(latestDriverData.assignedVehicle); // Set the assigned vehicle
+      console.log("Assigned vehicle for task assignment:", latestDriverData.assignedVehicle);
       setShowTaskModal(true);
     } catch (error) {
       console.error("Error preparing task assignment:", error);
@@ -331,11 +348,21 @@ const Drivers = () => {
       
       console.log(`Submitting task ${taskFormData.taskNumber} for driver ${selectedDriverForTask.driverId}`);
       
+      // Use the assigned vehicle from the state variable
+      if (!assignedVehicleForTask) {
+         setAlertMessage("No assigned vehicle found for the driver.");
+         setAlertType("danger");
+         setShowAlert(true);
+         return;
+      }
+
       const payload = {
         ...taskFormData,
         driverId: selectedDriverForTask.driverId,
-        licensePlate: selectedDriverForTask.assignedVehicle || "Not assigned"
+        licensePlate: assignedVehicleForTask // Use the state variable
       };
+
+      console.log("Creating task with payload:", payload);
 
       // Directly use the task creation endpoint to ensure companyId is set properly
       const response = await api.post(`/api/tasks`, {
@@ -352,7 +379,7 @@ const Drivers = () => {
       // Close the modal after successful submission
       setShowTaskModal(false);
       
-      // Clear the form data
+      // Clear the form data and assigned vehicle state
       setTaskFormData({
         taskNumber: '',
         cargoType: '',
@@ -363,6 +390,7 @@ const Drivers = () => {
         expectedDelivery: '',
         additionalNotes: ''
       });
+      setAssignedVehicleForTask(null); // Clear assigned vehicle state
     } catch (err) {
       console.error("Failed to assign task:", err);
       setAlertMessage(`Failed to assign task: ${err.response?.data?.message || err.message}`);

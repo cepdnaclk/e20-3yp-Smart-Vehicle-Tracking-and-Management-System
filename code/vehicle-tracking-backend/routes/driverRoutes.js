@@ -42,6 +42,7 @@ router.get("/", auth, async (req, res) => {
 // GET driver by driverId - Updated with tenant isolation
 router.get("/:id", auth, async (req, res) => {
   try {
+    console.log(`GET /api/drivers/${req.params.id} called`);
     // Make sure to filter by companyId for proper tenant isolation
     const driver = await Driver.findOne({
       driverId: req.params.id,
@@ -49,11 +50,14 @@ router.get("/:id", auth, async (req, res) => {
     });
 
     if (!driver) {
+      console.warn(`Driver not found for ID: ${req.params.id} (GET request)`);
       return res.status(404).json({ message: "Driver not found" });
     }
 
+    console.log(`Successfully fetched driver ${driver.driverId}:`, driver);
     res.json(driver);
   } catch (err) {
+    console.error(`Error fetching driver ${req.params.id}:`, err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -180,12 +184,15 @@ router.put(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error("Validation errors in PUT /api/drivers/:id:", errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
+      console.log(`PUT /api/drivers/${req.params.id} called with body:`, req.body);
       const driver = await Driver.findOne({ driverId: req.params.id });
       if (!driver) {
+        console.warn(`Driver not found for ID: ${req.params.id}`);
         return res.status(404).json({ message: "Driver not found" });
       }
 
@@ -197,6 +204,7 @@ router.put(
         joinDate,
         employmentStatus,
         lastLocation,
+        assignedVehicle
       } = req.body;
 
       driver.fullName = fullName;
@@ -206,10 +214,17 @@ router.put(
       driver.joinDate = joinDate ? new Date(joinDate) : driver.joinDate;
       driver.employmentStatus = employmentStatus || driver.employmentStatus;
       driver.lastLocation = lastLocation || driver.lastLocation;
+      // Update assignedVehicle if provided in the request body
+      if (req.body.assignedVehicle !== undefined) {
+        driver.assignedVehicle = req.body.assignedVehicle;
+        console.log(`Updating assignedVehicle for driver ${driver.driverId} to: ${driver.assignedVehicle}`);
+      }
 
       const updatedDriver = await driver.save();
+      console.log(`Driver ${updatedDriver.driverId} updated successfully.`);
       res.json(updatedDriver);
     } catch (err) {
+      console.error(`Error updating driver ${req.params.id}:`, err);
       res.status(400).json({ message: err.message });
     }
   }
