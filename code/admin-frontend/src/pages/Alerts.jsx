@@ -27,7 +27,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import PageHeader from "../components/PageHeader";
 import DataTable from "../components/DataTable";
 import AnimatedAlert from "../components/AnimatedAlert";
-import { getAlerts, startPolling, stopPolling, fetchAlertsFromAPI } from "../services/getAlerts";
+import { startPolling, stopPolling, fetchAlertsFromAPI } from "../services/getAlerts";
 import { api } from "../services/api";
 import './Alerts.css';  // Import the CSS file
 import VehicleDetailsModal from "../components/VehicleDetailsModal"; // Import the modal

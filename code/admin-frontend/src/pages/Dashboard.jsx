@@ -38,7 +38,7 @@ import VehicleDetailsModal from "../components/VehicleDetailsModal";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AnimatedAlert from "../components/AnimatedAlert";
 import { getSensorsData } from "../services/getSensorsData";
-import { getAlerts } from "../services/getAlerts";
+import { startPolling, stopPolling } from "../services/getAlerts";
 import { api } from "../services/api";
 import { authService } from '../services/authService';
 
@@ -156,6 +156,14 @@ const Dashboard = () => {
       navigate("/login");
     }
     
+    // Start alerts polling
+    const stopAlertsPolling = startPolling((alertsData) => {
+      if (Array.isArray(alertsData)) {
+        setAlerts(alertsData);
+        setActiveAlerts(alertsData.filter(a => a.status === 'active').length);
+      }
+    });
+
     // Initial loading
     const fetchData = async () => {
       try {
@@ -166,8 +174,7 @@ const Dashboard = () => {
           fetchActiveDrivers(),
           fetchTotalTasks(),
           fetchCompltedTasks(),
-          fetchSensors(),
-          fetchAlerts()
+          fetchSensors()
         ]);
         
         setIsLoading(false);
@@ -188,6 +195,12 @@ const Dashboard = () => {
     };
     
     fetchData();
+
+    // Cleanup function
+    return () => {
+      stopAlertsPolling();
+      stopPolling();
+    };
   }, [navigate]);
 
   useEffect(() => {
@@ -304,25 +317,6 @@ const Dashboard = () => {
       console.log('This is sensorsData', sensorsData); //Feed this sensors data to the dashboard
     } catch (error) {
       console.error("Error fetching sensors data:", error);
-    }
-  };
-
-  // Fetch alerts
-  const fetchAlerts = async () => {
-    try {
-      const alertsData = await getAlerts();
-      if (Array.isArray(alertsData)) {
-        setAlerts(alertsData);
-        setActiveAlerts(alertsData.filter(a => a.status === 'active').length);
-      } else {
-        console.error("getAlerts did not return an array:", alertsData);
-        setAlerts([]);
-        setActiveAlerts(0);
-      }
-    } catch (error) {
-      console.error("Error fetching alerts:", error);
-      setAlerts([]);
-      setActiveAlerts(0);
     }
   };
 
@@ -596,11 +590,6 @@ const Dashboard = () => {
                 isUp={true}
               />
             </motion.div>
-
-            {/* Analytics Content */}
-            <div className="text-center py-5">
-              <p className="text-muted">Analytics data will be displayed here</p>
-            </div>
           </div>
         </motion.div>
       </div>
