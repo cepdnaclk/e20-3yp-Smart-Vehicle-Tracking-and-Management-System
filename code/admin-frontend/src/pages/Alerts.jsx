@@ -21,6 +21,8 @@ import {
   Settings,
   Eye
 } from "lucide-react";
+import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 import Sidebar from "../components/Sidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -31,6 +33,9 @@ import { startPolling, stopPolling, fetchAlertsFromAPI } from "../services/getAl
 import { api } from "../services/api";
 import './Alerts.css';  // Import the CSS file
 import VehicleDetailsModal from "../components/VehicleDetailsModal"; // Import the modal
+
+// Register Chart.js components (needed for tree-shaking)
+Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ChartDataLabels);
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -69,7 +74,6 @@ const Alerts = () => {
     try {
       // Dynamically import jsPDF and jspdf-autotable
       const { default: jsPDF } = await import('jspdf');
-      // Dynamically import jspdf-autotable and get the autoTable function
       const { autoTable } = await import('jspdf-autotable');
 
       const doc = new jsPDF();
@@ -77,6 +81,123 @@ const Alerts = () => {
       // Add title
       doc.setFontSize(18);
       doc.text("Vehicle Alert Report", 14, 22);
+
+      // --- Add Alert Statistics Chart --- //
+
+      // Function to create the alert statistics chart image
+      const createAlertStatisticsChartImage = () => {
+        return new Promise((resolve, reject) => {
+          const canvas = document.createElement('canvas');
+          const size = 600; // Increase size for more bars
+          canvas.width = size;
+          canvas.height = size / 2; // Aspect ratio 2:1
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get 2D context for canvas'));
+            return;
+          }
+
+          // Create the bar chart with updated data
+          const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['Active', 'Resolved', 'Tampering', 'Temperature', 'Speed', 'Humidity', 'Accident'], // Added new labels
+              datasets: [{
+                label: 'Alert Statistics',
+                data: [
+                  filteredAlerts.filter(a => a.status === 'active').length,
+                  filteredAlerts.filter(a => a.status === 'resolved').length,
+                  filteredAlerts.filter(a => a.type === 'tampering' && a.status === 'active').length,
+                  filteredAlerts.filter(a => a.type === 'temperature' && a.status === 'active').length,
+                  filteredAlerts.filter(a => a.type === 'speed' && a.status === 'active').length, // Added Speed active count
+                  filteredAlerts.filter(a => a.type === 'humidity' && a.status === 'active').length, // Added Humidity active count
+                  filteredAlerts.filter(a => a.type === 'accident' && a.status === 'active').length // Added Accident active count
+                ],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#F59E0B', '#4BC0C0', '#9966FF', '#FF9F40'], // Added more colors
+                borderColor: ['#D32F2F', '#0E7490', '#F57C00', '#D97706', '#2E8B57', '#8A2BE2', '#DC143C'], // Added more border colors
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: false,
+              maintainAspectRatio: false,
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Alert Statistics',
+                  font: { size: 14 }
+                },
+                legend: {
+                  display: false,
+                  position: 'top'
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: (value) => value > 0 ? value : '',
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    }
+                }
+              },
+              layout: {
+               padding: { left: 10, right: 10, top: 10, bottom: 10 }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Count'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Alert Type'
+                  }
+                }
+              },
+              animation: {
+                onComplete: () => {
+                  try {
+                    const imageData = canvas.toDataURL('image/png');
+                    resolve(imageData);
+                  } catch (error) {
+                    reject(error);
+                  }
+                }
+              }
+            },
+          });
+
+          setTimeout(() => {
+            try {
+              const imageData = canvas.toDataURL('image/png');
+              resolve(imageData);
+            } catch (error) {
+              reject(error);
+            }
+          }, 500); // 500ms fallback delay
+        });
+      };
+
+      // Generate the alert statistics chart image
+      const alertStatisticsChartImage = await createAlertStatisticsChartImage();
+
+      // Add the image to the PDF
+      let chartWidth = 150; // Increase width to accommodate more bars
+      let chartHeight = 75; // Adjust height proportionally
+      let yOffset = 30; // Start below the title
+      const margin = 14; // Left margin
+
+      doc.addImage(alertStatisticsChartImage, 'PNG', margin, yOffset, chartWidth, chartHeight);
+
+      yOffset += chartHeight + 10; // Move down for the table
+
+      // --- Add Table --- //
 
       // Define columns for the table
       const tableColumn = ["Type", "Severity", "Vehicle", "Message", "Time", "Status"];
@@ -96,11 +217,11 @@ const Alerts = () => {
         tableRows.push(alertData);
       });
 
-      // Add the table using the new calling convention
-      autoTable(doc, { // Changed from doc.autoTable to autoTable(doc, ...)
+      // Add the table
+      autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
-        startY: 30, // Start table below the title
+        startY: yOffset, // Start table below the chart
         headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
         bodyStyles: { textColor: 50 },
         didDrawPage: (data) => {
@@ -119,7 +240,7 @@ const Alerts = () => {
       setShowToast(true);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      setToastMessage("Failed to generate PDF");
+      setToastMessage("Failed to generate PDF: " + error.message);
       setToastType("danger");
       setShowToast(true);
     }
@@ -366,9 +487,8 @@ const Alerts = () => {
                 });
                 setShowVehicleModal(true);
               } else {
-                // Handle cases where alert might not have associated vehicle (e.g., system alerts)
+                // Handle cases where alert might not have associated vehicle
                 console.warn("View button clicked for alert without vehicle data:", row);
-                // Optionally show a message to the user
                 setToastMessage("Vehicle details not available for this alert.");
                 setToastType("info");
                 setShowToast(true);
@@ -395,9 +515,9 @@ const Alerts = () => {
                 // Call backend API to update status
                 api.put(`/api/alerts/${row._id}/status`, { status: 'resolved' })
                   .then(() => {
-                setToastMessage("Alert marked as resolved");
-                setToastType("success");
-                setShowToast(true);
+                    setToastMessage("Alert marked as resolved");
+                    setToastType("success");
+                    setShowToast(true);
                   })
                   .catch(error => {
                     console.error("Error updating alert status:", error);
