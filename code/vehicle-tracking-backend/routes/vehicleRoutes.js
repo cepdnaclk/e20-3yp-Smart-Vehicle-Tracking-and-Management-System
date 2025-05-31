@@ -233,6 +233,7 @@ router.put(
     body("temperatureLimit").optional().isInt({ min: 0, max: 100 }),
     body("humidityLimit").optional().isInt({ min: 0, max: 100 }),
     body("speedLimit").optional().isInt({ min: 0, max: 100 }),
+    body("assignedDriver").optional().isString(),
   ],
   auth,
   async (req, res) => {
@@ -265,6 +266,7 @@ router.put(
         status,
         lastLocation,
         driver,
+        assignedDriver,
         lastUpdated,
         temperatureLimit,
         humidityLimit,
@@ -285,11 +287,19 @@ router.put(
           : vehicle.trackingEnabled;
       vehicle.status = status || vehicle.status;
       vehicle.lastLocation = lastLocation || vehicle.lastLocation;
-      vehicle.driver = driver || vehicle.driver;
       vehicle.lastUpdated = lastUpdated || Date.now();
       vehicle.temperatureLimit = temperatureLimit ?? vehicle.temperatureLimit;
       vehicle.humidityLimit = humidityLimit ?? vehicle.humidityLimit;
       vehicle.speedLimit = speedLimit ?? vehicle.speedLimit;
+
+      // Update assignedDriver field
+      if (assignedDriver !== undefined) {
+        vehicle.assignedDriver = assignedDriver; // Assign value from req.body
+        console.log(`Vehicle ${vehicle.licensePlate} assigned to driver: ${assignedDriver}`);
+      } else if (driver !== undefined) {
+        vehicle.assignedDriver = driver; // Fallback to 'driver' field
+        console.log(`Vehicle ${vehicle.licensePlate} assigned to driver using 'driver' field: ${driver}`);
+      }
 
       const updatedVehicle = await vehicle.save();
       res.json(updatedVehicle);

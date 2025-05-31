@@ -164,6 +164,8 @@ const DashboardScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
+      console.log("=== Starting vehicle assignment process ===");
+      console.log("Driver ID:", driverId);
       console.log("Validating license plate:", inputVehicle.trim());
 
       // Check if vehicle exists using license plate validation
@@ -171,11 +173,36 @@ const DashboardScreen = ({ navigation }) => {
 
       // Use try/catch specifically for the license plate check
       try {
+        // First, check if any other driver has this license plate assigned
+        console.log("Checking all drivers for vehicle assignment...");
+        const allDriversResponse = await api.get('/api/drivers');
+        const allDrivers = allDriversResponse.data;
+        
+        console.log("All drivers data:", JSON.stringify(allDrivers, null, 2));
+        
+        const driverWithVehicle = allDrivers.find(
+          driver => driver.assignedVehicle === licensePlate && driver.driverId !== driverId
+        );
+
+        if (driverWithVehicle) {
+          console.log("Found driver with vehicle assignment:", {
+            driverId: driverWithVehicle.driverId,
+            assignedVehicle: driverWithVehicle.assignedVehicle
+          });
+          Alert.alert(
+            "Vehicle Already Assigned",
+            "This vehicle is already assigned to another driver. Please choose a different vehicle."
+          );
+          setLoading(false);
+          return;
+        }
+
+        console.log("Checking vehicle existence in system...");
         const vehicleCheckResponse = await api.get(
           `/api/vehicles/license/${licensePlate}`
         );
 
-        console.log("Vehicle check response:", vehicleCheckResponse.data);
+        console.log("Vehicle check response:", JSON.stringify(vehicleCheckResponse.data, null, 2));
 
         // If the vehicle doesn't exist in the system
         if (!vehicleCheckResponse.data || !vehicleCheckResponse.data.exists) {
@@ -189,17 +216,15 @@ const DashboardScreen = ({ navigation }) => {
         }
 
         const vehicleData = vehicleCheckResponse.data.vehicle;
-        console.log("Vehicle found in system:", vehicleData);
+        console.log("Vehicle found in system:", JSON.stringify(vehicleData, null, 2));
 
-        // Check if vehicle is already assigned to another driver
-        if (
-          vehicleData.assignedDriver &&
-          vehicleData.assignedDriver !== driverId
-        ) {
-          console.log(
-            "Vehicle already assigned to another driver:",
-            vehicleData.assignedDriver
-          );
+        // Double check if vehicle is already assigned to another driver
+        // This is a second layer of protection
+        if (vehicleData.assignedDriver && vehicleData.assignedDriver !== driverId) {
+          console.log("Vehicle already assigned to another driver:", {
+            currentDriver: driverId,
+            assignedDriver: vehicleData.assignedDriver
+          });
           Alert.alert(
             "Vehicle Unavailable",
             "This vehicle is already assigned to another driver. Please choose a different vehicle."
@@ -210,14 +235,16 @@ const DashboardScreen = ({ navigation }) => {
 
         // Continue with vehicle assignment if all checks pass
         // First, get current driver data to preserve required fields
+        console.log("Fetching current driver data...");
         const driverResponse = await api.get(`/api/drivers/${driverId}`);
         const driverData = driverResponse.data;
 
         if (!driverData) {
+          console.error("Could not retrieve driver data");
           throw new Error("Could not retrieve driver data");
         }
 
-        console.log("Retrieved driver data:", driverData);
+        console.log("Retrieved driver data:", JSON.stringify(driverData, null, 2));
 
         // Update the driver with the new vehicle assignment
         // while preserving all other required fields
@@ -232,13 +259,10 @@ const DashboardScreen = ({ navigation }) => {
           vehicleId: vehicleData._id,
         };
 
-        console.log("Updating driver with data:", updateData);
-        await api.put(`/api/drivers/${driverId}`, updateData);
-
-        // Update the vehicle to assign it to this driver
-        // Using PUT instead of PATCH since the backend doesn't support PATCH
+        // First update the vehicle to assign it to this driver
+        // This ensures the vehicle is marked as assigned before updating the driver
         console.log("Updating vehicle with assignedDriver:", driverId);
-        await api.put(`/api/vehicles/${vehicleData._id}`, {
+        const vehicleUpdateResponse = await api.put(`/api/vehicles/${vehicleData._id}`, {
           vehicleName: vehicleData.vehicleName,
           licensePlate: vehicleData.licensePlate,
           vehicleType: vehicleData.vehicleType,
@@ -247,6 +271,12 @@ const DashboardScreen = ({ navigation }) => {
           status: "active",
           assignedDriver: driverId,
         });
+        console.log("Vehicle update response:", JSON.stringify(vehicleUpdateResponse.data, null, 2));
+
+        // Then update the driver
+        console.log("Updating driver with data:", JSON.stringify(updateData, null, 2));
+        const driverUpdateResponse = await api.put(`/api/drivers/${driverId}`, updateData);
+        console.log("Driver update response:", JSON.stringify(driverUpdateResponse.data, null, 2));
 
         // Update local state and storage
         setVehicleNumber(vehicleData.licensePlate);
@@ -254,7 +284,8 @@ const DashboardScreen = ({ navigation }) => {
         await AsyncStorage.setItem("vehicleId", vehicleData._id);
         setInputVehicle("");
 
-        console.log("Vehicle assignment successful:", vehicleData.licensePlate);
+        console.log("=== Vehicle assignment completed successfully ===");
+        console.log("Assigned vehicle:", vehicleData.licensePlate);
         Alert.alert(
           "Vehicle Assigned Successfully",
           `License Plate: ${vehicleData.licensePlate}\nVehicle Type: ${
@@ -262,6 +293,7 @@ const DashboardScreen = ({ navigation }) => {
           }\n\nYou can now start your tasks with this vehicle.`
         );
       } catch (checkError) {
+        console.error("Error during vehicle assignment process:", checkError);
         // Handle the 404 error from license plate check specifically
         if (checkError.response?.status === 404) {
           console.log("License plate not found:", licensePlate);
