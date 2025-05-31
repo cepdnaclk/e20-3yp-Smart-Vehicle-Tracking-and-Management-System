@@ -37,7 +37,6 @@ import Sidebar from "../components/Sidebar";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AnimatedAlert from "../components/AnimatedAlert";
-import { getSensorsData } from "../services/getSensorsData";
 import { startPolling, stopPolling } from "../services/getAlerts";
 import { api } from "../services/api";
 import { authService } from '../services/authService';
@@ -175,7 +174,7 @@ const Dashboard = () => {
           fetchActiveDrivers(),
           fetchTotalTasks(),
           fetchCompltedTasks(),
-          fetchSensors()
+          
         ]);
         
         setIsLoading(false);
@@ -204,28 +203,7 @@ const Dashboard = () => {
     };
   }, [navigate]);
 
-  useEffect(() => {
-    const fetchSensorData = async () => {
-      try {
-        const data = await getSensorsData();
-        setSensorData({
-          temperature: data.sensor.temperature_C,
-          humidity: data.sensor.humidity,
-          speed: data.gps.speed_kmh,
-          location: {
-            lat: data.gps.latitude,
-            lng: data.gps.longitude
-          }
-        });
-      } catch (error) {
-        console.error('Error fetching sensor data:', error);
-      }
-    };
-
-    fetchSensorData();
-    const interval = setInterval(fetchSensorData, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  
 
   const handleLogout = async () => {
     try {
@@ -311,15 +289,7 @@ const Dashboard = () => {
     }
   };
 
-  // Fetch sensors
-  const fetchSensors = async () => {
-    try {
-      const sensorsData = await getSensorsData();
-      console.log('This is sensorsData', sensorsData); //Feed this sensors data to the dashboard
-    } catch (error) {
-      console.error("Error fetching sensors data:", error);
-    }
-  };
+  
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
