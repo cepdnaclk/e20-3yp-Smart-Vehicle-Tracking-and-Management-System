@@ -11,6 +11,8 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
+import { Chart, CategoryScale, LinearScale, BarElement, Tooltip, Legend, ArcElement } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 import Sidebar from "../components/Sidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -49,6 +51,9 @@ const Tasks = () => {
     show: false,
     task: null
   });
+
+  // Register Chart.js components (needed for tree-shaking)
+  Chart.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels, ArcElement);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -367,6 +372,192 @@ const Tasks = () => {
     }
   ];
 
+  // Function to handle PDF export
+  const handleExportPdf = async () => {
+    try {
+      // Dynamically import jsPDF and jspdf-autotable
+      const { default: jsPDF } = await import('jspdf');
+      const { autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+
+      // Add title
+      doc.setFontSize(18);
+      doc.text("Vehicle Task Report", 14, 22);
+
+      // --- Add Task Status Chart ---
+      const createTaskStatusChartImage = () => {
+        return new Promise((resolve, reject) => {
+          const canvas = document.createElement('canvas');
+          const size = 600; // Chart size for PDF
+          canvas.width = size;
+          canvas.height = size / 2; // Aspect ratio 2:1
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get 2D context for canvas'));
+            return;
+          }
+
+          const statusCounts = tasks.reduce((acc, task) => {
+            acc[task.status] = (acc[task.status] || 0) + 1;
+            return acc;
+          }, {});
+
+          const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
+              datasets: [{
+                label: 'Number of Tasks',
+                data: [
+                  statusCounts['Pending'] || 0,
+                  statusCounts['In Progress'] || 0,
+                  statusCounts['Completed'] || 0,
+                  statusCounts['Cancelled'] || 0,
+                ],
+                backgroundColor: [
+                  'rgba(255, 193, 7, 0.8)', // warning
+                  'rgba(23, 162, 184, 0.8)', // info
+                  'rgba(40, 167, 69, 0.8)', // success
+                  'rgba(220, 53, 69, 0.8)', // danger
+                ],
+                borderColor: [
+                  'rgba(255, 193, 7, 1)',
+                  'rgba(23, 162, 184, 1)',
+                  'rgba(40, 167, 69, 1)',
+                  'rgba(220, 53, 69, 1)',
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: false,
+              maintainAspectRatio: false,
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Task Status Overview',
+                  font: { size: 14 } // Slightly smaller for PDF
+                },
+                legend: {
+                  display: false,
+                },
+                datalabels: {
+                   anchor: 'end',
+                   align: 'top',
+                   formatter: (value) => value > 0 ? value : '',
+                   color: '#000',
+                   font: {
+                       weight: 'bold'
+                   }
+               }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Count'
+                  },
+                  ticks: {
+                      stepSize: 1
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Status'
+                  }
+                }
+              },
+               animation: {
+                onComplete: () => {
+                  try {
+                    const imageData = canvas.toDataURL('image/png');
+                    resolve(imageData);
+                  } catch (error) {
+                    reject(error);
+                  }
+                }
+              }
+            },
+          });
+
+           // Fallback for animation completion
+          setTimeout(() => {
+            try {
+              const imageData = canvas.toDataURL('image/png');
+              resolve(imageData);
+            } catch (error) {
+              reject(error);
+            }
+          }, 500);
+        });
+      };
+
+      // Generate the chart image
+      const taskStatusChartImage = await createTaskStatusChartImage();
+
+      // Add the image to the PDF
+      let chartWidth = 150; // Width for PDF
+      let chartHeight = 75; // Height for PDF (maintaining aspect ratio)
+      let yOffset = 30; // Start below the title
+      const margin = 14; // Left margin
+
+      doc.addImage(taskStatusChartImage, 'PNG', margin, yOffset, chartWidth, chartHeight);
+
+      yOffset += chartHeight + 10; // Move down for the table
+
+      // Define columns for the table
+      const tableColumn = ["Task ID", "Driver ID", "Cargo Type", "Weight (kg)", "Pickup", "Delivery", "Expected Delivery", "Status"];
+
+      // Define rows from tasks data
+      const tableRows = [];
+
+      tasks.forEach(task => {
+        const taskData = [
+          task.taskNumber,
+          task.driverId || 'N/A',
+          task.cargoType,
+          task.weight || 'N/A',
+          task.pickup || 'N/A',
+          task.delivery || 'N/A',
+          task.expectedDelivery ? formatDate(task.expectedDelivery) : 'N/A',
+          task.status,
+        ];
+        tableRows.push(taskData);
+      });
+
+      // Add the table
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: yOffset, // Start table below the chart
+        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+        bodyStyles: { textColor: 50 },
+        didDrawPage: (data) => {
+          // Footer
+          let pageNumber = doc.internal.getNumberOfPages();
+          doc.setFontSize(10);
+          doc.text(`Page ${pageNumber}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+        }
+      });
+
+      // Save the PDF
+      doc.save(`Vehicle_Task_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+
+      setAlertMessage("PDF report generated");
+      setAlertType("success");
+      setShowAlert(true);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      setAlertMessage("Failed to generate PDF: " + error.message);
+      setAlertType("danger");
+      setShowAlert(true);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-vh-100 d-flex justify-content-center align-items-center">
@@ -412,12 +603,14 @@ const Tasks = () => {
                 <RefreshCw size={16} className="me-2" />
                 Refresh
               </Button>
-              <Button 
-                variant="outline-primary" 
+              <Button
+                variant="outline-primary"
                 className="d-flex align-items-center"
+                onClick={handleExportPdf}
+                disabled={tasks.length === 0}
               >
                 <DownloadCloud size={16} className="me-2" />
-                Export
+                Export PDF
               </Button>
             </>
           }
@@ -601,6 +794,8 @@ const Tasks = () => {
           itemName={deleteModal.task ? `${deleteModal.task.taskNumber}` : ""}
           additionalMessage="All task data and completion history will be permanently removed."
         />
+
+        
       </div>
     </div>
   );
