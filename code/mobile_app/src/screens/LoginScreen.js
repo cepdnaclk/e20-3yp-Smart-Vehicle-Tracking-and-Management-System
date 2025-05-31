@@ -7,6 +7,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { styles } from "../styles/styles";
@@ -17,6 +18,7 @@ import {
   DRIVER_NAME,
   DEFAULT_CREDENTIALS,
 } from "../config/constants";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -27,6 +29,14 @@ const LoginScreen = ({ navigation }) => {
   useEffect(() => {
     // Check if user is already logged in
     checkExistingLogin();
+    
+    // Remove truck animation start
+    // animateTruck();
+
+    // Cleanup animation on unmount
+    return () => {
+      // No specific cleanup needed anymore
+    };
   }, []);
 
   const checkExistingLogin = async () => {
@@ -129,8 +139,13 @@ const LoginScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <View style={[styles.logoContainer, { backgroundColor: "#4DA6FF" }]}>
-        <Text style={styles.logoText}>Track Master</Text>
+      {/* Remove Animated Truck View */}
+      {/* <Animated.View style={{ ... }}> ... </Animated.View> */}
+
+      <View style={[styles.logoContainer, { backgroundColor: "#4DA6FF", justifyContent: 'center', alignItems: 'center' }]}>
+        {/* Static Truck Icon */}
+        <MaterialCommunityIcons name="truck" size={90} color="#fff" />
+        <Text style={styles.logoText}>TrackMaster Pro</Text>
       </View>
 
       <View style={styles.formContainer}>
@@ -182,7 +197,7 @@ const LoginScreen = ({ navigation }) => {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Smart Vehicle Tracking System © 2023
+          Smart Vehicle Tracking System © 2025
         </Text>
       </View>
     </View>
