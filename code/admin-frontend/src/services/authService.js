@@ -3,7 +3,8 @@ import { api } from "./api";
 class AuthService {
   constructor() {
     // Hardcoded base URL for development
-    this.baseURL = "http://localhost:5000";
+    this.baseURL =
+      "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
   }
 
   // Set auth token in API headers

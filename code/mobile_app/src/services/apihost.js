@@ -6,10 +6,12 @@ import { Platform } from "react-native";
 let baseURL;
 if (Platform.OS === "android") {
   // Android emulator needs to use special IP to reach host
-  baseURL = "http://10.0.2.2:5000";
+  baseURL =
+    "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
 } else if (Platform.OS === "ios") {
   // iOS simulator can use localhost
-  baseURL = "http://localhost:5000";
+  baseURL =
+    "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
 } else {
   // Web environment
   if (
@@ -22,7 +24,8 @@ if (Platform.OS === "android") {
     console.log("Using relative URL for API requests to work with Vite proxy");
   } else {
     // Regular web environment
-    baseURL = "http://localhost:5000";
+    baseURL =
+      "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
   }
 }
 
@@ -43,7 +46,7 @@ api.interceptors.request.use(
     try {
       const token = await AsyncStorage.getItem("driverToken");
       console.log("Current token:", token ? "Token exists" : "No token found");
-      
+
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
         console.log("Request headers:", config.headers);
@@ -73,7 +76,7 @@ api.interceptors.response.use(
         status: error.response.status,
         data: error.response.data,
         headers: error.response.headers,
-        url: error.config.url
+        url: error.config.url,
       });
 
       // Handle 401 errors

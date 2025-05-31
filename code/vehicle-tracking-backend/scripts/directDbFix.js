@@ -3,8 +3,7 @@
 const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
-const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://localhost:27017/vehicle-tracking";
+const MONGO_URI = process.env.MONGO_URI;
 
 async function fixIndexes() {
   const client = new MongoClient(MONGO_URI);

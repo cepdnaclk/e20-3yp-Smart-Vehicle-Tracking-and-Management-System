@@ -7,12 +7,14 @@ export default defineConfig({
   server: {
     proxy: {
       "/socket.io": {
-        target: "http://localhost:5000",
+        target:
+          "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/",
         ws: true,
         changeOrigin: true,
       },
       "/api": {
-        target: "http://localhost:5000",
+        target:
+          "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/",
         changeOrigin: true,
       },
     },

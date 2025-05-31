@@ -2,7 +2,8 @@ import axios from "axios";
 
 // Create an axios instance with default configuration
 export const api = axios.create({
-  baseURL: "http://localhost:5000", // Use a hardcoded value
+  baseURL:
+    "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/", // Use a hardcoded value
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

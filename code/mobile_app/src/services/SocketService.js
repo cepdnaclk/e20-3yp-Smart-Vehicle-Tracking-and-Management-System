@@ -121,13 +121,16 @@ class SocketService {
     let apiUrl;
     if (Platform.OS === "android") {
       // Android emulator uses 10.0.2.2 to access host machine
-      apiUrl = "http://10.0.2.2:5000";
+      apiUrl =
+        "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
     } else if (Platform.OS === "ios") {
       // iOS simulator can use localhost
-      apiUrl = "http://localhost:5000";
+      apiUrl =
+        "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
     } else {
       // Web fallback
-      apiUrl = "http://localhost:5000";
+      apiUrl =
+        "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/";
     }
 
     if (this.socket && this.isConnected) {

@@ -7,7 +7,8 @@ class SocketClient {
   }
 
   connect() {
-    const BACKEND_URL = "http://localhost:5000"; // Update as needed
+    const BACKEND_URL =
+      "https://trackmasterpro-faethrezd6cvauee.southindia-01.azurewebsites.net/"; // Update as needed
 
     if (this.socket && this.isConnected) {
       return; // Already connected
