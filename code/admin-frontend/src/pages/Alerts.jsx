@@ -21,7 +21,7 @@ import {
   Settings,
   Eye
 } from "lucide-react";
-import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, BarController } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 import Sidebar from "../components/Sidebar";
@@ -35,7 +35,7 @@ import './Alerts.css';  // Import the CSS file
 import VehicleDetailsModal from "../components/VehicleDetailsModal"; // Import the modal
 
 // Register Chart.js components (needed for tree-shaking)
-Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ChartDataLabels);
+Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, BarController, ChartDataLabels);
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -75,6 +75,11 @@ const Alerts = () => {
       // Dynamically import jsPDF and jspdf-autotable
       const { default: jsPDF } = await import('jspdf');
       const { autoTable } = await import('jspdf-autotable');
+
+      // Ensure Chart.js is properly registered before creating the chart
+      if (!Chart.controllers.bar) {
+        Chart.register(BarController);
+      }
 
       const doc = new jsPDF();
 
