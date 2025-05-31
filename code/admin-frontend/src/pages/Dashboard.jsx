@@ -41,6 +41,7 @@ import { getSensorsData } from "../services/getSensorsData";
 import { startPolling, stopPolling } from "../services/getAlerts";
 import { api } from "../services/api";
 import { authService } from '../services/authService';
+import LeafletMap from '../components/LeafletMapDashboard';
 
 // Animation variants
 const containerVariants = {
@@ -463,44 +464,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="card-body p-0" style={{ height: '400px' }}>
-            <div style={{ height: '380px', width: '100%' }}>
-              <MapContainer
-                center={[sensorData.location.lat, sensorData.location.lng]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <Marker 
-                  position={[sensorData.location.lat, sensorData.location.lng]}
-                  icon={vehicleIcon}
-                >
-                  <Popup>
-                    <div>
-                      <h6 className="mb-2">Vehicle Status</h6>
-                      <p className="mb-1">
-                        <Hash className="text-secondary me-2" size={16} />
-                        License: {activeVehicles[0]?.licensePlate || 'N/A'}
-                      </p>
-                      <p className="mb-1">
-                        <Gauge className="text-primary me-2" size={16} />
-                        Speed: {sensorData.speed} km/h
-                      </p>
-                      <p className="mb-1">
-                        <Thermometer className="text-danger me-2" size={16} />
-                        Temperature: {sensorData.temperature}°C
-                      </p>
-                      <p className="mb-0">
-                        <Droplets className="text-info me-2" size={16} />
-                        Humidity: {sensorData.humidity}%
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              </MapContainer>
-            </div>
+            <LeafletMap vehicles={activeVehicles} />
           </div>
         </motion.div>
 
