@@ -257,16 +257,31 @@ const Drivers = () => {
   };
 
   // Show VehicleDetailsModal for the driver's last vehicle (if available)
-  const handleViewVehicleDetails = (driver) => {
-    // You may want to fetch the vehicle by driver.assignedVehicle or similar logic
-    // Here, we assume driver.lastLocation or driver.vehicle is available
-    setSelectedVehicle({
-      licensePlate: driver.vehicleNumber || driver.assignedVehicle || "",
-      driver: driver.fullName,
-      number: driver.vehicleNumber || driver.assignedVehicle || "",
-      // Add more fields as needed for VehicleDetailsModal
-    });
-    setShowVehicleDetails(true);
+  const handleViewVehicleDetails = async (driver) => {
+    try {
+      // Fetch the vehicle details using the license plate
+      const vehicleResponse = await api.get(`/api/vehicles/license/${driver.vehicleNumber || driver.assignedVehicle}`);
+      const vehicleDetails = vehicleResponse.data;
+      
+      if (vehicleDetails && vehicleDetails.vehicle) {
+        setSelectedVehicle({
+          licensePlate: vehicleDetails.vehicle.licensePlate,
+          number: vehicleDetails.vehicle.licensePlate,
+          deviceId: vehicleDetails.vehicle.deviceId,
+          driver: driver.fullName
+        });
+        setShowVehicleDetails(true);
+      } else {
+        setAlertMessage("Vehicle details not found");
+        setAlertType("warning");
+        setShowAlert(true);
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle details:", error);
+      setAlertMessage("Failed to fetch vehicle details");
+      setAlertType("danger");
+      setShowAlert(true);
+    }
   };
 
   // Add this function to fetch tasks for a specific driver
