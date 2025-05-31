@@ -1,15 +1,21 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+  // Container styles
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+
+  // Login Screen
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
     height: 200,
-    backgroundColor: "#4DA6FF",
+    width: "100%",
   },
   logoText: {
     fontSize: 32,
@@ -19,23 +25,54 @@ export const styles = StyleSheet.create({
   formContainer: {
     padding: 20,
   },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 20,
+    color: "#333",
+  },
   input: {
     backgroundColor: "white",
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    fontSize: 16,
   },
   loginButton: {
     backgroundColor: "#4DA6FF",
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: "center",
+    marginTop: 5,
+    elevation: 2,
   },
   loginButtonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
+  forgotPasswordContainer: {
+    marginTop: 15,
+    alignItems: "center",
+  },
+  forgotPasswordText: {
+    color: "#4DA6FF",
+    fontSize: 14,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 20,
+    width: "100%",
+    alignItems: "center",
+  },
+  footerText: {
+    color: "#999",
+    fontSize: 12,
+  },
+
+  // Dashboard Screen
   dashboardContainer: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -47,10 +84,12 @@ export const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 22,
     fontWeight: "bold",
+    color: "#333",
   },
   dateText: {
     fontSize: 16,
     color: "#666",
+    marginTop: 2,
   },
   statsContainer: {
     flexDirection: "row",
@@ -59,11 +98,15 @@ export const styles = StyleSheet.create({
   },
   statCard: {
     backgroundColor: "white",
-    borderRadius: 5,
+    borderRadius: 12,
     padding: 15,
     width: "48%",
     alignItems: "center",
     elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   statNumber: {
     fontSize: 24,
@@ -79,87 +122,361 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginVertical: 15,
+    color: "#333",
+  },
+  activeTaskCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  activeTaskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  activeTaskNumber: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  activeTaskBadge: {
+    backgroundColor: "#4DA6FF",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  activeTaskBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  activeTaskDetails: {
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    paddingTop: 10,
+  },
+  activeTaskRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  activeTaskText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: "#666",
+    flex: 1,
+  },
+  viewDetailsButton: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  viewDetailsText: {
+    color: "#4DA6FF",
+    fontWeight: "500",
+    marginRight: 5,
+  },
+  noActiveTaskCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 25,
+    marginBottom: 15,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  noActiveTaskText: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 10,
+    color: "#333",
+  },
+  noActiveTaskSubtext: {
+    fontSize: 14,
+    color: "#999",
+    marginTop: 5,
+    textAlign: "center",
   },
   vehicleInfoBox: {
     backgroundColor: "#fff",
-    borderRadius: 5,
+    borderRadius: 12,
     padding: 15,
-    marginBottom: 10,
+    marginBottom: 15,
     alignItems: "center",
     elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   vehicleInfoText: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#4DA6FF",
   },
-  scanButton: {
-    backgroundColor: "#4DA6FF",
-    padding: 15,
-    borderRadius: 5,
+  locationUpdateStatus: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 8,
   },
-  scanButtonText: {
+  locationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#4CAF50",
+    marginRight: 5,
+  },
+  locationText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  vehicleInputContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  vehicleInput: {
+    backgroundColor: "#f9f9f9",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    fontSize: 16,
+  },
+  submitButton: {
+    backgroundColor: "#4DA6FF",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  submitButtonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
-  centerText: {
-    fontSize: 18,
-    padding: 32,
-    color: "#777",
-    textAlign: "center",
+  removeButton: {
+    backgroundColor: "#FF6B6B",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 5,
+    marginBottom: 20,
   },
-  buttonTouchable: {
-    padding: 16,
-  },
-  buttonText: {
+  removeButtonText: {
+    color: "white",
+    fontWeight: "bold",
     fontSize: 16,
-    color: "#4DA6FF",
   },
-  header: {
-    backgroundColor: "#4DA6FF",
-    padding: 20,
+
+  // Tasks Screen
+  headerContainer: {
+    padding: 15,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
-  vehicleNumber: {
+  headerText: {
     fontSize: 22,
     fontWeight: "bold",
+    color: "#333",
+  },
+  taskInstructions: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 5,
+  },
+  listContainer: {
+    padding: 15,
+  },
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 50,
+  },
+  taskItem: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  completedTask: {
+    opacity: 0.7,
+    backgroundColor: "#f9f9f9",
+  },
+  overdueTask: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF6B6B",
+  },
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  taskNumber: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  cargoTypeText: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: "500",
+    overflow: "hidden",
+  },
+  pendingBadge: {
+    backgroundColor: "#FFC107",
+    color: "#333",
+  },
+  inProgressBadge: {
+    backgroundColor: "#2196F3",
     color: "white",
   },
-  statusText: {
-    fontSize: 16,
+  completedBadge: {
+    backgroundColor: "#4CAF50",
     color: "white",
+  },
+  cancelledBadge: {
+    backgroundColor: "#F44336",
+    color: "white",
+  },
+  taskDetails: {
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    paddingTop: 10,
+  },
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  locationText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  infoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  infoText: {
+    marginLeft: 5,
+    fontSize: 12,
+    color: "#666",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 30,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginTop: 15,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#999",
     marginTop: 5,
+    textAlign: "center",
+  },
+
+  // Task Details Screen
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginBottom: 15,
   },
   detailsContainer: {
     backgroundColor: "white",
-    margin: 10,
+    marginHorizontal: 15,
+    marginBottom: 15,
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   detailRow: {
     flexDirection: "row",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   detailLabel: {
     fontWeight: "bold",
     width: "30%",
+    color: "#333",
   },
   detailValue: {
     width: "70%",
+    color: "#666",
+  },
+  notesContainer: {
+    backgroundColor: "white",
+    marginHorizontal: 15,
+    marginBottom: 15,
+    padding: 15,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  notesText: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
   },
   actionContainer: {
-    margin: 10,
+    margin: 15,
     alignItems: "center",
   },
   actionButton: {
-    backgroundColor: "#4DA6FF",
     padding: 15,
-    borderRadius: 5,
-    width: "90%",
+    borderRadius: 8,
+    width: "100%",
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: 5,
+    elevation: 2,
   },
   actionButtonText: {
     color: "white",
@@ -168,104 +485,34 @@ export const styles = StyleSheet.create({
   },
   completionContainer: {
     alignItems: "center",
-    padding: 10,
+    padding: 20,
+    marginBottom: 10,
   },
   completionText: {
     fontSize: 18,
     color: "#4CAF50",
     fontWeight: "bold",
-    marginBottom: 15,
+    marginTop: 10,
   },
-  headerText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    margin: 15,
-  },
-  taskInstructions: {
-    fontSize: 14,
-    color: "#666",
-    marginHorizontal: 15,
-    marginBottom: 10,
-    fontStyle: "italic",
-  },
-  listContainer: {
-    padding: 10,
-  },
-  taskItem: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    padding: 15,
-    marginBottom: 10,
-    elevation: 2,
-  },
-  completedTask: {
-    opacity: 0.7,
-  },
-  taskHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  vehicleText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
-    fontSize: 12,
-  },
-  pendingBadge: {
-    backgroundColor: "#FFC107",
-    color: "#000",
-  },
-  completedBadge: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-  },
-  taskDetails: {
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    paddingTop: 10,
-  },
-  destinationText: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  notificationItem: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    padding: 15,
-    marginBottom: 10,
-    elevation: 2,
-  },
-  notificationTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  notificationMessage: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: "#666",
-    textAlign: "right",
-  },
+
+  // Settings Screen styles
   profileSection: {
     alignItems: "center",
     backgroundColor: "white",
     padding: 20,
-    margin: 10,
-    borderRadius: 5,
+    margin: 15,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
     marginTop: 10,
+    color: "#333",
   },
   profileInfo: {
     fontSize: 14,
@@ -275,8 +522,13 @@ export const styles = StyleSheet.create({
   settingsSection: {
     backgroundColor: "white",
     padding: 15,
-    margin: 10,
-    borderRadius: 5,
+    margin: 15,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   settingItem: {
     flexDirection: "row",
@@ -288,6 +540,7 @@ export const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
+    color: "#333",
   },
   supportItem: {
     flexDirection: "row",
@@ -299,12 +552,13 @@ export const styles = StyleSheet.create({
   supportItemText: {
     fontSize: 16,
     marginLeft: 10,
+    color: "#333",
   },
   logoutButton: {
     backgroundColor: "#FF6B6B",
-    margin: 10,
+    margin: 15,
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: "center",
   },
   logoutButtonText: {
@@ -312,44 +566,68 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  wrongVehicleContainer: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-    alignItems: "center",
-    elevation: 3,
+
+  // Notifications Screen
+  notificationItem: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 15,
+    marginHorizontal: 15,
+    marginTop: 15,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
-  wrongVehicleTitle: {
-    fontSize: 22,
+  notificationTitle: {
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#FF6B6B",
-    marginBottom: 15,
-  },
-  wrongVehicleText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  currentVehicleText: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 20,
-  },
-  requiredVehicleContainer: {
-    backgroundColor: "#E6F4FF",
-    padding: 10,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#4DA6FF",
-  },
-  requiredVehicleText: {
-    fontSize: 16,
+    marginBottom: 5,
     color: "#333",
   },
-  requiredVehicleNumber: {
+  notificationMessage: {
+    fontSize: 14,
+    marginBottom: 10,
+    color: "#666",
+    lineHeight: 20,
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: "#999",
+    textAlign: "right",
+  },
+
+  // Add new styles for instruction items
+  instructionItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 15,
+  },
+  instructionBullet: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#4DA6FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 2,
+  },
+  instructionNumber: {
+    color: "white",
     fontWeight: "bold",
+  },
+  signupContainer: {
+    marginTop: 15,
+    alignItems: "center",
+  },
+  signupText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  signupLink: {
     color: "#4DA6FF",
-    fontSize: 18,
+    fontWeight: "bold",
   },
 });

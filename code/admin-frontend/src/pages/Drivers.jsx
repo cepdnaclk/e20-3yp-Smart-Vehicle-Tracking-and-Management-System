@@ -1,1228 +1,875 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaCalendarAlt, FaMapMarkerAlt, FaCamera, FaUserCircle, FaArrowLeft, FaTasks, FaBox, FaTrash, FaEye, FaEdit, FaFileDownload, FaFilter } from 'react-icons/fa';
-import axios from 'axios';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable'; // Import autoTable explicitly
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button, Modal, Form } from "react-bootstrap";
+import { motion } from "framer-motion";
+import { 
+  Users,
+  Plus, 
+  DownloadCloud, 
+  RefreshCw,
+  Eye,
+  MapPin,
+  Edit,
+  Trash2,
+  Briefcase // Add this new icon for tasks
+} from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-function Drivers() {
+import Sidebar from "../components/Sidebar";
+import LoadingSpinner from "../components/LoadingSpinner";
+import PageHeader from "../components/PageHeader";
+import DataTable from "../components/DataTable";
+import AnimatedAlert from "../components/AnimatedAlert";
+import VehicleDetailsModal from "../components/VehicleDetailsModal";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { api } from "../services/api";
+
+const Drivers = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [drivers, setDrivers] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [showTaskView, setShowTaskView] = useState(false);
-  const [showAssignTaskForm, setShowAssignTaskForm] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [selectedDriverId, setSelectedDriverId] = useState(null);
-  const [tasks, setTasks] = useState([]);
-  const [editDriver, setEditDriver] = useState(null);
-  const [viewDriver, setViewDriver] = useState(null);
-  const [viewTask, setViewTask] = useState(null);
-  const [editTask, setEditTask] = useState(null);
-  const [dateRange, setDateRange] = useState('7');
-  const [selectedStatuses, setSelectedStatuses] = useState(['Pending', 'In Progress', 'Completed']);
-  const [reportData, setReportData] = useState([]);
-
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    dateOfBirth: '',
-    phoneNumber: '',
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState("info");
+  const [newDriver, setNewDriver] = useState({
+    driverId: '',
+    fullName: '',
     email: '',
+    phone: '',
     licenseNumber: '',
-    licenseExpiry: '',
-    vehicleId: '',
-    lastLocation: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    employmentStatus: 'active',
-    joiningDate: '',
-    profileImage: null,
+    joinDate: '',
+    employmentStatus: 'active'
   });
-
+  const [showVehicleDetails, setShowVehicleDetails] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedDriverForTask, setSelectedDriverForTask] = useState(null);
   const [taskFormData, setTaskFormData] = useState({
+    taskNumber: '',
     cargoType: '',
     weight: '',
     pickup: '',
     delivery: '',
+    deliveryPhone: '',
     expectedDelivery: '',
-    status: 'Pending',
+    additionalNotes: ''
   });
+  const [taskSubmitted, setTaskSubmitted] = useState(false);
+  const [driverTasks, setDriverTasks] = useState([]);
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    driver: null
+  });
+  const [assignedVehicleForTask, setAssignedVehicleForTask] = useState(null);
 
   useEffect(() => {
-    const fetchDrivers = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get('http://localhost:5000/api/drivers');
-        setDrivers(response.data);
-      } catch (error) {
-        console.error('Error fetching drivers:', error);
-        toast.error(error.response?.data?.message || 'Failed to load drivers');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    }
+    
     fetchDrivers();
-  }, []);
+  }, [navigate]);
 
-  const fetchTasks = async (driverId) => {
+  const fetchDrivers = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/drivers/${driverId}/tasks`);
-      setTasks(response.data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error(error.response?.data?.message || 'Failed to load tasks');
-    } finally {
+      const response = await api.get("/api/drivers");
+      setDrivers(response.data);
       setIsLoading(false);
+      setAlertMessage("Driver data loaded successfully");
+      setAlertType("success");
+      setShowAlert(true);
+    } catch (error) {
+      setIsLoading(false);
+      setAlertMessage(
+        error.response?.data?.message === "Not Found"
+          ? "Driver endpoint not found. Please check backend route."
+          : "Failed to load driver data. Please try again."
+      );
+      setAlertType("danger");
+      setShowAlert(true);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'file' ? files[0] : value,
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const handleViewDriver = (driver) => {
+    console.log("View mode activated for driver:", driver.driverId);
+    setViewMode(true);
+    setEditMode(false);
+    setNewDriver({
+      driverId: driver.driverId,
+      fullName: driver.fullName,
+      email: driver.email,
+      phone: driver.phone,
+      licenseNumber: driver.licenseNumber,
+      joinDate: driver.joinDate ? driver.joinDate.slice(0, 10) : '',
+      employmentStatus: driver.employmentStatus
     });
+    setModalKey(prev => prev + 1);
+    setShowAddModal(true);
+  };
+
+  const handleEditDriver = (driver) => {
+    setViewMode(false); // Ensure viewMode is false for editing
+    setEditMode(true);
+    setNewDriver({
+      driverId: driver.driverId,
+      fullName: driver.fullName,
+      email: driver.email,
+      phone: driver.phone,
+      licenseNumber: driver.licenseNumber,
+      joinDate: driver.joinDate ? driver.joinDate.slice(0, 10) : '',
+      employmentStatus: driver.employmentStatus
+    });
+    setModalKey(prev => prev + 1);
+    setShowAddModal(true);
+  };
+
+  const handleDeleteClick = (driver) => {
+    setDeleteModal({
+      show: true,
+      driver
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const driver = deleteModal.driver;
+    if (!driver) return;
+    
+    try {
+      await api.delete(`/api/drivers/${driver.driverId}`);
+      setDrivers(drivers.filter(d => d.driverId !== driver.driverId));
+      setAlertMessage("Driver deleted successfully");
+      setAlertType("success");
+      setShowAlert(true);
+    } catch (err) {
+      setAlertMessage("Failed to delete driver.");
+      setAlertType("danger");
+      setShowAlert(true);
+    } finally {
+      setDeleteModal({ show: false, driver: null });
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ show: false, driver: null });
+  };
+  
+  const handleAddDriver = () => {
+    console.log("Add mode activated", { viewMode: false, editMode: false });
+    setViewMode(false);
+    setEditMode(false);
+    setNewDriver({
+      driverId: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      licenseNumber: '',
+      joinDate: '',
+      employmentStatus: 'active'
+    });
+    setModalKey(prev => prev + 1);
+    setShowAddModal(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewDriver({
+      ...newDriver,
+      [name]: value
+    });
+  };
+
+  const handleAddDriverSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        driverId: newDriver.driverId.trim(),
+        fullName: newDriver.fullName.trim(),
+        email: newDriver.email,
+        phone: newDriver.phone,
+        licenseNumber: newDriver.licenseNumber,
+        joinDate: newDriver.joinDate,
+        employmentStatus: newDriver.employmentStatus,
+        // No need to add companyId here - it's extracted from JWT token in the backend
+      };
+
+      if (
+        !payload.driverId ||
+        !payload.fullName ||
+        !payload.email ||
+        !payload.phone ||
+        !payload.licenseNumber ||
+        !payload.joinDate ||
+        !payload.employmentStatus
+      ) {
+        setAlertMessage("All fields are required.");
+        setAlertType("danger");
+        setShowAlert(true);
+        return;
+      }
+
+      if (editMode && !viewMode) {
+        await api.put(`/api/drivers/${newDriver.driverId}`, payload);
+        setAlertMessage("Driver updated successfully");
+      } else {
+        console.log("Submitting new driver:", payload);
+        await api.post("/api/drivers", payload);
+        setAlertMessage("New driver added successfully");
+      }
+
+      setAlertType("success");
+      setShowAlert(true);
+      setShowAddModal(false);
+      fetchDrivers();
+    } catch (err) {
+      console.error("Error saving driver:", err);
+      
+      // Better error handling with more details
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        setAlertMessage(
+          err.response.data.errors.map(e => e.msg).join(" | ")
+        );
+      } else if (err.response?.data?.message) {
+        setAlertMessage(err.response.data.message);
+      } else {
+        setAlertMessage(editMode ? "Failed to update driver." : "Failed to add driver.");
+      }
+      setAlertType("danger");
+      setShowAlert(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setViewMode(false);
+    setEditMode(false);
+  };
+
+  // Show VehicleDetailsModal for the driver's last vehicle (if available)
+  const handleViewVehicleDetails = async (driver) => {
+    try {
+      // Fetch the vehicle details using the license plate
+      const vehicleResponse = await api.get(`/api/vehicles/license/${driver.vehicleNumber || driver.assignedVehicle}`);
+      const vehicleDetails = vehicleResponse.data;
+      
+      if (vehicleDetails && vehicleDetails.vehicle) {
+        setSelectedVehicle({
+          licensePlate: vehicleDetails.vehicle.licensePlate,
+          number: vehicleDetails.vehicle.licensePlate,
+          deviceId: vehicleDetails.vehicle.deviceId,
+          driver: driver.fullName
+        });
+        setShowVehicleDetails(true);
+      } else {
+        setAlertMessage("Vehicle details not found");
+        setAlertType("warning");
+        setShowAlert(true);
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle details:", error);
+      setAlertMessage("Failed to fetch vehicle details");
+      setAlertType("danger");
+      setShowAlert(true);
+    }
+  };
+
+  // Add this function to fetch tasks for a specific driver
+  const fetchDriverTasks = async (driverId) => {
+    try {
+      const response = await api.get(`/api/tasks/driver/${driverId}`);
+      setDriverTasks(response.data);
+    } catch (error) {
+      console.error("Error fetching driver tasks:", error);
+    }
+  };
+
+  const handleAssignTask = async (driver) => {
+    try {
+      console.log("Attempting to assign task for driver:", driver);
+      // Reset task states
+      setTaskSubmitted(false);
+      setDriverTasks([]);
+      
+      // Fetch the latest driver data to get the current assigned vehicle
+      const driverResponse = await api.get(`/api/drivers/${driver.driverId}`);
+      console.log("Fetched latest driver data:", driverResponse.data);
+      const latestDriverData = driverResponse.data;
+      
+      if (!latestDriverData || !latestDriverData.assignedVehicle) {
+        console.warn("Driver has no assigned vehicle or data not fetched correctly.", { latestDriverData });
+        setAlertMessage("Driver has no assigned vehicle. Please ask the driver to set it on the mobile app dashboard.");
+        setAlertType("danger");
+        setShowAlert(true);
+        return;
+      }
+
+      // Generate a driver-specific task number
+      const taskNumberResponse = await api.get(`/api/tasks/next-number/${driver.driverId}`);
+      const taskNum = taskNumberResponse.data.nextTaskNumber;
+      
+      console.log(`Generated task number for driver ${driver.driverId}: ${taskNum}`);
+      
+      setSelectedDriverForTask(latestDriverData); // Use the latest driver data
+      setTaskFormData({
+        taskNumber: taskNum,
+        cargoType: '',
+        weight: '',
+        pickup: '',
+        delivery: '',
+        deliveryPhone: '',
+        expectedDelivery: '',
+        additionalNotes: ''
+      });
+      
+      setAssignedVehicleForTask(latestDriverData.assignedVehicle); // Set the assigned vehicle
+      console.log("Assigned vehicle for task assignment:", latestDriverData.assignedVehicle);
+      setShowTaskModal(true);
+    } catch (error) {
+      console.error("Error preparing task assignment:", error);
+      setAlertMessage(`Failed to prepare task assignment: ${error.response?.data?.message || error.message}`);
+      setAlertType("danger");
+      setShowAlert(true);
+    }
   };
 
   const handleTaskInputChange = (e) => {
     const { name, value } = e.target;
     setTaskFormData({
       ...taskFormData,
-      [name]: value,
+      [name]: value
     });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setIsLoading(true);
-      const payload = new FormData();
-      payload.append('firstName', formData.firstName);
-      payload.append('lastName', formData.lastName);
-      payload.append('phoneNumber', formData.phoneNumber);
-      payload.append('email', formData.email);
-      payload.append('licenseNumber', formData.licenseNumber);
-      payload.append('licenseExpiry', formData.licenseExpiry ? new Date(formData.licenseExpiry).toISOString() : '');
-      payload.append('vehicleId', formData.vehicleId);
-      payload.append('lastLocation', formData.lastLocation);
-      payload.append('employmentStatus', formData.employmentStatus);
-      if (formData.dateOfBirth) payload.append('dateOfBirth', new Date(formData.dateOfBirth).toISOString());
-      if (formData.address.trim()) payload.append('address', formData.address);
-      if (formData.city.trim()) payload.append('city', formData.city);
-      if (formData.state.trim()) payload.append('state', formData.state);
-      if (formData.zipCode.trim()) payload.append('zipCode', formData.zipCode);
-      if (formData.joiningDate) payload.append('joiningDate', new Date(formData.joiningDate).toISOString());
-      if (formData.profileImage) payload.append('profileImage', formData.profileImage);
-
-      let response;
-      if (editDriver) {
-        response = await axios.put(`http://localhost:5000/api/drivers/${editDriver._id}`, payload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        setDrivers(drivers.map((d) => (d._id === editDriver._id ? response.data : d)));
-        toast.success('Driver updated successfully!');
-      } else {
-        response = await axios.post('http://localhost:5000/api/drivers', payload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        setDrivers([...drivers, response.data]);
-        toast.success('Driver registered successfully!');
-      }
-
-      setFormData({
-        firstName: '',
-        lastName: '',
-        dateOfBirth: '',
-        phoneNumber: '',
-        email: '',
-        licenseNumber: '',
-        licenseExpiry: '',
-        vehicleId: '',
-        lastLocation: '',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        employmentStatus: 'active',
-        joiningDate: '',
-        profileImage: null,
-      });
-      setShowForm(false);
-      setEditDriver(null);
-    } catch (error) {
-      console.error('Error saving driver:', error);
-      toast.error(error.response?.data?.message || 'Failed to save driver');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
     try {
-      setIsLoading(true);
-      const payload = {
-        cargoType: taskFormData.cargoType,
-        weight: taskFormData.weight ? parseFloat(taskFormData.weight) : 0,
-        pickup: taskFormData.pickup,
-        delivery: taskFormData.delivery,
-        expectedDelivery: taskFormData.expectedDelivery ? new Date(taskFormData.expectedDelivery).toISOString() : new Date().toISOString(),
-        status: taskFormData.status,
-      };
-
-      let response;
-      if (editTask) {
-        response = await axios.put(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/${editTask._id}`, payload, {
-          headers: { 'Content-Type': 'application/json' },
-        });
-        setTasks(tasks.map((t) => (t._id === editTask._id ? response.data : t)));
-        toast.success('Task updated successfully!');
-      } else {
-        response = await axios.post(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks`, payload, {
-          headers: { 'Content-Type': 'application/json' },
-        });
-        setTasks([...tasks, response.data]);
-        toast.success('Task assigned successfully!');
+      if (!selectedDriverForTask) {
+        setAlertMessage("No driver selected");
+        setAlertType("danger");
+        setShowAlert(true);
+        return;
+      }
+      
+      console.log(`Submitting task ${taskFormData.taskNumber} for driver ${selectedDriverForTask.driverId}`);
+      
+      // Use the assigned vehicle from the state variable
+      if (!assignedVehicleForTask) {
+         setAlertMessage("No assigned vehicle found for the driver.");
+         setAlertType("danger");
+         setShowAlert(true);
+         return;
       }
 
+      const payload = {
+        ...taskFormData,
+        driverId: selectedDriverForTask.driverId,
+        licensePlate: assignedVehicleForTask // Use the state variable
+      };
+
+      console.log("Creating task with payload:", payload);
+
+      // Directly use the task creation endpoint to ensure companyId is set properly
+      const response = await api.post(`/api/tasks`, {
+        ...payload,
+        status: "Pending" // Set initial status explicitly
+      });
+      
+      console.log("Task created successfully:", response.data);
+      
+      setAlertMessage("Task assigned successfully! The driver will be notified in real-time.");
+      setAlertType("success");
+      setShowAlert(true);
+      
+      // Close the modal after successful submission
+      setShowTaskModal(false);
+      
+      // Clear the form data and assigned vehicle state
       setTaskFormData({
+        taskNumber: '',
         cargoType: '',
         weight: '',
         pickup: '',
         delivery: '',
+        deliveryPhone: '',
         expectedDelivery: '',
-        status: 'Pending',
+        additionalNotes: ''
       });
-      setShowAssignTaskForm(false);
-      setEditTask(null);
-    } catch (error) {
-      console.error('Error processing task:', error);
-      toast.error(error.response?.data?.message || 'Failed to process task');
-    } finally {
-      setIsLoading(false);
+      setAssignedVehicleForTask(null); // Clear assigned vehicle state
+    } catch (err) {
+      console.error("Failed to assign task:", err);
+      setAlertMessage(`Failed to assign task: ${err.response?.data?.message || err.message}`);
+      setAlertType("danger");
+      setShowAlert(true);
     }
   };
 
-  const handleViewDetails = (driver) => {
-    setViewDriver(driver);
-  };
-
-  const handleEdit = (driver) => {
-    setEditDriver(driver);
-    setFormData({
-      firstName: driver.firstName,
-      lastName: driver.lastName,
-      dateOfBirth: driver.dateOfBirth ? driver.dateOfBirth.split('T')[0] : '',
-      phoneNumber: driver.phoneNumber,
-      email: driver.email,
-      licenseNumber: driver.licenseNumber,
-      licenseExpiry: driver.licenseExpiry ? driver.licenseExpiry.split('T')[0] : '',
-      vehicleId: driver.vehicleId || '',
-      lastLocation: driver.lastLocation || '',
-      address: driver.address || '',
-      city: driver.city || '',
-      state: driver.state || '',
-      zipCode: driver.zipCode || '',
-      employmentStatus: driver.employmentStatus,
-      joiningDate: driver.joiningDate ? driver.joiningDate.split('T')[0] : '',
-      profileImage: null,
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title to PDF
+    doc.setFontSize(18);
+    doc.text('Driver Management System - Driver Report', 14, 22);
+    
+    // Add date
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 14, 30);
+    
+    // Define the columns for the table
+    const tableColumn = [
+      "Driver ID", 
+      "Full Name",
+      "Email", 
+      "Phone", 
+      "License Number",
+      "Join Date",
+      "Status"
+    ];
+    
+    // Define the rows for the table
+    const tableRows = [];
+    
+    // Add data rows
+    drivers.forEach(driver => {
+      const driverData = [
+        driver.driverId,
+        driver.fullName,
+        driver.email,
+        driver.phone,
+        driver.licenseNumber,
+        new Date(driver.joinDate).toLocaleDateString(),
+        driver.employmentStatus
+      ];
+      tableRows.push(driverData);
     });
-    setShowForm(true);
-  };
-
-  const handleDeleteDriver = async (driverId) => {
-    if (window.confirm('Are you sure you want to delete this driver?')) {
-      if (window.confirm('Please confirm again to delete this driver.')) {
-        try {
-          await axios.delete(`http://localhost:5000/api/drivers/${driverId}`);
-          setDrivers(drivers.filter((d) => d._id !== driverId));
-          toast.success('Driver deleted successfully!');
-        } catch (error) {
-          console.error('Error deleting driver:', error);
-          toast.error(error.response?.data?.message || 'Failed to delete driver');
-        }
+    
+    // Create the table
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: {
+        fillColor: [76, 175, 80], // Green color for driver management
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
       }
-    }
-  };
-
-  const handleViewTask = (task) => {
-    setViewTask(task);
-  };
-
-  const handleEditTask = (task) => {
-    setEditTask(task);
-    setTaskFormData({
-      cargoType: task.cargoType,
-      weight: task.weight.toString(),
-      pickup: task.pickup,
-      delivery: task.delivery,
-      expectedDelivery: task.expectedDelivery ? task.expectedDelivery.split('T')[0] : '',
-      status: task.status,
     });
-    setShowAssignTaskForm(true);
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      if (window.confirm('Please confirm again to delete this task.')) {
-        try {
-          await axios.delete(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/${taskId}`);
-          setTasks(tasks.filter((t) => t._id !== taskId));
-          toast.success('Task deleted successfully!');
-        } catch (error) {
-          console.error('Error deleting task:', error);
-          toast.error(error.response?.data?.message || 'Failed to delete task');
-        }
-      }
-    }
-  };
-
-  const handleAssignTask = (driverId) => {
-    setSelectedDriverId(driverId);
-    setShowTaskView(true);
-    fetchTasks(driverId);
-  };
-
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
-
-  const handleBackToDrivers = () => {
-    setShowTaskView(false);
-    setShowAssignTaskForm(false);
-    setSelectedDriverId(null);
-    setTasks([]);
-  };
-
-  const handleShowTaskForm = () => {
-    setEditTask(null);
-    setTaskFormData({
-      cargoType: '',
-      weight: '',
-      pickup: '',
-      delivery: '',
-      expectedDelivery: '',
-      status: 'Pending',
-    });
-    setShowAssignTaskForm(true);
-  };
-
-  const closeViewModal = () => {
-    setViewDriver(null);
-  };
-
-  const closeTaskViewModal = () => {
-    setViewTask(null);
-  };
-
-  const openReportModal = (driverId) => {
-    setSelectedDriverId(driverId);
-    setDateRange('7');
-    setSelectedStatuses(['Pending', 'In Progress', 'Completed']);
-    setReportData([]);
-    setShowReportModal(true);
-  };
-
-  const closeReportModal = () => {
-    setShowReportModal(false);
-    setSelectedDriverId(null);
-    setReportData([]);
-    setDateRange('7');
-    setSelectedStatuses(['Pending', 'In Progress', 'Completed']);
-  };
-
-  const handleDateRangeChange = (e) => {
-    setDateRange(e.target.value);
-  };
-
-  const handleStatusChange = (e) => {
-    const options = e.target.options;
-    const selected = [];
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].selected) {
-        selected.push(options[i].value);
-      }
-    }
-    setSelectedStatuses(selected);
-  };
-
-  const fetchReportData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/drivers/${selectedDriverId}/tasks/report`, {
-        params: {
-          dateRange,
-          statuses: selectedStatuses.join(','),
-        },
+    
+    // Add summary section
+    const finalY = (doc.lastAutoTable?.finalY || 40) + 10;
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Total Drivers: ${drivers.length}`, 14, finalY);
+    
+    // Add active/inactive driver counts
+    const activeDrivers = drivers.filter(d => d.employmentStatus === 'active').length;
+    const inactiveDrivers = drivers.filter(d => d.employmentStatus === 'inactive').length;
+    doc.text(`Active Drivers: ${activeDrivers}`, 14, finalY + 10);
+    doc.text(`Inactive Drivers: ${inactiveDrivers}`, 14, finalY + 20);
+    
+    // Add driver statistics (e.g., newest drivers)
+    if (drivers.length > 0) {
+      // Sort drivers by join date descending to get newest drivers
+      const sortedDrivers = [...drivers].sort((a, b) => 
+        new Date(b.joinDate) - new Date(a.joinDate));
+      
+      doc.text('Recently Added Drivers:', 14, finalY + 35);
+      let yOffset = finalY + 45;
+      
+      // List 5 most recent drivers
+      sortedDrivers.slice(0, 5).forEach((driver, index) => {
+        doc.text(
+          `${index + 1}. ${driver.fullName} (${driver.driverId}) - ${new Date(driver.joinDate).toLocaleDateString()}`, 
+          20, 
+          yOffset
+        );
+        yOffset += 8;
       });
-      const tasksWithNum = response.data.map((task, index) => ({
-        ...task,
-        taskNum: `TSK${String(index + 1).padStart(4, '0')}`,
-      }));
-      setReportData(tasksWithNum);
-      if (tasksWithNum.length === 0) {
-        toast.info('No tasks found for the selected filters');
-      }
-    } catch (error) {
-      console.error('Error fetching report data:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch report data');
-      setReportData([]);
-    } finally {
-      setIsLoading(false);
     }
+    
+    // Add footer
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('Smart Vehicle Tracking and Management System', 14, doc.internal.pageSize.height - 10);
+    
+    // Save PDF
+    doc.save('driver_report.pdf');
   };
 
-  const generateCSV = () => {
-    const headers = ['Task Number,Cargo Type,Pick Up,Delivery,Expected Delivery,Status'];
-    const rows = reportData.map((item) => [
-      item.taskNum,
-      item.cargoType,
-      item.pickup,
-      item.delivery,
-      new Date(item.expectedDelivery).toLocaleDateString(),
-      item.status,
-    ].join(','));
-
-    const csvContent = [...headers, ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `driver_report_${selectedDriverId}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const generatePDF = () => {
-    try {
-      const doc = new jsPDF();
-      // Apply autoTable to jsPDF instance
-      autoTable(doc, {
-        head: [['Task Number', 'Cargo Type', 'Pick Up', 'Delivery', 'Expected Delivery', 'Status']],
-        body: reportData.map((item) => [
-          item.taskNum,
-          item.cargoType,
-          item.pickup,
-          item.delivery,
-          new Date(item.expectedDelivery).toLocaleDateString(),
-          item.status,
-        ]),
-        startY: 60,
-        theme: 'grid',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [0, 123, 255] },
-      });
-
-      doc.setFontSize(16);
-      doc.text('Driver Task Report', 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Driver ID: ${selectedDriverId}`, 20, 30);
-      doc.text(`Date Range: Last ${dateRange} days`, 20, 40);
-      doc.text(`Statuses: ${selectedStatuses.join(', ')}`, 20, 50);
-
-      doc.save(`driver_report_${selectedDriverId}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF: ' + error.message);
+  const tableColumns = [
+    { key: 'driverId', header: 'Driver ID', sortable: true, render: (v) => <span>{v}</span> },
+    { key: 'fullName', header: 'Full Name', sortable: true, render: (v) => <span>{v}</span> },
+    { key: 'phone', header: 'Phone No', sortable: true, render: (v) => <span>{v}</span> },
+    { key: 'employmentStatus', header: 'Employment Status', sortable: true, render: (v) => (
+      <span className={`badge ${v === 'active' ? 'bg-success' : 'bg-warning'}`}>
+        {v.charAt(0).toUpperCase() + v.slice(1)}
+      </span>
+    ) },
+    { 
+      key: 'lastLocation', 
+      header: 'Last Location', 
+      sortable: false, 
+      render: (v, row) => (
+        <Button
+          size="sm"
+          variant="outline-info"
+          onClick={() => handleViewVehicleDetails(row)}
+        >
+           <MapPin size={16} />
+        </Button>
+      )
+    },
+    {
+      key: 'actions', header: 'Action', sortable: false, render: (_, row) => (
+        <div className="d-flex gap-2">
+          <Button size="sm" variant="outline-primary" onClick={() => handleViewDriver(row)}>
+            <Eye size={16} />
+          </Button>
+          <Button size="sm" variant="outline-secondary" onClick={() => handleEditDriver(row)}>
+            <Edit size={16} />
+          </Button>
+          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
+            <Trash2 size={16} />
+          </Button>
+          <Button size="sm" variant="outline-success" onClick={() => handleAssignTask(row)}>
+            <Briefcase size={16} />
+          </Button>
+        </div>
+      )
     }
-  };
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="min-vh-100 d-flex justify-content-center align-items-center">
+        <LoadingSpinner size="lg" text="Loading drivers..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="container-fluid p-4">
-      {!showTaskView ? (
-        <>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1><FaUser className="me-2" />Driver Management</h1>
-            <div>
-              <button className="btn btn-secondary me-2" onClick={handleBackToDashboard}>
-                <FaArrowLeft className="me-1" /> Back to Dashboard
-              </button>
-              <button className="btn btn-primary" onClick={() => {
-                setEditDriver(null);
-                setFormData({
-                  firstName: '',
-                  lastName: '',
-                  dateOfBirth: '',
-                  phoneNumber: '',
-                  email: '',
-                  licenseNumber: '',
-                  licenseExpiry: '',
-                  vehicleId: '',
-                  lastLocation: '',
-                  address: '',
-                  city: '',
-                  state: '',
-                  zipCode: '',
-                  employmentStatus: 'active',
-                  joiningDate: '',
-                  profileImage: null,
-                });
-                setShowForm(!showForm);
-              }}>
-                {showForm ? 'Cancel' : 'Add New Driver'}
-              </button>
-            </div>
-          </div>
-
-          {showForm && (
-            <div className="card mb-4 shadow-sm">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">{editDriver ? 'Edit Driver' : 'Register New Driver'}</h5>
-              </div>
-              <div className="card-body">
-                <form onSubmit={handleSubmit}>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <h6 className="mb-3">Personal Information</h6>
-                      <div className="mb-4 text-center">
-                        <div
-                          className="position-relative d-inline-block"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => document.getElementById('profileImage').click()}
-                        >
-                          {formData.profileImage ? (
-                            <img
-                              src={URL.createObjectURL(formData.profileImage)}
-                              alt="Profile preview"
-                              className="rounded-circle border"
-                              style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                            />
-                          ) : editDriver && editDriver.profileImage ? (
-                            <img
-                              src={`http://localhost:5000/${editDriver.profileImage}`}
-                              alt="Profile"
-                              className="rounded-circle border"
-                              style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <div
-                              className="rounded-circle bg-light d-flex align-items-center justify-content-center border"
-                              style={{ width: '150px', height: '150px' }}
-                            >
-                              <FaUserCircle size={80} className="text-secondary" />
-                            </div>
-                          )}
-                          <div
-                            className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2"
-                            style={{ boxShadow: '0px 0px 5px rgba(0,0,0,0.3)' }}
-                          >
-                            <FaCamera />
-                          </div>
-                        </div>
-                        <input
-                          id="profileImage"
-                          type="file"
-                          className="d-none"
-                          name="profileImage"
-                          accept="image/*"
-                          onChange={handleInputChange}
-                        />
-                        <div className="mt-2 text-muted small">Click to upload profile photo</div>
-                      </div>
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">First Name</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="firstName"
-                              value={formData.firstName}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Last Name</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="lastName"
-                              value={formData.lastName}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Date of Birth</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaCalendarAlt /></span>
-                          <input
-                            type="date"
-                            className="form-control"
-                            name="dateOfBirth"
-                            value={formData.dateOfBirth}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Phone Number</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaPhone /></span>
-                          <input
-                            type="tel"
-                            className="form-control"
-                            name="phoneNumber"
-                            value={formData.phoneNumber}
-                            onChange={handleInputChange}
-                            placeholder="e.g., 555-123-4567"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Email Address</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaEnvelope /></span>
-                          <input
-                            type="email"
-                            className="form-control"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="e.g., driver@example.com"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <h6 className="mb-3">License Information & Address</h6>
-                      <div className="mb-3">
-                        <label className="form-label">Driver's License Number</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaIdCard /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="licenseNumber"
-                            value={formData.licenseNumber}
-                            onChange={handleInputChange}
-                            placeholder="e.g., DL-123456789"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">License Expiry Date</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaCalendarAlt /></span>
-                          <input
-                            type="date"
-                            className="form-control"
-                            name="licenseExpiry"
-                            value={formData.licenseExpiry}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Vehicle ID</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaIdCard /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="vehicleId"
-                            value={formData.vehicleId}
-                            onChange={handleInputChange}
-                            placeholder="e.g., VEH-1234"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Last Location</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaMapMarkerAlt /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="lastLocation"
-                            value={formData.lastLocation}
-                            onChange={handleInputChange}
-                            placeholder="e.g., New York, NY"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Address</label>
-                        <input
-                          type="text"
-                          className="form-control mb-2"
-                          name="address"
-                          value={formData.address}
-                          onChange={handleInputChange}
-                          placeholder="Street Address"
-                        />
-                        <div className="row">
-                          <div className="col-md-6">
-                            <input
-                              type="text"
-                              className="form-control mb-2"
-                              name="city"
-                              value={formData.city}
-                              onChange={handleInputChange}
-                              placeholder="City"
-                            />
-                          </div>
-                          <div className="col-md-6">
-                            <input
-                              type="text"
-                              className="form-control mb-2"
-                              name="state"
-                              value={formData.state}
-                              onChange={handleInputChange}
-                              placeholder="State/Province"
-                            />
-                          </div>
-                        </div>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="zipCode"
-                          value={formData.zipCode}
-                          onChange={handleInputChange}
-                          placeholder="ZIP/Postal Code"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="d-flex justify-content-end gap-2 mt-3">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => {
-                        setShowForm(false);
-                        setEditDriver(null);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-success"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : editDriver ? 'Update Driver' : 'Register Driver'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          <div className="card shadow-sm">
-            <div className="card-header bg-light">
-              <h5 className="mb-0">Registered Drivers</h5>
-            </div>
-            <div className="card-body">
-              {isLoading ? (
-                <div className="text-center py-4">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <p className="mt-2">Loading drivers...</p>
-                </div>
-              ) : drivers.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="mb-0">No drivers registered yet.</p>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Register Number</th>
-                        <th>Vehicle Number</th>
-                        <th>Status</th>
-                        <th>Location</th>
-                        <th>Assign Task</th>
-                        <th>Generate Report</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {drivers.map((driver) => (
-                        <tr key={driver._id}>
-                          <td>{driver.licenseNumber}</td>
-                          <td>{driver.vehicleId || 'N/A'}</td>
-                          <td>
-                            <span className={`badge ${driver.employmentStatus === 'active' ? 'bg-success' : 'bg-secondary'}`}>
-                              {driver.employmentStatus.charAt(0).toUpperCase() + driver.employmentStatus.slice(1)}
-                            </span>
-                          </td>
-                          <td>{driver.lastLocation || 'N/A'}</td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-success"
-                              onClick={() => handleAssignTask(driver._id)}
-                            >
-                              <FaTasks className="me-1" /> Assign
-                            </button>
-                          </td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-info"
-                              onClick={() => openReportModal(driver._id)}
-                            >
-                              <FaFileDownload className="me-1" /> Generate
-                            </button>
-                          </td>
-                          <td>
-                            <div className="btn-group btn-group-sm">
-                              <button className="btn btn-primary" onClick={() => handleViewDetails(driver)}>
-                                <FaEye className="me-1" /> View
-                              </button>
-                              <button className="btn btn-outline-secondary" onClick={() => handleEdit(driver)}>
-                                <FaEdit className="me-1" /> Edit
-                              </button>
-                              <button className="btn btn-danger" onClick={() => handleDeleteDriver(driver._id)}>
-                                <FaTrash className="me-1" /> Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {viewDriver && (
-            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content">
-                  <div className="modal-header bg-primary text-white">
-                    <h5 className="modal-title">Driver Details</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={closeViewModal}></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3 text-center">
-                      {viewDriver.profileImage ? (
-                        <img
-                          src={`http://localhost:5000/${viewDriver.profileImage}`}
-                          alt="Profile"
-                          className="rounded-circle border"
-                          style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <FaUserCircle size={80} className="text-secondary" />
-                      )}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Name:</strong> {viewDriver.firstName} {viewDriver.lastName}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Date of Birth:</strong> {viewDriver.dateOfBirth ? new Date(viewDriver.dateOfBirth).toLocaleDateString() : 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Phone Number:</strong> {viewDriver.phoneNumber}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Email:</strong> {viewDriver.email}
-                    </div>
-                    <div className="mb-3">
-                      <strong>License Number:</strong> {viewDriver.licenseNumber}
-                    </div>
-                    <div className="mb-3">
-                      <strong>License Expiry:</strong> {viewDriver.licenseExpiry ? new Date(viewDriver.licenseExpiry).toLocaleDateString() : 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Vehicle ID:</strong> {viewDriver.vehicleId || 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Last Location:</strong> {viewDriver.lastLocation || 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Address:</strong> {viewDriver.address || 'N/A'}, {viewDriver.city || 'N/A'}, {viewDriver.state || 'N/A'} {viewDriver.zipCode || 'N/A'}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Employment Status:</strong> {viewDriver.employmentStatus}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Joining Date:</strong> {viewDriver.joiningDate ? new Date(viewDriver.joiningDate).toLocaleDateString() : 'N/A'}
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={closeViewModal}>
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1><FaTasks className="me-2" />Tasks for Driver</h1>
-            <button className="btn btn-secondary" onClick={handleBackToDrivers}>
-              <FaArrowLeft className="me-1" /> Back to Drivers
-            </button>
-          </div>
-
-          {!showAssignTaskForm ? (
+    <div className="min-vh-100 bg-light" style={{ 
+      paddingLeft: '250px',
+      transition: 'padding-left 0.3s ease-in-out'
+    }}>
+      <Sidebar handleLogout={handleLogout} />
+      <div className="p-4">
+        <PageHeader 
+          title="Driver Management" 
+          subtitle="Manage and monitor all your drivers"
+          icon={Users}
+          actions={
             <>
-              <div className="card shadow-sm mb-4">
-                <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">Assigned Tasks</h5>
-                  <button className="btn btn-primary btn-sm" onClick={handleShowTaskForm}>
-                    Add New Task
-                  </button>
-                </div>
-                <div className="card-body">
-                  {isLoading ? (
-                    <div className="text-center py-4">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading tasks...</p>
-                    </div>
-                  ) : tasks.length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="mb-0">No tasks assigned yet.</p>
-                    </div>
-                  ) : (
-                    <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead className="table-light">
-                          <tr>
-                            <th>Task Num</th>
-                            <th>Cargo Type</th>
-                            <th>Pick Up</th>
-                            <th>Delivery</th>
-                            <th>Expected Delivery</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tasks.map((task, index) => (
-                            <tr key={task._id}>
-                              <td>TSK{String(index + 1).padStart(4, '0')}</td>
-                              <td>{task.cargoType}</td>
-                              <td>{task.pickup}</td>
-                              <td>{task.delivery}</td>
-                              <td>{new Date(task.expectedDelivery).toLocaleDateString()}</td>
-                              <td>
-                                <span className={`badge ${task.status === 'Completed' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning' : 'bg-secondary'}`}>
-                                  {task.status}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="btn-group btn-group-sm">
-                                  <button className="btn btn-primary" onClick={() => handleViewTask(task)}>
-                                    <FaEye className="me-1" /> View
-                                  </button>
-                                  <button className="btn btn-outline-secondary" onClick={() => handleEditTask(task)}>
-                                    <FaEdit className="me-1" /> Edit
-                                  </button>
-                                  <button className="btn btn-danger" onClick={() => handleDeleteTask(task._id)}>
-                                    <FaTrash className="me-1" /> Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <Button 
+                variant="outline-primary" 
+                className="d-flex align-items-center"
+                onClick={fetchDrivers}
+              >
+                <RefreshCw size={16} className="me-2" />
+                Refresh
+              </Button>
+              <Button 
+                variant="outline-primary" 
+                className="d-flex align-items-center"
+                onClick={handleExportPDF}
+              >
+                <DownloadCloud size={16} className="me-2" />
+                Export
+              </Button>
+              <Button 
+                variant="primary" 
+                className="d-flex align-items-center"
+                onClick={handleAddDriver}
+              >
+                <Plus size={16} className="me-2" />
+                Add Driver
+              </Button>
             </>
-          ) : (
-            <div className="card shadow-sm">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">{editTask ? 'Edit Task' : 'Assign New Task'}</h5>
-              </div>
-              <div className="card-body">
-                <form onSubmit={handleTaskSubmit}>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Cargo Type</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaBox /></span>
-                          <select
-                            className="form-select"
-                            name="cargoType"
-                            value={taskFormData.cargoType}
-                            onChange={handleTaskInputChange}
-                          >
-                            <option value="">Select Cargo Type</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Furniture">Furniture</option>
-                            <option value="Perishables">Perishables</option>
-                            <option value="Machinery">Machinery</option>
-                            <option value="Textiles">Textiles</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Weight (kg)</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaBox /></span>
-                          <input
-                            type="number"
-                            className="form-control"
-                            name="weight"
-                            value={taskFormData.weight}
-                            onChange={handleTaskInputChange}
-                            placeholder="Enter weight in kg"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Pickup Location</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaMapMarkerAlt /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="pickup"
-                            value={taskFormData.pickup}
-                            onChange={handleTaskInputChange}
-                            placeholder="Enter pickup location"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Delivery Location</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaMapMarkerAlt /></span>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="delivery"
-                            value={taskFormData.delivery}
-                            onChange={handleTaskInputChange}
-                            placeholder="Enter delivery location"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Expected Delivery Date</label>
-                        <div className="input-group">
-                          <span className="input-group-text"><FaCalendarAlt /></span>
-                          <input
-                            type="date"
-                            className="form-control"
-                            name="expectedDelivery"
-                            value={taskFormData.expectedDelivery}
-                            onChange={handleTaskInputChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Status</label>
-                        <select
-                          className="form-select"
-                          name="status"
-                          value={taskFormData.status}
-                          onChange={handleTaskInputChange}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="d-flex justify-content-end gap-2 mt-3">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setShowAssignTaskForm(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-success"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Processing...' : editTask ? 'Update Task' : 'Assign Task'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+          }
+        />
+        
+        <AnimatedAlert
+          show={showAlert}
+          type={alertType}
+          message={alertMessage}
+          onClose={() => setShowAlert(false)}
+        />
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-4"
+        >
+          <DataTable 
+            columns={tableColumns}
+            data={drivers}
+            title="All Drivers"
+            icon={<Users size={18} />}
+            emptyMessage="No drivers found"
+          />
+        </motion.div>
+      </div>
 
-          {viewTask && (
-            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-              <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content">
-                  <div className="modal-header bg-primary text-white">
-                    <h5 className="modal-title">Task Details</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={closeTaskViewModal}></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <strong>Task Number:</strong> TSK{String(tasks.findIndex(t => t._id === viewTask._id) + 1).padStart(4, '0')}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Cargo Type:</strong> {viewTask.cargoType}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Weight (kg):</strong> {viewTask.weight}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Pickup Location:</strong> {viewTask.pickup}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Delivery Location:</strong> {viewTask.delivery}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Expected Delivery:</strong> {new Date(viewTask.expectedDelivery).toLocaleDateString()}
-                    </div>
-                    <div className="mb-3">
-                      <strong>Status:</strong> {viewTask.status}
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={closeTaskViewModal}>
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
+      <Modal key={modalKey} show={showAddModal} onHide={handleCloseModal} centered>
+        <Form onSubmit={handleAddDriverSubmit}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              {viewMode ? 'View Driver' : editMode ? 'Edit Driver' : 'Add Driver'}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Driver ID</Form.Label>
+              <Form.Control
+                type="text"
+                name="driverId"
+                value={newDriver.driverId}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode || editMode}
+                placeholder="e.g., DR001"
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Full Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="fullName"
+                value={newDriver.fullName}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={newDriver.email}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Phone No</Form.Label>
+              <Form.Control
+                type="text"
+                name="phone"
+                value={newDriver.phone}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>License Number</Form.Label>
+              <Form.Control
+                type="text"
+                name="licenseNumber"
+                value={newDriver.licenseNumber}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Join Date</Form.Label>
+              <Form.Control
+                type="date"
+                name="joinDate"
+                value={newDriver.joinDate}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Employment Status</Form.Label>
+              <Form.Select
+                name="employmentStatus"
+                value={newDriver.employmentStatus}
+                onChange={handleInputChange}
+                required
+                disabled={viewMode}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Form.Select>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={handleCloseModal}>
+              Close
+            </Button>
+            {!viewMode && (
+              <Button variant="primary" type="submit">
+                {editMode ? 'Update Driver' : 'Add Driver'}
+              </Button>
+            )}
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Vehicle Details Modal for Last Location */}
+      {showVehicleDetails && selectedVehicle && !showAddModal && (
+        <VehicleDetailsModal
+          vehicle={selectedVehicle}
+          onClose={() => setShowVehicleDetails(false)}
+        />
       )}
 
-      {showReportModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">Generate Task Report</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={closeReportModal}></button>
+      {/* Task Assignment Modal */}
+      <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered size="lg">
+        <Form onSubmit={handleTaskSubmit}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              Assign Task to {selectedDriverForTask?.fullName}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Task Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="taskNumber"
+                    value={taskFormData.taskNumber}
+                    disabled
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Cargo Type</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="cargoType"
+                    value={taskFormData.cargoType}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="e.g., Electronics, Furniture"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Weight (kg)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="weight"
+                    value={taskFormData.weight}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Weight in kilograms"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Pickup Location</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="pickup"
+                    value={taskFormData.pickup}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Full pickup address"
+                  />
+                </Form.Group>
               </div>
-              <div className="modal-body">
-                <div className="row mb-4">
-                  <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label className="form-label fw-bold">Date Range</label>
-                      <div className="input-group">
-                        <span className="input-group-text"><FaCalendarAlt /></span>
-                        <select
-                          className="form-select"
-                          value={dateRange}
-                          onChange={handleDateRangeChange}
-                        >
-                          <option value="1">Last 1 Day</option>
-                          <option value="7">Last 7 Days</option>
-                          <option value="30">Last 30 Days</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label className="form-label fw-bold">Task Status</label>
-                      <div className="input-group">
-                        <span className="input-group-text"><FaFilter /></span>
-                        <select
-                          className="form-select"
-                          multiple
-                          value={selectedStatuses}
-                          onChange={handleStatusChange}
-                          style={{ height: '100px' }}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </div>
-                      <small className="form-text text-muted">Hold Ctrl/Cmd to select multiple statuses</small>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-primary w-100 mb-4"
-                  onClick={fetchReportData}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Fetching Data...
-                    </>
-                  ) : (
-                    'Fetch Report Data'
-                  )}
-                </button>
-                {reportData.length > 0 && (
-                  <>
-                    <div className="table-responsive mb-4">
-                      <table className="table table-bordered table-hover">
-                        <thead className="table-primary">
-                          <tr>
-                            <th>Task Number</th>
-                            <th>Cargo Type</th>
-                            <th>Pick Up</th>
-                            <th>Delivery</th>
-                            <th>Expected Delivery</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {reportData.map((item) => (
-                            <tr key={item._id}>
-                              <td>{item.taskNum}</td>
-                              <td>{item.cargoType}</td>
-                              <td>{item.pickup}</td>
-                              <td>{item.delivery}</td>
-                              <td>{new Date(item.expectedDelivery).toLocaleDateString()}</td>
-                              <td>
-                                <span className={`badge ${item.status === 'Completed' ? 'bg-success' : item.status === 'In Progress' ? 'bg-warning' : 'bg-secondary'}`}>
-                                  {item.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="d-flex gap-2">
-                      <button className="btn btn-success w-50" onClick={generateCSV}>
-                        <FaFileDownload className="me-2" />Download CSV
-                      </button>
-                      <button className="btn btn-danger w-50" onClick={generatePDF}>
-                        <FaFileDownload className="me-2" />Download PDF
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={closeReportModal}>
-                  Close
-                </button>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Delivery Location</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="delivery"
+                    value={taskFormData.delivery}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Full delivery address"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Delivery Phone Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="deliveryPhone"
+                    value={taskFormData.deliveryPhone}
+                    onChange={handleTaskInputChange}
+                    required
+                    placeholder="Contact number at delivery location"
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Expected Delivery Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="expectedDelivery"
+                    value={taskFormData.expectedDelivery}
+                    onChange={handleTaskInputChange}
+                    required
+                  />
+                </Form.Group>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Additional Notes</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="additionalNotes"
+                value={taskFormData.additionalNotes}
+                onChange={handleTaskInputChange}
+                placeholder="Any special instructions or notes"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={() => setShowTaskModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              Assign Task
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        show={deleteModal.show}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        itemType="Driver"
+        itemName={deleteModal.driver ? `${deleteModal.driver.fullName} (${deleteModal.driver.driverId})` : ""}
+        additionalMessage="this driver will be permanently removed."
+      />
     </div>
   );
-}
+};
 
 export default Drivers;

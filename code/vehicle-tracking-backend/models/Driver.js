@@ -1,41 +1,47 @@
 const mongoose = require("mongoose");
 
-const taskSchema = new mongoose.Schema(
-  {
-    cargoType: { type: String },
-    weight: { type: Number },
-    pickup: { type: String },
-    delivery: { type: String },
-    expectedDelivery: { type: Date },
-    status: { type: String, default: "Pending" },
-  },
-  { timestamps: true }
-);
+// Drop any existing schema for Driver if it exists
+mongoose.models = {};
+mongoose.modelSchemas = {};
 
 const driverSchema = new mongoose.Schema(
   {
-    firstName: { type: String },
-    lastName: { type: String },
-    dateOfBirth: { type: Date },
-    phoneNumber: { type: String },
-    email: { type: String },
-    licenseNumber: { type: String },
-    licenseExpiry: { type: Date },
-    vehicleId: { type: String },
-    lastLocation: { type: String },
-    address: { type: String },
-    city: { type: String },
-    state: { type: String },
-    zipCode: { type: String },
-    employmentStatus: { type: String, default: "active" },
-    joiningDate: { type: Date },
-    profileImage: { type: String },
-    tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
+    driverId: {
+      type: String,
+      required: true,
+      // Make sure there's NO unique: true here
+    },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
+    licenseNumber: { type: String, required: true },
+    joinDate: { type: Date, required: true },
+    employmentStatus: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+    lastLocation: { type: String, default: "" },
+    assignedVehicle: { type: String, default: "" },
+    companyId: {
+      type: String,
+      required: true, // Changed to required to ensure tenant isolation
+    },
   },
   { timestamps: true }
 );
 
-const Driver = mongoose.model("Driver", driverSchema);
-const Task = mongoose.model("Task", taskSchema);
+// IMPORTANT: Do not create any index here that would interfere with our manual compound index
+// We'll create the indexes manually after model definition
 
-module.exports = { Driver, Task };
+const Driver = mongoose.model("Driver", driverSchema);
+
+// Now create the proper indexes manually
+Driver.collection.createIndex(
+  { driverId: 1, companyId: 1 },
+  { unique: true, background: true }
+);
+
+Driver.collection.createIndex({ companyId: 1 }, { background: true });
+
+module.exports = Driver;

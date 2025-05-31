@@ -1,43 +1,186 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   FlatList,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
+  TouchableOpacity,
+  RefreshControl,
+  StatusBar,
 } from "react-native";
-import { useAppContext } from "../App";
+import { useAppContext } from "../context/AppContext";
 import { styles } from "../styles/styles";
+import AnimatedPlaceholder from "../components/AnimatedPlaceholder";
+import { Feather } from "@expo/vector-icons";
+import {
+  subscribeToTaskUpdates,
+  fetchDriverTasks,
+} from "../services/TaskService";
+import {
+  DRIVER_ID,
+  COMPANY_ID,
+  initializeFromStorage,
+  logTaskOwnership,
+} from "../config/constants";
 
 export const TaskScreen = ({ navigation }) => {
-  const { tasks, completedTasks, loading } = useAppContext();
+  const {
+    tasks: contextTasks,
+    setTasks: setContextTasks,
+    completedTasks,
+    activeTaskId,
+    loading,
+  } = useAppContext();
 
-  const renderItem = ({ item }) => {
-    const isCompleted = completedTasks.includes(item._id);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // Handle real-time task updates
+  const handleTaskUpdate = useCallback(
+    (action, task) => {
+      console.log(`TaskScreen: Real-time task ${action}:`, task.taskNumber);
+
+      switch (action) {
+        case "add":
+          setContextTasks((prev) => {
+            // Check if task already exists in the list
+            if (prev.some((t) => t._id === task._id)) {
+              console.log("TaskScreen: Task already exists, ignoring add");
+              return prev;
+            }
+            // Add new task at the beginning
+            console.log("TaskScreen: Adding new task to list");
+            return [task, ...prev];
+          });
+          break;
+
+        case "update":
+          setContextTasks((prev) => {
+            const updated = prev.map((t) => (t._id === task._id ? task : t));
+            console.log("TaskScreen: Updated task in list");
+            return updated;
+          });
+          break;
+
+        case "delete":
+          setContextTasks((prev) => {
+            const filtered = prev.filter((t) => t._id !== task._id);
+            console.log("TaskScreen: Removed task from list");
+            return filtered;
+          });
+          break;
+      }
+    },
+    [setContextTasks]
+  );
+
+  // Set up subscription to task updates
+  useEffect(() => {
+    console.log("TaskScreen: Setting up task update subscription");
+    // Subscribe to task updates
+    const unsubscribe = subscribeToTaskUpdates(handleTaskUpdate);
+
+    // Cleanup on unmount
+    return () => {
+      console.log("TaskScreen: Cleaning up task update subscription");
+      unsubscribe();
+    };
+  }, [handleTaskUpdate]);
+
+  // Function to handle task refresh - update the context directly
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Ensure constants are up to date
+      await initializeFromStorage();
+
+      console.log(
+        `TaskScreen: Refreshing tasks for driver=${DRIVER_ID}, company=${COMPANY_ID}`
+      );
+
+      const freshTasks = await fetchDriverTasks();
+
+      // Log task ownership for debugging
+      if (freshTasks && Array.isArray(freshTasks)) {
+        console.log(`TaskScreen: Received ${freshTasks.length} tasks`);
+
+        freshTasks.forEach((task) => {
+          logTaskOwnership(task);
+        });
+      }
+
+      setContextTasks(freshTasks); // Update directly to context
+    } catch (error) {
+      console.error("Failed to refresh tasks:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Filter tasks based on completion status - use contextTasks directly
+  const filteredTasks = showCompleted
+    ? contextTasks.filter(
+        (task) =>
+          task.status === "Completed" || completedTasks.includes(task._id)
+      )
+    : contextTasks.filter(
+        (task) =>
+          task.status !== "Completed" && !completedTasks.includes(task._id)
+      );
+
+  const renderTaskItem = ({ item }) => {
+    const isCompleted =
+      item.status === "Completed" || completedTasks.includes(item._id);
+    const isActive = item._id === activeTaskId;
+    const isOverdue =
+      new Date(item.expectedDelivery) < new Date() && !isCompleted;
 
     return (
       <TouchableOpacity
-        style={[styles.taskItem, isCompleted ? styles.completedTask : null]}
+        style={[
+          styles.taskItem,
+          isCompleted && styles.completedTask,
+          isOverdue && styles.overdueTask,
+        ]}
         onPress={() => navigation.navigate("TaskDetails", { taskId: item._id })}
       >
         <View style={styles.taskHeader}>
-          <Text style={styles.vehicleText}>Vehicle: {item.vehicle}</Text>
+          <View>
+            <Text style={styles.taskNumber}>{item.taskNumber}</Text>
+            <Text style={styles.cargoTypeText}>{item.cargoType}</Text>
+          </View>
           <Text
             style={[
               styles.statusBadge,
-              isCompleted ? styles.completedBadge : styles.pendingBadge,
+              isCompleted
+                ? styles.completedBadge
+                : isActive
+                ? styles.inProgressBadge
+                : styles.pendingBadge,
             ]}
           >
-            {isCompleted ? "Completed" : item.status}
+            {isCompleted ? "Completed" : isActive ? "In Progress" : "Pending"}
           </Text>
         </View>
+
         <View style={styles.taskDetails}>
-          <Text style={styles.destinationText}>To: {item.delivery}</Text>
-          <Text style={styles.dateText}>
-            Due: {new Date(item.expectedDelivery).toLocaleDateString()}
-          </Text>
+          <View style={styles.locationContainer}>
+            <Text style={styles.locationText}>
+              {item.pickup} → {item.delivery}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Feather name="calendar" size={12} color="#666" />
+              <Text style={styles.infoText}>
+                {new Date(item.expectedDelivery).toLocaleDateString()}
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Feather name="package" size={12} color="#666" />
+              <Text style={styles.infoText}>{item.weight} kg</Text>
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -45,198 +188,100 @@ export const TaskScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerText}>Your Delivery Tasks</Text>
-      <Text style={styles.taskInstructions}>
-        Select a task to view details. You must scan the correct vehicle QR code
-        before starting each task.
-      </Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>Delivery Tasks</Text>
+        <Text style={styles.taskInstructions}>
+          {showCompleted
+            ? "Your completed deliveries"
+            : "View and manage your assigned deliveries"}
+        </Text>
+      </View>
+
+      {/* Task filter toggle */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          paddingHorizontal: 15,
+          paddingVertical: 10,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => setShowCompleted(!showCompleted)}
+          style={{
+            backgroundColor: showCompleted ? "#4DA6FF" : "#f0f0f0",
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 20,
+          }}
+        >
+          <Text
+            style={{
+              color: showCompleted ? "white" : "#333",
+              fontWeight: "500",
+            }}
+          >
+            {showCompleted ? "Show Active Tasks" : "Show Completed"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#4DA6FF"
-          style={{ marginTop: 20 }}
-        />
+        <AnimatedPlaceholder type="tasks" count={3} />
       ) : (
         <FlatList
-          data={tasks}
-          renderItem={renderItem}
+          data={filteredTasks}
+          extraData={contextTasks} // Update extraData to use contextTasks directly
+          renderItem={renderTaskItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Feather
+                name={showCompleted ? "check-circle" : "inbox"}
+                size={50}
+                color="#ccc"
+              />
+              <Text style={styles.emptyText}>
+                {showCompleted
+                  ? "No completed tasks yet"
+                  : "No pending tasks found"}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {showCompleted
+                  ? "Completed tasks will appear here"
+                  : "Pull down to refresh"}
+              </Text>
+            </View>
+          }
         />
       )}
     </View>
   );
 };
 
+// Basic TaskDetailsScreen stub - will be expanded later
 export const TaskDetailsScreen = ({ route, navigation }) => {
-  const { taskId } = route.params;
-  const { scannedVehicle, completedTasks, setCompletedTasks, tasks } =
-    useAppContext();
-  const task = tasks.find((t) => t._id === taskId);
-  const [status, setStatus] = useState(
-    completedTasks.includes(task._id) ? "finished" : task.status
-  );
-
-  if (!task) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.headerText}>Task Not Found</Text>
-      </View>
-    );
-  }
-
-  const hasCorrectVehicle = scannedVehicle === task.vehicle;
-
-  const handleStart = () => {
-    Alert.alert(
-      "Start Task",
-      `Are you sure you are in vehicle ${task.vehicle} and want to start this task?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, Start",
-          onPress: () => {
-            Alert.alert(
-              "Double Confirm",
-              "Please confirm again to start the task.",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Start", onPress: () => setStatus("started") },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  };
-
-  const handleFinish = () => {
-    Alert.alert(
-      "Finish Task",
-      `Are you sure you have completed the delivery for vehicle ${task.vehicle}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, Finish",
-          onPress: () => {
-            Alert.alert(
-              "Double Confirm",
-              "Please confirm again to finish the task.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Finish",
-                  onPress: () => {
-                    setStatus("finished");
-                    setCompletedTasks((prev) => [...prev, task._id]);
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  };
-
-  if (!hasCorrectVehicle) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.wrongVehicleContainer}>
-          <Text style={styles.wrongVehicleTitle}>Wrong Vehicle</Text>
-          <Text style={styles.wrongVehicleText}>
-            This task requires vehicle:{" "}
-            <Text style={styles.requiredVehicleNumber}>{task.vehicle}</Text>
-          </Text>
-          {scannedVehicle && (
-            <Text style={styles.currentVehicleText}>
-              Currently scanned:{" "}
-              <Text style={{ fontWeight: "bold" }}>{scannedVehicle}</Text>
-            </Text>
-          )}
-          <TouchableOpacity
-            style={styles.scanButton}
-            onPress={() =>
-              navigation.navigate("Scan QR", { requiredVehicle: task.vehicle })
-            }
-          >
-            <Text style={styles.scanButtonText}>
-              Scan {task.vehicle} QR Code
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.vehicleNumber}>Vehicle: {task.vehicle}</Text>
-        <Text style={styles.statusText}>
-          Status:{" "}
-          {status === "pending"
-            ? "Ready to Start"
-            : status === "started"
-            ? "In Progress"
-            : "Completed"}
-        </Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.sectionTitle}>Cargo Details</Text>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Cargo Type:</Text>
-          <Text style={styles.detailValue}>{task.cargoType}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Weight:</Text>
-          <Text style={styles.detailValue}>{task.weight} kg</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Pickup:</Text>
-          <Text style={styles.detailValue}>{task.pickup}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Delivery:</Text>
-          <Text style={styles.detailValue}>{task.delivery}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Expected Delivery:</Text>
-          <Text style={styles.detailValue}>
-            {new Date(task.expectedDelivery).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.actionContainer}>
-        {status === "pending" && (
-          <TouchableOpacity style={styles.actionButton} onPress={handleStart}>
-            <Text style={styles.actionButtonText}>Start Delivery</Text>
-          </TouchableOpacity>
-        )}
-        {status === "started" && (
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
-            onPress={handleFinish}
-          >
-            <Text style={styles.actionButtonText}>Finish Delivery</Text>
-          </TouchableOpacity>
-        )}
-        {status === "finished" && (
-          <View style={styles.completionContainer}>
-            <Text style={styles.completionText}>
-              Delivery completed successfully!
-            </Text>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: "#4DA6FF" }]}
-              onPress={() => navigation.navigate("To-Do")}
-            >
-              <Text style={styles.actionButtonText}>Return to Tasks</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Text>Task Details Screen</Text>
+      <Text>Task ID: {route.params?.taskId}</Text>
+      <TouchableOpacity
+        style={{
+          marginTop: 20,
+          padding: 10,
+          backgroundColor: "#4DA6FF",
+          borderRadius: 5,
+        }}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={{ color: "white" }}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
-
-export default TaskScreen;

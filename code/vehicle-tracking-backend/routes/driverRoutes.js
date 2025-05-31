@@ -1,339 +1,425 @@
 const express = require("express");
-const multer = require("multer");
-const { Driver, Task } = require("../models/Driver");
+const { body, validationResult } = require("express-validator");
+const Driver = require("../models/Driver");
+const Task = require("../models/Task");
+const auth = require("../middleware/auth"); // Assuming you have an auth middleware
 const router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-const upload = multer({ storage });
-
-router.get("/", async (req, res) => {
+// Updated: GET all drivers (with tenant isolation)
+router.get("/", auth, async (req, res) => {
   try {
-    const drivers = await Driver.find();
+    console.log("GET /api/drivers - User Context:", req.user);
+    
+    // If it's a mobile user, only return their own driver record
+    if (req.user.userType === 'mobile') {
+      const driver = await Driver.findOne({ 
+        driverId: req.user.driverId,
+        companyId: req.user.companyId 
+      });
+      
+      if (!driver) {
+        return res.status(404).json({ 
+          success: false,
+          message: "Driver not found" 
+        });
+      }
+      
+      return res.json([driver]);
+    }
+    
+    // For admin users, return all drivers for their company
+    const drivers = await Driver.find({ companyId: req.user.companyId });
     res.json(drivers);
   } catch (err) {
     console.error("Error fetching drivers:", err);
+    res.status(500).json({ 
+      success: false,
+      message: err.message 
+    });
+  }
+});
+
+// GET driver by driverId - Updated with tenant isolation
+router.get("/:id", auth, async (req, res) => {
+  try {
+    console.log(`GET /api/drivers/${req.params.id} called`);
+    // Make sure to filter by companyId for proper tenant isolation
+    const driver = await Driver.findOne({
+      driverId: req.params.id,
+      companyId: req.user.companyId,
+    });
+
+    if (!driver) {
+      console.warn(`Driver not found for ID: ${req.params.id} (GET request)`);
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    console.log(`Successfully fetched driver ${driver.driverId}:`, driver);
+    res.json(driver);
+  } catch (err) {
+    console.error(`Error fetching driver ${req.params.id}:`, err);
     res.status(500).json({ message: err.message });
   }
 });
 
+// Updated: POST a new driver (with tenant isolation)
 router.post(
   "/",
-  upload.fields([{ name: "profileImage", maxCount: 1 }]),
+  auth, // First run the auth middleware to ensure req.user is available
+  [
+    body("driverId")
+      .notEmpty()
+      .withMessage("Driver ID is required")
+      .matches(/^DR\d{3}$/)
+      .withMessage("Driver ID must be DR followed by 3 digits (e.g., DR001)"),
+    body("fullName").notEmpty().withMessage("Full Name is required"),
+    body("email").isEmail().withMessage("Invalid email"),
+    body("phone").notEmpty().withMessage("Phone number is required"),
+    body("licenseNumber").notEmpty().withMessage("License number is required"),
+    body("joinDate")
+      .notEmpty()
+      .withMessage("Join date is required")
+      .isISO8601()
+      .withMessage("Join date must be a valid date"),
+    body("employmentStatus")
+      .optional()
+      .isIn(["active", "inactive"])
+      .withMessage("Invalid employment status"),
+    body("lastLocation").optional().isString(),
+  ],
   async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
+      // Get the company ID from the authenticated user
+      const companyId = req.user.companyId;
+      console.log("Creating new driver with company ID:", companyId);
+
       const {
-        firstName,
-        lastName,
-        dateOfBirth,
-        phoneNumber,
+        driverId,
+        fullName,
         email,
+        phone,
         licenseNumber,
-        licenseExpiry,
-        vehicleId,
-        lastLocation,
-        address,
-        city,
-        state,
-        zipCode,
+        joinDate,
         employmentStatus,
-        joiningDate,
+        lastLocation,
       } = req.body;
 
+      // First check if driver ID exists within this company
+      const existingDriver = await Driver.findOne({
+        driverId: driverId.trim(),
+        companyId: companyId,
+      });
+
+      if (existingDriver) {
+        return res
+          .status(400)
+          .json({
+            message: `Driver ID ${driverId} already exists in your company`,
+          });
+      }
+
       const newDriver = new Driver({
-        firstName,
-        lastName,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-        phoneNumber,
+        driverId: driverId.trim(),
+        fullName,
         email,
+        phone,
         licenseNumber,
-        licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : undefined,
-        vehicleId,
-        lastLocation,
-        address,
-        city,
-        state,
-        zipCode,
-        employmentStatus,
-        joiningDate: joiningDate ? new Date(joiningDate) : undefined,
-        profileImage: req.files["profileImage"]
-          ? req.files["profileImage"][0].path
-          : null,
+        joinDate: joinDate ? new Date(joinDate) : undefined,
+        employmentStatus: employmentStatus || "active",
+        lastLocation: lastLocation || "",
+        companyId: companyId, // Set companyId from authenticated user
+      });
+
+      console.log("Saving new driver:", {
+        ...newDriver.toObject(),
+        companyId: companyId,
       });
 
       const savedDriver = await newDriver.save();
+      console.log("Driver saved successfully with ID:", savedDriver._id);
+
       res.status(201).json(savedDriver);
     } catch (err) {
       console.error("Error creating driver:", err);
+
+      // Better error handling for duplicate key errors
+      if (err.code === 11000 && err.keyPattern && err.keyPattern.driverId) {
+        return res
+          .status(400)
+          .json({
+            message: `Driver ID ${req.body.driverId} already exists in your company`,
+          });
+      }
+
       res.status(400).json({ message: err.message });
     }
   }
 );
 
+// PUT update a driver
 router.put(
   "/:id",
-  upload.fields([{ name: "profileImage", maxCount: 1 }]),
+  [
+    body("fullName").notEmpty().withMessage("Full Name is required"),
+    body("email").isEmail().withMessage("Invalid email"),
+    body("phone").notEmpty().withMessage("Phone number is required"),
+    body("licenseNumber").notEmpty().withMessage("License number is required"),
+    body("joinDate")
+      .notEmpty()
+      .withMessage("Join date is required")
+      .isISO8601()
+      .withMessage("Join date must be a valid date"),
+    body("employmentStatus")
+      .optional()
+      .isIn(["active", "inactive"])
+      .withMessage("Invalid employment status"),
+    body("lastLocation").optional().isString(),
+  ],
+  auth,
   async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.error("Validation errors in PUT /api/drivers/:id:", errors.array());
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
-      const driver = await Driver.findById(req.params.id);
+      console.log(`PUT /api/drivers/${req.params.id} called with body:`, req.body);
+      const driver = await Driver.findOne({ driverId: req.params.id });
       if (!driver) {
+        console.warn(`Driver not found for ID: ${req.params.id}`);
         return res.status(404).json({ message: "Driver not found" });
       }
 
       const {
-        firstName,
-        lastName,
-        dateOfBirth,
-        phoneNumber,
+        fullName,
         email,
+        phone,
         licenseNumber,
-        licenseExpiry,
-        vehicleId,
-        lastLocation,
-        address,
-        city,
-        state,
-        zipCode,
+        joinDate,
         employmentStatus,
-        joiningDate,
+        lastLocation,
+        assignedVehicle
       } = req.body;
 
-      driver.firstName = firstName || driver.firstName;
-      driver.lastName = lastName || driver.lastName;
-      driver.dateOfBirth = dateOfBirth
-        ? new Date(dateOfBirth)
-        : driver.dateOfBirth;
-      driver.phoneNumber = phoneNumber || driver.phoneNumber;
-      driver.email = email || driver.email;
-      driver.licenseNumber = licenseNumber || driver.licenseNumber;
-      driver.licenseExpiry = licenseExpiry
-        ? new Date(licenseExpiry)
-        : driver.licenseExpiry;
-      driver.vehicleId = vehicleId || driver.vehicleId;
-      driver.lastLocation = lastLocation || driver.lastLocation;
-      driver.address = address || driver.address;
-      driver.city = city || driver.city;
-      driver.state = state || driver.state;
-      driver.zipCode = zipCode || driver.zipCode;
+      driver.fullName = fullName;
+      driver.email = email;
+      driver.phone = phone;
+      driver.licenseNumber = licenseNumber;
+      driver.joinDate = joinDate ? new Date(joinDate) : driver.joinDate;
       driver.employmentStatus = employmentStatus || driver.employmentStatus;
-      driver.joiningDate = joiningDate
-        ? new Date(joiningDate)
-        : driver.joiningDate;
-      if (req.files["profileImage"]) {
-        driver.profileImage = req.files["profileImage"][0].path;
+      driver.lastLocation = lastLocation || driver.lastLocation;
+      // Update assignedVehicle if provided in the request body
+      if (req.body.assignedVehicle !== undefined) {
+        driver.assignedVehicle = req.body.assignedVehicle;
+        console.log(`Updating assignedVehicle for driver ${driver.driverId} to: ${driver.assignedVehicle}`);
       }
 
       const updatedDriver = await driver.save();
+      console.log(`Driver ${updatedDriver.driverId} updated successfully.`);
       res.json(updatedDriver);
     } catch (err) {
-      console.error("Error updating driver:", err);
+      console.error(`Error updating driver ${req.params.id}:`, err);
       res.status(400).json({ message: err.message });
     }
   }
 );
 
-router.delete("/:id", async (req, res) => {
+// DELETE driver by ID
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const driver = await Driver.findById(req.params.id);
+    const driver = await Driver.findOne({ driverId: req.params.id });
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
     }
 
-    await Task.deleteMany({ _id: { $in: driver.tasks } });
-    await Driver.findByIdAndDelete(req.params.id);
-    res.json({ message: "Driver and associated tasks deleted successfully" });
+    // Update tasks to set driverId to null instead of deleting them
+    await Task.updateMany(
+      { driverId: req.params.id },
+      { $set: { driverId: null } }
+    );
+
+    await Driver.deleteOne({ driverId: req.params.id });
+    res.json({ message: "Driver deleted successfully" });
   } catch (err) {
-    console.error("Error deleting driver:", err);
     res.status(500).json({ message: err.message });
   }
 });
 
-router.get("/count", async (req, res) => {
+// GET tasks for a specific driver
+router.get("/:id/tasks", async (req, res) => {
   try {
-    const totalDrivers = await Driver.countDocuments();
-    res.json({ totalDrivers });
-  } catch (err) {
-    console.error("Error counting drivers:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/count/active", async (req, res) => {
-  try {
-    const activeDriversCount = await Driver.countDocuments({
-      employmentStatus: "active",
-    });
-    res.json({ activeDriversCount });
-  } catch (err) {
-    console.error("Error counting active drivers:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/:driverId/tasks", async (req, res) => {
-  try {
-    const driver = await Driver.findById(req.params.driverId).populate("tasks");
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
-    }
-    res.json(driver.tasks);
-  } catch (err) {
-    console.error("Error fetching tasks:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/:driverId/tasks/report", async (req, res) => {
-  try {
-    const driver = await Driver.findById(req.params.driverId).populate("tasks");
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
-    }
-
-    const dateRange = parseInt(req.query.dateRange) || 7;
-    const statuses = req.query.statuses ? req.query.statuses.split(",") : null;
-
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - dateRange);
-
-    let filteredTasks = driver.tasks.filter((task) => {
-      const taskDate = new Date(task.expectedDelivery);
-      return taskDate >= startDate && taskDate <= endDate;
-    });
-
-    if (statuses) {
-      filteredTasks = filteredTasks.filter((task) =>
-        statuses.includes(task.status)
-      );
-    }
-
-    const tasks = filteredTasks.map((task) => ({
-      _id: task._id,
-      cargoType: task.cargoType,
-      pickup: task.pickup,
-      delivery: task.delivery,
-      expectedDelivery: task.expectedDelivery,
-      status: task.status,
-    }));
-
+    const tasks = await Task.find({ driverId: req.params.id });
     res.json(tasks);
   } catch (err) {
-    console.error("Error fetching report:", err);
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post("/:driverId/tasks", async (req, res) => {
-  try {
-    const driver = await Driver.findById(req.params.driverId);
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
+// POST a new task for a specific driver
+router.post(
+  "/:id/tasks",
+  [
+    body("taskNumber").notEmpty().withMessage("Task number is required"),
+    body("cargoType").notEmpty().withMessage("Cargo type is required"),
+    body("weight").isNumeric().withMessage("Weight must be a number"),
+    body("pickup").notEmpty().withMessage("Pickup location is required"),
+    body("delivery").notEmpty().withMessage("Delivery location is required"),
+    body("deliveryPhone").notEmpty().withMessage("Delivery phone is required"),
+    body("expectedDelivery")
+      .notEmpty()
+      .withMessage("Expected delivery date is required")
+      .isISO8601()
+      .withMessage("Expected delivery must be a valid date"),
+    body("licensePlate").notEmpty().withMessage("License plate is required"),
+  ],
+  auth, // Add auth middleware to get companyId
+  async (req, res) => {
+    try {
+      // Check if driver exists
+      const driver = await Driver.findOne({
+        driverId: req.params.id,
+        companyId: req.user.companyId, // Ensure driver belongs to admin's company
+      });
+
+      if (!driver) {
+        return res
+          .status(404)
+          .json({ message: "Driver not found or not authorized" });
+      }
+
+      // Check if this task number already exists for this specific company (not just driver)
+      const existingTask = await Task.findOne({
+        taskNumber: req.body.taskNumber,
+        companyId: req.user.companyId,
+      });
+
+      if (existingTask) {
+        return res.status(400).json({
+          message: `Task number ${req.body.taskNumber} already exists for this company`,
+        });
+      }
+
+      const newTask = new Task({
+        taskNumber: req.body.taskNumber,
+        cargoType: req.body.cargoType,
+        weight: req.body.weight,
+        pickup: req.body.pickup,
+        delivery: req.body.delivery,
+        deliveryPhone: req.body.deliveryPhone,
+        expectedDelivery: new Date(req.body.expectedDelivery),
+        additionalNotes: req.body.additionalNotes || "",
+        licensePlate: req.body.licensePlate,
+        driverId: req.params.id,
+        status: "Pending",
+        companyId: req.user.companyId, // Add the companyId from authenticated user
+      });
+
+      console.log("Creating new task with data:", {
+        ...newTask.toObject(),
+        companyId: req.user.companyId,
+      });
+
+      const savedTask = await newTask.save();
+
+      // Emit socket event if socketServer is available
+      if (req.socketServer) {
+        console.log(
+          "Emitting task:assigned event from driver route for task:",
+          savedTask.taskNumber
+        );
+        req.socketServer.emitTaskAssigned(savedTask);
+      } else {
+        console.warn(
+          "Socket server not available, couldn't emit task:assigned event"
+        );
+      }
+
+      res.status(201).json(savedTask);
+    } catch (err) {
+      console.error("Error creating task:", err);
+      res.status(400).json({
+        message: err.message || "Failed to create task",
+        details: err.toString(),
+      });
     }
-
-    const { cargoType, weight, pickup, delivery, expectedDelivery, status } =
-      req.body;
-
-    const newTask = new Task({
-      cargoType,
-      weight: weight ? parseFloat(weight) : undefined,
-      pickup,
-      delivery,
-      expectedDelivery: expectedDelivery
-        ? new Date(expectedDelivery)
-        : undefined,
-      status,
-    });
-
-    const savedTask = await newTask.save();
-    driver.tasks.push(savedTask._id);
-    await driver.save();
-
-    res.status(201).json(savedTask);
-  } catch (err) {
-    console.error("Error creating task:", err);
-    res.status(400).json({ message: err.message });
   }
-});
+);
 
-router.put("/:driverId/tasks/:taskId", async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.taskId);
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+// POST task assignment to driver - fix this duplicate route
+router.post(
+  "/:driverId/tasks",
+  auth, // Add auth middleware to get companyId
+  async (req, res) => {
+    try {
+      const driverId = req.params.driverId;
+
+      // Verify driver exists and belongs to admin's company
+      const driver = await Driver.findOne({
+        driverId,
+        companyId: req.user.companyId,
+      });
+
+      if (!driver) {
+        return res
+          .status(404)
+          .json({ message: "Driver not found or not authorized" });
+      }
+
+      const newTask = new Task({
+        taskNumber: req.body.taskNumber,
+        cargoType: req.body.cargoType,
+        weight: req.body.weight,
+        pickup: req.body.pickup,
+        delivery: req.body.delivery,
+        deliveryPhone: req.body.deliveryPhone,
+        expectedDelivery: new Date(req.body.expectedDelivery),
+        additionalNotes: req.body.additionalNotes || "",
+        driverId: driverId,
+        licensePlate: req.body.licensePlate || "Not assigned",
+        status: "Pending",
+        companyId: req.user.companyId, // Add the companyId from authenticated user
+      });
+
+      console.log("Creating new task with data:", {
+        ...newTask.toObject(),
+        companyId: req.user.companyId,
+      });
+
+      const savedTask = await newTask.save();
+
+      // Emit socket event if socketServer is available
+      if (req.socketServer) {
+        console.log(
+          "Emitting task:assigned event for new task:",
+          savedTask.taskNumber
+        );
+        req.socketServer.emitTaskAssigned(savedTask);
+      } else {
+        console.warn(
+          "Socket server not available, couldn't emit task:assigned event"
+        );
+      }
+
+      res.status(201).json(savedTask);
+    } catch (err) {
+      console.error("Error assigning task:", err);
+      res.status(400).json({
+        message: err.message || "Failed to assign task",
+        details: err.toString(),
+      });
     }
-
-    const { cargoType, weight, pickup, delivery, expectedDelivery, status } =
-      req.body;
-
-    task.cargoType = cargoType || task.cargoType;
-    task.weight = weight ? parseFloat(weight) : task.weight;
-    task.pickup = pickup || task.pickup;
-    task.delivery = delivery || task.delivery;
-    task.expectedDelivery = expectedDelivery
-      ? new Date(expectedDelivery)
-      : task.expectedDelivery;
-    task.status = status || task.status;
-
-    const updatedTask = await task.save();
-    res.json(updatedTask);
-  } catch (err) {
-    console.error("Error updating task:", err);
-    res.status(400).json({ message: err.message });
   }
-});
+);
 
-router.delete("/:driverId/tasks/:taskId", async (req, res) => {
-  try {
-    const driver = await Driver.findById(req.params.driverId);
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
-    }
-
-    const task = await Task.findById(req.params.taskId);
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-
-    driver.tasks = driver.tasks.filter(
-      (taskId) => taskId.toString() !== req.params.taskId
-    );
-    await driver.save();
-
-    await Task.findByIdAndDelete(req.params.taskId);
-    res.json({ message: "Task deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting task:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/:driverId/tasks/:taskId", async (req, res) => {
-  try {
-    const driver = await Driver.findById(req.params.driverId).populate("tasks");
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
-    }
-
-    const task = driver.tasks.find(
-      (task) => task._id.toString() === req.params.taskId
-    );
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-
-    res.json(task);
-  } catch (err) {
-    console.error("Error fetching task:", err);
-    res.status(500).json({ message: err.message });
-  }
+// Catch-all for missing/incorrect endpoints
+router.use((req, res) => {
+  res.status(404).json({ message: "Driver endpoint not found" });
 });
 
 module.exports = router;

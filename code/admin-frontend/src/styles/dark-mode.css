@@ -1,0 +1,266 @@
+/* Dark Mode Styles */
+.dark-mode {
+  /* Dark Mode Color Variables */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #2d2d2d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #3a3a3a;
+  
+  /* Override Bootstrap variables */
+  --bs-body-bg: var(--bg-primary);
+  --bs-body-color: var(--text-primary);
+  --bs-border-color: var(--border-color);
+  
+  /* Card & Container Styles */
+  --card-bg: var(--bg-secondary);
+  --card-header-bg: var(--bg-secondary);
+  --card-border: 1px solid var(--border-color);
+  
+  /* Form Styles */
+  --input-bg: var(--bg-tertiary);
+  --input-color: var(--text-primary);
+  --input-border: var(--border-color);
+  --input-focus-bg: #353535;
+  
+  /* Dropdown & Modal Styles */
+  --dropdown-bg: var(--bg-secondary);
+  --dropdown-color: var(--text-primary);
+  --dropdown-border: var(--border-color);
+  --dropdown-link-hover-bg: var(--bg-tertiary);
+  --modal-bg: var(--bg-secondary);
+  
+  /* Table Styles */
+  --table-bg: var(--bg-secondary);
+  --table-color: var(--text-primary);
+  --table-border-color: var(--border-color);
+  --table-striped-bg: var(--bg-tertiary);
+  --table-hover-bg: #353535;
+  
+  /* Shadow Adjustments */
+  --shadow-sm: 0 2px 5px 0 rgba(0, 0, 0, 0.5);
+  --shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 10px 0 rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Body & Background */
+.dark-mode body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Card Styles */
+.dark-mode .card {
+  background-color: var(--card-bg);
+  border: var(--card-border);
+}
+
+.dark-mode .card-header {
+  background-color: var(--card-header-bg);
+  border-bottom-color: var(--border-color);
+}
+
+/* Form Controls */
+.dark-mode .form-control,
+.dark-mode .form-select {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-color);
+}
+
+.dark-mode .form-control:focus,
+.dark-mode .form-select:focus {
+  background-color: var(--input-focus-bg);
+  border-color: var(--primary);
+  color: var(--input-color);
+}
+
+.dark-mode .input-group-text {
+  background-color: var(--bg-tertiary);
+  border-color: var(--input-border);
+  color: var(--input-color);
+}
+
+.dark-mode .form-check-input {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+}
+
+/* Dropdown */
+.dark-mode .dropdown-menu {
+  background-color: var(--dropdown-bg);
+  border-color: var(--dropdown-border);
+}
+
+.dark-mode .dropdown-item {
+  color: var(--dropdown-color);
+}
+
+.dark-mode .dropdown-item:hover,
+.dark-mode .dropdown-item:focus {
+  background-color: var(--dropdown-link-hover-bg);
+  color: var(--dropdown-color);
+}
+
+/* Modals */
+.dark-mode .modal-content {
+  background-color: var(--modal-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .modal-header {
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .modal-footer {
+  border-top-color: var(--border-color);
+}
+
+/* Tables */
+.dark-mode .table {
+  color: var(--table-color);
+  border-color: var(--table-border-color);
+}
+
+.dark-mode .table thead th {
+  background-color: var(--bg-tertiary);
+}
+
+.dark-mode .table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--table-striped-bg);
+  color: var(--text-primary);
+}
+
+.dark-mode .table-hover > tbody > tr:hover > * {
+  background-color: var(--table-hover-bg);
+  color: var(--text-primary);
+}
+
+/* Buttons */
+.dark-mode .btn-light,
+.dark-mode .btn-outline-secondary {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark-mode .btn-light:hover,
+.dark-mode .btn-outline-secondary:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+/* Alerts */
+.dark-mode .alert-success,
+.dark-mode .alert-info,
+.dark-mode .alert-warning,
+.dark-mode .alert-danger {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.dark-mode .alert-success {
+  border-left: 4px solid var(--success);
+}
+
+.dark-mode .alert-info {
+  border-left: 4px solid var(--info);
+}
+
+.dark-mode .alert-warning {
+  border-left: 4px solid var(--warning);
+}
+
+.dark-mode .alert-danger {
+  border-left: 4px solid var(--danger);
+}
+
+/* Sidebar */
+.dark-mode .sidebar {
+  background-color: var(--bg-secondary);
+  border-right-color: var(--border-color);
+}
+
+.dark-mode .sidebar-link {
+  color: var(--text-secondary);
+}
+
+.dark-mode .sidebar-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.dark-mode .sidebar-link.active {
+  color: var(--primary);
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+/* Nav Tabs & Pills */
+.dark-mode .nav-tabs,
+.dark-mode .nav-pills {
+  border-color: var(--border-color);
+}
+
+.dark-mode .nav-tabs .nav-link.active,
+.dark-mode .nav-pills .nav-link.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+.dark-mode .nav-tabs .nav-link:not(.active),
+.dark-mode .nav-pills .nav-link:not(.active) {
+  color: var(--text-secondary);
+}
+
+.dark-mode .nav-tabs .nav-link:hover:not(.active),
+.dark-mode .nav-pills .nav-link:hover:not(.active) {
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+/* Map Container */
+.dark-mode .leaflet-container {
+  filter: brightness(0.8) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+/* Typography */
+.dark-mode .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.dark-mode h1, 
+.dark-mode h2, 
+.dark-mode h3, 
+.dark-mode h4, 
+.dark-mode h5, 
+.dark-mode h6,
+.dark-mode .h1, 
+.dark-mode .h2, 
+.dark-mode .h3, 
+.dark-mode .h4, 
+.dark-mode .h5, 
+.dark-mode .h6 {
+  color: var(--text-primary);
+}
+
+/* Scrollbar */
+.dark-mode ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}

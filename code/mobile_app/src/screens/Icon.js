@@ -5,8 +5,6 @@ const Icon = ({ name, size, color }) => (
   <Text style={{ color, fontSize: size }}>
     {name === "view-dashboard"
       ? "📊"
-      : name === "qrcode-scan"
-      ? "📷"
       : name === "format-list-checks"
       ? "📋"
       : name === "bell"
@@ -29,8 +27,6 @@ const Icon = ({ name, size, color }) => (
       ? "⏰"
       : name === "check-circle"
       ? "✅"
-      : name === "flashlight"
-      ? "🔦"
       : ""}
   </Text>
 );

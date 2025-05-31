@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { getVehicleTrackingData } from "../services/getVehicleTrackingData";
+import { getSensorsData } from "../services/getSensorsData";
 
 // Add CSS for the blinking dot
 const blinkingDotStyle = `
@@ -22,7 +22,8 @@ const blinkingDotStyle = `
   }
 `;
 
-const LeafletMap = () => {
+// Accept deviceId prop
+const LeafletMap = ({ deviceId }) => {
     const [vehicleData, setVehicleData] = useState(null);
     const [map, setMap] = useState(null);
     const [marker, setMarker] = useState(null);
@@ -36,7 +37,7 @@ const LeafletMap = () => {
     const isFirstDataPointRef = useRef(true);
 
     // Store max path segments to limit API calls and memory usage
-    const maxPathSegments = 20;
+    const maxPathSegments = 100; // Limit path length
 
     // Initial map setup
     useEffect(() => {
@@ -90,135 +91,162 @@ const LeafletMap = () => {
             mapInstance.remove();
             document.head.removeChild(styleElement);
         };
-    }, []);
+    }, []); // Empty dependency array ensures this runs only once on mount
 
-    // Function to get route between two points using OSRM
-    const getRoutePoints = async (startLat, startLng, endLat, endLng) => {
-        try {
-            const response = await fetch(
-                `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`
-            );
-
-            if (!response.ok) {
-                throw new Error("Routing API request failed");
-            }
-
-            const data = await response.json();
-
-            if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-                throw new Error("No route found");
-            }
-
-            // Extract route coordinates
-            const routeCoordinates = data.routes[0].geometry.coordinates;
-
-            // Convert [lng, lat] format to [lat, lng] format that Leaflet uses
-            return routeCoordinates.map(coord => [coord[1], coord[0]]);
-        } catch (error) {
-            console.error("Error fetching route:", error);
-            // Fall back to straight line if routing fails
-            return [[startLat, startLng], [endLat, endLng]];
-        }
-    };
-
-    // Fetch vehicle data and update periodically
+    // Fetch vehicle data periodically using the provided deviceId
     useEffect(() => {
-        if (!map || !marker || !polylineRef.current) return;
+        // Only fetch if map, marker, polyline are initialized and deviceId is provided
+        if (!map || !marker || !polylineRef.current || !deviceId) {
+             setLoading(false); // Ensure loading is false if requirements aren't met
+             setError("Device ID not provided.");
+             return;
+        }
 
-        const fetchAndUpdateData = async () => {
+        setLoading(true);
+        setError(null);
+
+        const fetchData = async () => {
             try {
-                setLoading(true);
-                const vTrackData = await getVehicleTrackingData();
+                const vTrackData = await getSensorsData(deviceId);
 
-                // Check if the data is valid and has location properties
-                if (vTrackData && vTrackData.latitude && vTrackData.longitude) {
+                if (vTrackData && vTrackData.gps?.latitude !== 0 && vTrackData.gps?.longitude !== 0) {
                     setVehicleData(vTrackData);
 
-                    const newPosition = [vTrackData.latitude, vTrackData.longitude];
+                    const newPosition = [vTrackData.gps.latitude, vTrackData.gps.longitude];
 
-                    // Update marker position
+                    // Update marker position and popup content
                     marker.setLatLng(newPosition);
+                     marker.bindPopup(`
+                         <div>
+                             <strong>Device ID:</strong> ${vTrackData.deviceId}<br>
+                             <strong>Speed:</strong> ${vTrackData.gps?.speed_kmh || 0} km/h<br>
+                             <strong>Temperature:</strong> ${vTrackData.sensor?.temperature_C || 0}°C<br>
+                             <strong>Humidity:</strong> ${vTrackData.sensor?.humidity || 0}%<br>
+                             ${vTrackData.tampering ? '<strong style="color: red;">TAMPERING DETECTED!</strong>' : ''}
+                         </div>
+                     `);
+                     // Update icon color based on tampering status
+                     const markerColor = vTrackData.tampering ? '#ff3b30' : '#3388ff'; // Red for tampering, Blue otherwise
+                     const iconHtml = `<div class="blinking-dot" style="background-color: ${markerColor}"></div>`;
+                     const currentIcon = marker.getIcon();
+                     if (currentIcon && currentIcon.options.html !== iconHtml) {
+                          marker.setIcon(L.divIcon({
+                              className: "vehicle-marker",
+                              html: iconHtml,
+                              iconSize: [24, 24],
+                              iconAnchor: [12, 12]
+                          }));
+                     }
 
                     // Update route on the map
-                    await updateRoutePath(newPosition);
+                    updateRoutePath(newPosition);
 
-                    // Re-center map
+                    // Re-center map only on the first valid data point or if the view hasn't been manually moved
+                    // A more sophisticated approach might track user pan/zoom
+                     if (isFirstDataPointRef.current && map) {
                     map.setView(newPosition, map.getZoom());
+                     }
 
-                    // We've received actual data now
                     isFirstDataPointRef.current = false;
+                    setLoading(false);
+                    setError(null);
+
                 } else {
-                    console.warn("Invalid vehicle data received:", vTrackData);
-                    setError("No valid vehicle tracking data available");
+                    console.warn(`Invalid or no data received for device ${deviceId}:`, vTrackData);
+                     // If data becomes invalid, reset marker and path
+                     if (marker) marker.setLatLng([0,0]); // Or a default location like [6.9271, 79.8612]
+                     if (polylineRef.current) polylineRef.current.setLatLngs([]);
+                     pathPointsRef.current = [];
+                     lastPositionRef.current = null;
+                     isFirstDataPointRef.current = true;
+                     setVehicleData(null);
+                     setLoading(false);
+                     setError(`No valid tracking data available for device ${deviceId}`);
                 }
-            } catch (error) {
-                console.error("Error fetching vehicle tracking data:", error);
-                setError("Failed to fetch vehicle data");
-            } finally {
+            } catch (err) {
+                 console.error(`Error fetching data for device ${deviceId}:`, err);
+                 // Handle fetch error - reset marker and path
+                 if (marker) marker.setLatLng([0,0]); // Or a default location
+                 if (polylineRef.current) polylineRef.current.setLatLngs([]);
+                 pathPointsRef.current = [];
+                 lastPositionRef.current = null;
+                 isFirstDataPointRef.current = true;
+                 setVehicleData(null);
                 setLoading(false);
+                 setError(`Error fetching tracking data for device ${deviceId}`);
             }
         };
 
+        // Fetch data immediately
+        fetchData();
+
+        // Set up interval for updates
+        const interval = setInterval(fetchData, 3000); // Poll every 3 seconds
+
+        // Cleanup:
+        return () => {
+            console.log(`Clearing interval for device ${deviceId}`);
+            clearInterval(interval);
+            // Also clear path and reset state when deviceId changes or component unmounts
+            pathPointsRef.current = [];
+            if(polylineRef.current) polylineRef.current.setLatLngs([]);
+            lastPositionRef.current = null;
+            isFirstDataPointRef.current = true;
+            setVehicleData(null); // Clear previous vehicle data
+             // Optionally reset marker to default or hide it
+             if (marker) marker.setLatLng([0,0]); // Or a default location
+             setLoading(false); // Ensure loading is off on cleanup
+             setError(null); // Clear any errors on cleanup
+        };
+    }, [map, marker, polylineRef, deviceId]); // Re-run effect if map, marker, polylineRef or deviceId changes
+
         // Function to update the route path
-        const updateRoutePath = async (newPosition) => {
-            // If this is the first real data point, just set it without drawing a route
+    const updateRoutePath = (newPosition) => {
+         // Only update if we have a valid position
+         if (newPosition[0] === 0 && newPosition[1] === 0) {
+             return;
+         }
+
+        // If this is the very first real data point, initialize
             if (isFirstDataPointRef.current) {
+             pathPointsRef.current = [newPosition];
                 lastPositionRef.current = newPosition;
+             // isFirstDataPointRef.current = false; // Set in the data fetching effect
+             if(polylineRef.current) polylineRef.current.setLatLngs(pathPointsRef.current);
                 return;
             }
 
-            // Only update if we have a new position that's different from the last one
-            // and if we have a previous position to connect from
+        // Only update if the position has actually changed from the last recorded position
+        // Use a smaller tolerance for floating point comparisons to capture more detailed movement
+        const tolerance = 0.0000001;
             if (lastPositionRef.current &&
-                (lastPositionRef.current[0] !== newPosition[0] ||
-                    lastPositionRef.current[1] !== newPosition[1])) {
+            (Math.abs(lastPositionRef.current[0] - newPosition[0]) > tolerance ||
+             Math.abs(lastPositionRef.current[1] - newPosition[1]) > tolerance)) {
 
-                // Check if the distance is meaningful (to prevent routing for tiny movements)
-                const distance = calculateDistance(
-                    lastPositionRef.current[0], lastPositionRef.current[1],
-                    newPosition[0], newPosition[1]
-                );
+            // Add the new position to the path points
+            pathPointsRef.current = [...pathPointsRef.current, newPosition];
 
-                // Only get a route if the vehicle has moved a meaningful distance (e.g., 10 meters)
-                if (distance > 0.01) { // ~10 meters
-                    try {
-                        // Get road-following route between the last position and the new position
-                        const routePoints = await getRoutePoints(
-                            lastPositionRef.current[0], lastPositionRef.current[1],
-                            newPosition[0], newPosition[1]
-                        );
-
-                        // Add route to the path
-                        if (routePoints && routePoints.length > 0) {
-                            // Add all new route points except the first one (which is already the last point of the previous route)
-                            if (pathPointsRef.current.length === 0) {
-                                // If this is the first segment, add all points
-                                pathPointsRef.current = routePoints;
-                            } else {
-                                // Otherwise, append all points except the first one
-                                pathPointsRef.current = pathPointsRef.current.concat(routePoints.slice(1));
-                            }
-
-                            // Limit the number of path segments to prevent memory issues
-                            if (pathPointsRef.current.length > maxPathSegments * 20) { // Assuming average of 20 points per segment
-                                // Keep only the most recent points (approximately last 20 segments)
-                                pathPointsRef.current = pathPointsRef.current.slice(-maxPathSegments * 20);
+            // Limit the number of path segments to prevent performance/memory issues
+            if (pathPointsRef.current.length > maxPathSegments) {
+                pathPointsRef.current = pathPointsRef.current.slice(pathPointsRef.current.length - maxPathSegments);
                             }
 
                             // Update polyline
+            if (polylineRef.current) {
                             polylineRef.current.setLatLngs(pathPointsRef.current);
-                        }
-                    } catch (error) {
-                        console.error("Failed to update route:", error);
-                    }
                 }
 
                 // Update last position
                 lastPositionRef.current = newPosition;
+             // Optional: Re-center map on the tracked vehicle's latest position
+            // if (map) {
+            //      map.setView(newPosition, map.getZoom());
+            // }
             }
         };
 
         // Helper function to calculate distance between two points in km (haversine formula)
+    // (Kept this as it might be useful later)
         const calculateDistance = (lat1, lon1, lat2, lon2) => {
             const R = 6371; // Radius of the earth in km
             const dLat = deg2rad(lat2 - lat1);
@@ -236,21 +264,13 @@ const LeafletMap = () => {
             return deg * (Math.PI / 180);
         };
 
-        // Fetch data immediately
-        fetchAndUpdateData();
-
-        // Set up interval for updates
-        const interval = setInterval(fetchAndUpdateData, 3000);
-
-        // Clean up interval
-        return () => clearInterval(interval);
-    }, [map, marker]);
-
     // Function to clear the path
     const clearPath = () => {
         if (polylineRef.current) {
             pathPointsRef.current = [];
             polylineRef.current.setLatLngs([]);
+            lastPositionRef.current = null; // Reset last position when clearing path
+            isFirstDataPointRef.current = true; // Treat next point as the first after clearing
         }
     };
 
@@ -259,11 +279,13 @@ const LeafletMap = () => {
             <div className="card-body">
                 <h5 className="card-title">Live Vehicle Tracking</h5>
                 <div className="bg-light rounded p-4">
+                     {/* The map div will be populated by Leaflet JS */}
                     <div id="map" style={{ height: "400px", width: "100%" }}></div>
                     <div className="d-flex justify-content-between align-items-center mt-2">
                         <button
                             className="btn btn-sm btn-outline-secondary"
                             onClick={clearPath}
+                             disabled={!vehicleData || pathPointsRef.current.length === 0} // Disable if no data or empty path
                         >
                             Clear Path
                         </button>
@@ -272,11 +294,19 @@ const LeafletMap = () => {
                             {error && <span className="text-danger">{error}</span>}
                             {vehicleData && (
                                 <span>
-                                    <strong>Vehicle ID:</strong> {vehicleData.vehicleId || 'Unknown'} |
-                                    <strong> Last updated:</strong> {new Date().toLocaleTimeString()}
+                                    <strong>Last updated:</strong> {new Date().toLocaleTimeString()}
                                 </span>
                             )}
                         </div>
+                         {/* Legend - not needed for single vehicle map */}
+                        {/* <div className="small">
+                            <span className="me-3">
+                                <span style={{ color: '#3388ff' }}>■</span> Normal
+                            </span>
+                            <span>
+                                <span style={{ color: '#ff3b30' }}>■</span> Tampering Detected
+                            </span>
+                        </div> */}
                     </div>
                 </div>
             </div>
