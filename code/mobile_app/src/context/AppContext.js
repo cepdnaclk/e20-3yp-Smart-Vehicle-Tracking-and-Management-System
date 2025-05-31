@@ -70,6 +70,9 @@ export const AppProvider = ({ children }) => {
           }
         }
 
+        // Log the assigned vehicle after attempting to load it
+        console.log("Login check: Assigned vehicle is", vehicleNumber);
+
         // Fetch tasks for this driver
         try {
           const tasksResponse = await api.get(`/api/tasks/driver/${DRIVER_ID}`);
