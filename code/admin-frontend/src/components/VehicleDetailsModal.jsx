@@ -282,7 +282,9 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
         </Card>
 
         {/* Map */}
-        <LeafletMap />
+        {vehicle?.deviceId && (
+           <LeafletMap deviceId={vehicle.deviceId} />
+        )}
       </Modal.Body>
       
       <Modal.Footer>

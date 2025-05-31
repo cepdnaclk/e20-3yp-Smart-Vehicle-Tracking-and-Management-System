@@ -18,10 +18,14 @@ const authenticateFirebase = async () => {
   }
 };
 
-// Async function to fetch sensor data for a specific device
+// Async function to fetch sensor data for a specific device by ID
 export const getSensorsData = async (deviceId) => {
   try {
-    // Ensure Firebase is authenticated
+    if (!deviceId) {
+      console.error("getSensorsData requires a deviceId");
+      return null; // Return null for invalid deviceId
+    }
+    
     await authenticateFirebase();
 
     const deviceRef = ref(database, `companies/TANGALLEB001/devices/${deviceId}`);
@@ -32,37 +36,28 @@ export const getSensorsData = async (deviceId) => {
 
       // Extract and return the relevant sensor and GPS data
       const sensorAndGpsData = {
-        gps: {
-          latitude: deviceData.gps?.latitude || 0,
-          longitude: deviceData.gps?.longitude || 0, // Corrected typo logitude -> longitude
+        deviceId: deviceId, // Include deviceId in the response
+          gps: {
+            latitude: deviceData.gps?.latitude || 0,
+            longitude: deviceData.gps?.longitude || 0,
           speed_kmh: deviceData.gps?.speed_kmh || 0,
-        },
-        sensor: {
-          temperature_C: deviceData.sensor?.temperature_C || 0,
+          },
+          sensor: {
+            temperature_C: deviceData.sensor?.temperature_C || 0,
           humidity: deviceData.sensor?.humidity || 0,
         },
-        // Include tampering status as well
         tampering: deviceData.tampering_detected || false
-      };
+        };
 
       return sensorAndGpsData;
     } else {
       console.log(`No data found for device ID: ${deviceId}`);
-      return {
-        gps:{ latitude: 0, longitude: 0, speed_kmh: 0 },
-        sensor:{ temperature_C: 0, humidity: 0 },
-        tampering: false
-      };
+      return null; // Return null if no data exists
     }
-  } catch (error) {
+      } catch (error) {
     console.error(`Error fetching sensor data for device ${deviceId}:`, error);
-    // Return default structure on error
-    return {
-      gps:{ latitude: 0, longitude: 0, speed_kmh: 0 },
-      sensor:{ temperature_C: 0, humidity: 0 },
-      tampering: false
-    };
-  }
+    return null; // Return null on error
+      }
 };
 
 // Removed unused imports, variables, and functions related to alerts, polling, listeners, etc.
