@@ -194,7 +194,7 @@ const DashboardScreen = ({ navigation }) => {
         // Check if vehicle is already assigned to another driver
         if (
           vehicleData.assignedDriver &&
-          vehicleData.assignedDriver !== DRIVER_ID
+          vehicleData.assignedDriver !== driverId
         ) {
           console.log(
             "Vehicle already assigned to another driver:",
@@ -210,7 +210,7 @@ const DashboardScreen = ({ navigation }) => {
 
         // Continue with vehicle assignment if all checks pass
         // First, get current driver data to preserve required fields
-        const driverResponse = await api.get(`/api/drivers/${DRIVER_ID}`);
+        const driverResponse = await api.get(`/api/drivers/${driverId}`);
         const driverData = driverResponse.data;
 
         if (!driverData) {
@@ -233,11 +233,11 @@ const DashboardScreen = ({ navigation }) => {
         };
 
         console.log("Updating driver with data:", updateData);
-        await api.put(`/api/drivers/${DRIVER_ID}`, updateData);
+        await api.put(`/api/drivers/${driverId}`, updateData);
 
         // Update the vehicle to assign it to this driver
         // Using PUT instead of PATCH since the backend doesn't support PATCH
-        console.log("Updating vehicle with assignedDriver:", DRIVER_ID);
+        console.log("Updating vehicle with assignedDriver:", driverId);
         await api.put(`/api/vehicles/${vehicleData._id}`, {
           vehicleName: vehicleData.vehicleName,
           licensePlate: vehicleData.licensePlate,
@@ -245,7 +245,7 @@ const DashboardScreen = ({ navigation }) => {
           deviceId: vehicleData.deviceId || "unknown",
           trackingEnabled: vehicleData.trackingEnabled,
           status: "active",
-          assignedDriver: DRIVER_ID,
+          assignedDriver: driverId,
         });
 
         // Update local state and storage
