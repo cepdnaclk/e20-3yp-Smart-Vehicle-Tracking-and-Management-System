@@ -76,10 +76,8 @@ const Alerts = () => {
       const { default: jsPDF } = await import('jspdf');
       const { autoTable } = await import('jspdf-autotable');
 
-      // Ensure Chart.js is properly registered before creating the chart
-      if (!Chart.controllers.bar) {
-        Chart.register(BarController);
-      }
+      // Re-register Chart.js components to ensure they're available
+      Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, BarController, ChartDataLabels);
 
       const doc = new jsPDF();
 
@@ -92,100 +90,105 @@ const Alerts = () => {
       // Function to create the alert statistics chart image
       const createAlertStatisticsChartImage = () => {
         return new Promise((resolve, reject) => {
-          const canvas = document.createElement('canvas');
-          const size = 600; // Increase size for more bars
-          canvas.width = size;
-          canvas.height = size / 2; // Aspect ratio 2:1
+          try {
+            const canvas = document.createElement('canvas');
+            const size = 600; // Increase size for more bars
+            canvas.width = size;
+            canvas.height = size / 2; // Aspect ratio 2:1
 
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('Failed to get 2D context for canvas'));
-            return;
-          }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Failed to get 2D context for canvas'));
+              return;
+            }
 
-          // Create the bar chart with updated data
-          const chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels: ['Active', 'Resolved', 'Tampering', 'Temperature', 'Speed', 'Humidity', 'Accident'], // Added new labels
-              datasets: [{
-                label: 'Alert Statistics',
-                data: [
-                  filteredAlerts.filter(a => a.status === 'active').length,
-                  filteredAlerts.filter(a => a.status === 'resolved').length,
-                  filteredAlerts.filter(a => a.type === 'tampering' && a.status === 'active').length,
-                  filteredAlerts.filter(a => a.type === 'temperature' && a.status === 'active').length,
-                  filteredAlerts.filter(a => a.type === 'speed' && a.status === 'active').length, // Added Speed active count
-                  filteredAlerts.filter(a => a.type === 'humidity' && a.status === 'active').length, // Added Humidity active count
-                  filteredAlerts.filter(a => a.type === 'accident' && a.status === 'active').length // Added Accident active count
-                ],
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#F59E0B', '#4BC0C0', '#9966FF', '#FF9F40'], // Added more colors
-                borderColor: ['#D32F2F', '#0E7490', '#F57C00', '#D97706', '#2E8B57', '#8A2BE2', '#DC143C'], // Added more border colors
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: false,
-              maintainAspectRatio: false,
-              plugins: {
-                title: {
-                  display: true,
-                  text: 'Alert Statistics',
-                  font: { size: 14 }
-                },
-                legend: {
-                  display: false,
-                  position: 'top'
-                },
-                datalabels: {
+            // Create the bar chart with updated data
+            const chart = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: ['Active', 'Resolved', 'Tampering', 'Temperature', 'Speed', 'Humidity', 'Accident'],
+                datasets: [{
+                  label: 'Alert Statistics',
+                  data: [
+                    filteredAlerts.filter(a => a.status === 'active').length,
+                    filteredAlerts.filter(a => a.status === 'resolved').length,
+                    filteredAlerts.filter(a => a.type === 'tampering' && a.status === 'active').length,
+                    filteredAlerts.filter(a => a.type === 'temperature' && a.status === 'active').length,
+                    filteredAlerts.filter(a => a.type === 'speed' && a.status === 'active').length,
+                    filteredAlerts.filter(a => a.type === 'humidity' && a.status === 'active').length,
+                    filteredAlerts.filter(a => a.type === 'accident' && a.status === 'active').length
+                  ],
+                  backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#F59E0B', '#4BC0C0', '#9966FF', '#FF9F40'],
+                  borderColor: ['#D32F2F', '#0E7490', '#F57C00', '#D97706', '#2E8B57', '#8A2BE2', '#DC143C'],
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                plugins: {
+                  title: {
+                    display: true,
+                    text: 'Alert Statistics',
+                    font: { size: 14 }
+                  },
+                  legend: {
+                    display: false,
+                    position: 'top'
+                  },
+                  datalabels: {
                     anchor: 'end',
                     align: 'top',
                     formatter: (value) => value > 0 ? value : '',
                     color: '#000',
                     font: {
-                        weight: 'bold'
+                      weight: 'bold'
                     }
-                }
-              },
-              layout: {
-               padding: { left: 10, right: 10, top: 10, bottom: 10 }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: 'Count'
                   }
                 },
-                x: {
-                  title: {
-                    display: true,
-                    text: 'Alert Type'
+                layout: {
+                  padding: { left: 10, right: 10, top: 10, bottom: 10 }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Count'
+                    }
+                  },
+                  x: {
+                    title: {
+                      display: true,
+                      text: 'Alert Type'
+                    }
                   }
-                }
-              },
-              animation: {
-                onComplete: () => {
-                  try {
-                    const imageData = canvas.toDataURL('image/png');
-                    resolve(imageData);
-                  } catch (error) {
-                    reject(error);
+                },
+                animation: {
+                  onComplete: () => {
+                    try {
+                      const imageData = canvas.toDataURL('image/png');
+                      resolve(imageData);
+                    } catch (error) {
+                      reject(error);
+                    }
                   }
                 }
               }
-            },
-          });
+            });
 
-          setTimeout(() => {
-            try {
-              const imageData = canvas.toDataURL('image/png');
-              resolve(imageData);
-            } catch (error) {
-              reject(error);
-            }
-          }, 500); // 500ms fallback delay
+            // Fallback timeout in case animation doesn't complete
+            setTimeout(() => {
+              try {
+                const imageData = canvas.toDataURL('image/png');
+                resolve(imageData);
+              } catch (error) {
+                reject(error);
+              }
+            }, 500);
+          } catch (error) {
+            reject(error);
+          }
         });
       };
 
@@ -193,14 +196,14 @@ const Alerts = () => {
       const alertStatisticsChartImage = await createAlertStatisticsChartImage();
 
       // Add the image to the PDF
-      let chartWidth = 150; // Increase width to accommodate more bars
-      let chartHeight = 75; // Adjust height proportionally
-      let yOffset = 30; // Start below the title
-      const margin = 14; // Left margin
+      let chartWidth = 150;
+      let chartHeight = 75;
+      let yOffset = 30;
+      const margin = 14;
 
       doc.addImage(alertStatisticsChartImage, 'PNG', margin, yOffset, chartWidth, chartHeight);
 
-      yOffset += chartHeight + 10; // Move down for the table
+      yOffset += chartHeight + 10;
 
       // --- Add Table --- //
 
@@ -208,29 +211,23 @@ const Alerts = () => {
       const tableColumn = ["Type", "Severity", "Vehicle", "Message", "Time", "Status"];
 
       // Define rows from filtered alerts data
-      const tableRows = [];
-
-      filteredAlerts.forEach(alert => {
-        const alertData = [
-          `${alert.type.charAt(0).toUpperCase() + alert.type.slice(1)} Alert`,
-          alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1),
-          alert.vehicle?.licensePlate || alert.vehicle?.number || 'N/A',
-          alert.message,
-          formatDateTime(alert.timestamp),
-          alert.status.charAt(0).toUpperCase() + alert.status.slice(1),
-        ];
-        tableRows.push(alertData);
-      });
+      const tableRows = filteredAlerts.map(alert => [
+        `${alert.type.charAt(0).toUpperCase() + alert.type.slice(1)} Alert`,
+        alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1),
+        alert.vehicle?.licensePlate || alert.vehicle?.number || 'N/A',
+        alert.message,
+        formatDateTime(alert.timestamp),
+        alert.status.charAt(0).toUpperCase() + alert.status.slice(1)
+      ]);
 
       // Add the table
       autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
-        startY: yOffset, // Start table below the chart
+        startY: yOffset,
         headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
         bodyStyles: { textColor: 50 },
         didDrawPage: (data) => {
-          // Footer
           let pageNumber = doc.internal.getNumberOfPages();
           doc.setFontSize(10);
           doc.text(`Page ${pageNumber}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
@@ -245,7 +242,7 @@ const Alerts = () => {
       setShowToast(true);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      setToastMessage("Failed to generate PDF: " + error.message);
+      setToastMessage("Failed to generate PDF: " + (error.message || "Unknown error"));
       setToastType("danger");
       setShowToast(true);
     }
