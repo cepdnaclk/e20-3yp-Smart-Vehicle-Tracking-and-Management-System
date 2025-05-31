@@ -481,9 +481,9 @@ const Alerts = () => {
               if (row.vehicle) {
                 setSelectedVehicleForModal({ 
                   licensePlate: row.vehicle.licensePlate,
-                  number: row.vehicle.licensePlate, // Assuming vehicle number is license plate for now
-                  driverId: row.vehicle.driverId, // Assuming driverId is available in vehicle object
-                  // Add other vehicle properties if needed by the modal
+                  number: row.vehicle.licensePlate,
+                  driverId: row.vehicle.driverId,
+                  deviceId: row.vehicle.deviceId
                 });
                 setShowVehicleModal(true);
               } else {

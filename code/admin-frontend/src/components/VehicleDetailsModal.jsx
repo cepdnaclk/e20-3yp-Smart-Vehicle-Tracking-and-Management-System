@@ -78,6 +78,9 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
             return;
           }
 
+          // Store the deviceId in the vehicle object for the map component
+          vehicle.deviceId = vehicleDetails.vehicle.deviceId;
+
           // Now fetch the sensor data using the device ID
           const data = await getSensorsData(vehicleDetails.vehicle.deviceId);
           
