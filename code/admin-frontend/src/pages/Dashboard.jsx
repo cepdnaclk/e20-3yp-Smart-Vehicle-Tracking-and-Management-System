@@ -423,14 +423,10 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <div className="card-header bg-white">
             <div className="d-flex align-items-center">
               <Map size={18} className="me-2 text-primary" />
               <h5 className="mb-0">Live Vehicle Tracking</h5>
-            </div>
-            <div>
-              <button className="btn btn-sm btn-outline-primary me-2">Refresh</button>
-              <button className="btn btn-sm btn-primary">Full Screen</button>
             </div>
           </div>
           <div className="card-body p-0" style={{ height: '400px' }}>

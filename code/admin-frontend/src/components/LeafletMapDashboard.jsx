@@ -173,35 +173,30 @@ const LeafletMap = ({ vehicles = [] }) => {
     }, [map, devicesData, vehicles]); // Rerun this effect when map, devicesData, or vehicles changes
 
     return (
-        <div className="card mb-4">
-            <div className="card-body">
-                <h5 className="card-title">Live Vehicle Tracking</h5>
-                <div className="bg-light rounded p-4">
-                    {loading && !error && <div className="text-center">Loading vehicle data...</div>}
-                    {error && <div className="text-danger text-center">{error}</div>}
-                    {/* The map div will be populated by Leaflet JS */}
-                    <div id="map" style={{ height: "400px", width: "100%" }}></div>
-                    <div className="d-flex justify-content-between align-items-center mt-2">
-                        <div className="small">
-                            {!loading && !error && devicesData.length > 0 && (
-                                <span>
-                                    <strong>Last updated:</strong> {new Date().toLocaleTimeString()}
-                                </span>
-                            )}
-                             {!loading && !error && devicesData.length === 0 && (
-                                <span>No vehicle tracking data available.</span>
-                            )}
-                        </div>
-                        {/* Legend */}
-                        <div className="small">
-                            <span className="me-3">
-                                <span style={{ color: '#3388ff' }}>■</span> Normal
-                            </span>
-                            <span>
-                                <span style={{ color: '#ff3b30' }}>■</span> Tampering Detected
-                            </span>
-                        </div>
-                    </div>
+        <div className="bg-light rounded">
+            {loading && !error && <div className="text-center">Loading vehicle data...</div>}
+            {error && <div className="text-danger text-center">{error}</div>}
+            {/* The map div will be populated by Leaflet JS */}
+            <div id="map" style={{ height: "400px", width: "100%" }}></div>
+            <div className="d-flex justify-content-between align-items-center mt-2 p-2">
+                <div className="small">
+                    {!loading && !error && devicesData.length > 0 && (
+                        <span>
+                            <strong>Last updated:</strong> {new Date().toLocaleTimeString()}
+                        </span>
+                    )}
+                    {!loading && !error && devicesData.length === 0 && (
+                        <span>No vehicle tracking data available.</span>
+                    )}
+                </div>
+                {/* Legend */}
+                <div className="small">
+                    <span className="me-3">
+                        <span style={{ color: '#3388ff' }}>■</span> Normal
+                    </span>
+                    <span>
+                        <span style={{ color: '#ff3b30' }}>■</span> Tampering Detected
+                    </span>
                 </div>
             </div>
         </div>
