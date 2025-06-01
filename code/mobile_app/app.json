@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -23,7 +22,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.sagaup72.vehicletrackingapp"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,6 +33,11 @@
             "@expo/vector-icons"
           ]
         }
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4d75bbff-cc6d-465b-bd32-16e596921c09"
       }
     }
   }
