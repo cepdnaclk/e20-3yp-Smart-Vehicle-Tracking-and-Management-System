@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Vehicle Tracking and Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- You can add a favicon here -->
+    <!-- <link rel="icon" type="image/png" href="./images/favicon.png"> -->
+
+    <style>
+        /* CSS styles will be inserted here */
+        :root {
+            --primary-color: #007bff; /* Using a blue primary color for vehicle tracking theme */
+            --secondary-color: #0056b3;
+            --text-color: #333;
+            --bg-color: #f8f9fa; /* Lighter background */
+            --white: #ffffff;
+            --shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 5%;
+            background: var(--white);
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-links a.active {
+            color: var(--primary-color);
+        }
+
+        .menu-btn {
+            display: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            padding: 8rem 5% 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                url('./images/hero-background.jpg'); /* Placeholder background image */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--white);
+        }
+
+        .hero-logo {
+            width: 200px; /* Placeholder logo size */
+            height: auto;
+            animation: fadeInDown 1s ease;
+            margin-bottom: 1rem;
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease 0.2s;
+        }
+
+        /* Introduction Section */
+        .introduction {
+            padding: 5rem 5%;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .problem-section,
+        .solution-section {
+            margin-bottom: 3rem;
+            padding: 2rem;
+            border-radius: 10px;
+            background: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .problem-section h2,
+        .solution-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .content ul {
+            list-style-type: none;
+            padding-left: 1rem;
+        }
+
+        .content ul li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .content ul li:before {
+            content: "•";
+            color: var(--primary-color);
+            position: absolute;
+            left: 0;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 5%;
+            background: var(--bg-color);
+        }
+
+        .features h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-item {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-item i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+         /* Architecture Section */
+        .architecture {
+            padding: 5rem 5%;
+            background: var(--white);
+        }
+
+        .architecture-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .arch-diagram {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .arch-diagram img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .arch-components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .component {
+            background: var(--bg-color);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .component:hover {
+            transform: translateY(-5px);
+        }
+
+        .component h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .component ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .component ul li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .component ul li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+
+        /* Tech Stack Section */
+        .tech-stack {
+            padding: 5rem 5%;
+            background: var(--bg-color);
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tech-category {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .tech-category h3 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tech-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .tech-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .tech-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .tech-item img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 0.5rem;
+            object-fit: contain; /* Ensure logos scale correctly */
+        }
+
+        .tech-item span {
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+         /* CAD/Video Section Styles */
+        .cad {
+            padding: 5rem 5%;
+            background: var(--white);
+        }
+
+        .cad-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .cad-container h3 { /* Using h3 for video titles */
+            width: 100%;
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem; /* Add some space below the video title */
+        }
+
+        .cad-container video {
+            flex: 1 1 48%; /* Allow videos to be side-by-side or stack */
+            max-width: 640px;
+            min-width: 280px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            background-color: #000;
+            display: block;
+        }
+
+        /* Circuit Diagram Section Styles */
+        .circuit {
+             padding: 5rem 5%;
+             background: var(--bg-color);
+        }
+
+         .circuit-container {
+             max-width: 1200px;
+             margin: 0 auto;
+             text-align: center;
+         }
+
+         .circuit-diagram img {
+             max-width: 100%;
+             height: auto;
+             border-radius: 10px;
+             box-shadow: var(--shadow);
+         }
+
+        /* Budget Section Styles */
+        .budget {
+            padding: 5rem 5%;
+            background: var(--white);
+        }
+
+        .budget-header {
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            text-align: center;
+        }
+
+        .budget-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .budget-table-wrapper {
+            background: var(--bg-color);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            background: var(--white);
+        }
+
+        .budget-table th,
+        .budget-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .budget-table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .budget-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .budget-table tfoot {
+            font-weight: bold;
+        }
+
+        .budget-table tfoot td {
+            border-top: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* Animation for the table rows */
+        .budget-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .budget-table tbody tr:hover {
+            transform: translateX(10px);
+            background-color: #e9ecef; /* Slightly darker hover for light background */
+        }
+
+        /* Team Section */
+        .team {
+            padding: 5rem 5%;
+            background: var(--bg-color);
+        }
+
+        .team h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .team-member {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .team-member:hover {
+            transform: translateY(-5px);
+        }
+
+        .team-member img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            object-fit: cover;
+        }
+
+        .team-member .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .team-member .social-links a {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .team-member .social-links a:hover {
+            color: var(--primary-color);
+        }
+
+         /* Contact Section */
+        .contact {
+            padding: 5rem 5%;
+            background: var(--white);
+        }
+
+        .contact h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .contact-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .contact-info {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .contact-info p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Common section headers */
+        section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        section h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        /* Add hover effects to all cards */
+        .feature-item,
+        .component,
+        .tech-category,
+        .team-member {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item::before,
+        .component::before,
+        .tech-category::before,
+        .team-member::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-item:hover::before,
+        .component:hover::before,
+        .tech-category:hover::before,
+        .team-member:hover::before {
+            transform: scaleX(1);
+        }
+
+        /* Footer */
+        footer {
+            background: #333;
+            color: var(--white);
+            padding: 3rem 5% 1rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+        }
+
+        .footer-section a {
+            color: var(--white);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: var(--white);
+                padding: 1rem;
+                box-shadow: var(--shadow);
+            }
+
+            .nav-links.active {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .menu-btn {
+                display: block;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+
+             .cad-container video {
+                flex-basis: 100%;
+                 max-width: 100%;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-logo">
+            <i class="fas fa-car"></i> <!-- Icon related to vehicles -->
+            <span>Smart Vehicle Tracking</span>
+        </div>
+        <div class="nav-links">
+            <a href="#home" class="active">Home</a>
+            <a href="#introduction">About</a>
+            <a href="#features">Features</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#tech-stack">Tech Stack</a>
+             <a href="#cad">CAD</a>
+             <a href="#circuit">Circuit</a>
+            <a href="#budget">Budget</a>
+            <a href="#team">Team</a>
+            <a href="#contact">Contact</a>
+        </div>
+        <div class="menu-btn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <!-- Placeholder for project logo -->
+            <img src="./images/project-logo.jpg" alt="Project Logo" class="hero-logo">
+            <h1>Smart Vehicle Tracking and Management System</h1>
+            <p>Enhancing Efficiency and Safety in Vehicle Operations</p>
+        </div>
+    </section>
+
+    <section id="introduction" class="introduction">
+        <div class="container">
+            <div class="problem-section">
+                <h2>The Problem</h2>
+                <div class="content">
+                    <p>Current vehicle tracking and management often face challenges:</p>
+                    <ul>
+                        <li>Inefficient manual tracking methods</li>
+                        <li>Lack of real-time data for decision making</li>
+                        <li>Difficulties in managing alerts and incidents</li>
+                        <li>Limited historical data analysis</li>
+                        <li>Suboptimal resource allocation</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="solution-section">
+                <h2>Our Solution</h2>
+                <div class="content">
+                    <p>Our system provides a comprehensive solution for smart vehicle tracking and management:</p>
+                    <ul>
+                        <li>Real-time GPS tracking and monitoring</li>
+                        <li>Automated alert generation for critical events (speeding, geofence breaches, etc.)</li>
+                        <li>Centralized dashboard for fleet overview and management</li>
+                        <li>Historical data logging and reporting</li>
+                        <li>Mobile application for drivers and stakeholders</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <h2>Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>Real-Time GPS Tracking</h3>
+                <p>Monitor vehicle locations accurately in real-time on a map.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-bell"></i>
+                <h3>Automated Alerts</h3>
+                <p>Receive instant notifications for predefined events and violations.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-dashboard"></i>
+                <h3>Centralized Dashboard</h3>
+                <p>Get a comprehensive overview of your fleet and manage operations from a single interface.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-route"></i>
+                <h3>Route Monitoring & Geofencing</h3>
+                <p>Define operational areas and monitor vehicle movements within or outside them.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-history"></i>
+                <h3>Historical Data & Reporting</h3>
+                <p>Access past trip data, analyze trends, and generate custom reports.</p>
+            </div>
+             <div class="feature-item">
+                <i class="fas fa-mobile-alt"></i>
+                <h3>Mobile Accessibility</h3>
+                <p>Stay connected and manage on the go with our dedicated mobile application.</p>
+            </div>
+        </div>
+    </section>
+
+     <section id="architecture" class="architecture">
+        <h2>Solution Architecture</h2>
+        <div class="architecture-container">
+            <div class="arch-diagram">
+                <!-- Placeholder for your architecture diagram image -->
+                <img src="./images/architecture-diagram.png" alt="System Architecture Diagram">
+            </div>
+
+            <div class="arch-components">
+                <div class="component">
+                    <h3><i class="fas fa-car-alt"></i> Vehicle Unit</h3>
+                    <ul>
+                        <li>GPS Module for location data</li>
+                        <li>Microcontroller/Device for data processing and transmission</li>
+                        <li>Sensors (optional, e.g., for diagnostics)</li>
+                    </ul>
+                </div>
+
+                <div class="component">
+                    <h3><i class="fas fa-server"></i> Backend Service</h3>
+                    <ul>
+                        <li>Receives data from vehicle units</li>
+                        <li>Processes alerts and events</li>
+                        <li>Manages database interactions</li>
+                        <li>Provides APIs for frontend and mobile apps</li>
+                    </ul>
+                </div>
+
+                <div class="component">
+                    <h3><i class="fas fa-desktop"></i> Admin Frontend</h3>
+                    <ul>
+                        <li>Web-based dashboard for administrators</li>
+                        <li>Fleet monitoring, reporting, and configuration</li>
+                        <li>Alert management interface</li>
+                    </ul>
+                </div>
+
+                <div class="component">
+                    <h3><i class="fas fa-mobile-alt"></i> Mobile Application</h3>
+                    <ul>
+                        <li>Real-time vehicle view for drivers/users</li>
+                        <li>Alert notifications and acknowledgment</li>
+                        <li>Simplified interface for on-the-go access</li>
+                    </ul>
+                </div>
+                 <div class="component">
+                    <h3><i class="fas fa-cloud"></i> Cloud & Database</h3>
+                    <ul>
+                        <li>Scalable infrastructure for data storage and processing</li>
+                        <li>Hosting for backend and frontend services</li>
+                        <li>Ensures data availability and reliability</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tech-stack" class="tech-stack">
+        <h2>Technology Stack</h2>
+        <div class="tech-grid">
+            <div class="tech-category">
+                <h3><i class="fas fa-desktop"></i> Frontend</h3>
+                <div class="tech-items">
+                    <!-- Placeholder for Admin Frontend Tech Logo -->
+                     <div class="tech-item">
+                        <img src="./images/tech-react.png" alt="React">
+                        <span>React (Admin)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-category">
+                <h3><i class="fas fa-mobile-alt"></i> Mobile App</h3>
+                <div class="tech-items">
+                     <!-- Placeholder for Mobile App Tech Logo -->
+                     <div class="tech-item">
+                        <img src="./images/tech-expo.png" alt="Expo">
+                        <span>Expo / React Native</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-category">
+                <h3><i class="fas fa-server"></i> Backend</h3>
+                <div class="tech-items">
+                     <!-- Placeholder for Backend Tech Logo 1 -->
+                     <div class="tech-item">
+                        <img src="./images/tech-nodejs.png" alt="Node.js">
+                        <span>Node.js / Express</span>
+                    </div>
+                     <!-- Placeholder for Backend Tech Logo 2 -->
+                     <div class="tech-item">
+                        <img src="./images/tech-mongoose.png" alt="Mongoose">
+                         <span>Mongoose / MongoDB</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-category">
+                <h3><i class="fas fa-microchip"></i> Hardware / IoT</h3>
+                <div class="tech-items">
+                     <!-- Placeholder for Hardware Tech Logo -->
+                     <div class="tech-item">
+                         <img src="./images/tech-raspberrypi.png" alt="Raspberry Pi">
+                         <span>Raspberry Pi</span>
+                    </div>
+                     <div class="tech-item">
+                         <img src="./images/tech-gps.png" alt="GPS Module">
+                         <span>GPS Module</span>
+                     </div>
+                      <div class="tech-item">
+                         <img src="./images/tech-sensor.png" alt="Sensors">
+                         <span>Other Sensors</span>
+                    </div>
+                </div>
+            </div>
+
+             <div class="tech-category">
+                <h3><i class="fas fa-cloud"></i> Cloud & DevOps</h3>
+                <div class="tech-items">
+                    <!-- Placeholder for Cloud Tech Logo -->
+                     <div class="tech-item">
+                         <img src="./images/tech-cloud.png" alt="Cloud Platform">
+                         <span>Cloud Platform (e.g., AWS/Azure)</span>
+                    </div>
+                    <!-- Placeholder for DevOps Tool Logo -->
+                     <div class="tech-item">
+                         <img src="./images/tech-githubactions.png" alt="GitHub Actions">
+                         <span>GitHub Actions</span>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cad" class="cad">
+        <h2>CAD Designs (Videos)</h2>
+        <div class="cad-container">
+             <!-- Placeholder for CAD Video 1 -->
+            <video controls>
+                <source src="./videos/cad-video1.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+             <!-- Placeholder for CAD Video 2 -->
+             <video controls>
+                <source src="./videos/cad-video2.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+             <!-- Add more videos as needed -->
+        </div>
+    </section>
+
+     <section id="circuit" class="circuit">
+        <h2>Circuit Diagram</h2>
+        <div class="circuit-container">
+            <div class="circuit-diagram">
+                <!-- Placeholder for Circuit Diagram Image -->
+                <img src="./images/circuit-diagram.png" alt="Circuit Diagram">
+            </div>
+        </div>
+    </section>
+
+    <section id="budget" class="budget">
+        <div class="budget-header">
+            <h2>Project Budget</h2>
+        </div>
+
+        <div class="budget-container">
+            <div class="budget-table-wrapper">
+                <table class="budget-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Quantity</th>
+                            <th>Unit Price (Rs)</th>
+                            <th>Total Price (Rs)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Placeholder Budget Items -->
+                        <tr>
+                            <td>Raspberry Pi</td>
+                            <td>1</td>
+                            <td>[Price]</td>
+                            <td>[Total]</td>
+                        </tr>
+                         <tr>
+                            <td>GPS Module</td>
+                            <td>[Qty]</td>
+                            <td>[Price]</td>
+                            <td>[Total]</td>
+                        </tr>
+                         <tr>
+                            <td>Sensors</td>
+                            <td>[Qty]</td>
+                            <td>[Price]</td>
+                            <td>[Total]</td>
+                        </tr>
+                         <!-- Add more budget items as needed -->
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3">Estimated Total Budget</td>
+                            <td id="totalBudget">[Total Rs]</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="team" class="team">
+        <h2>Our Team</h2>
+        <div class="team-grid">
+             <!-- Placeholder Team Member 1 -->
+            <div class="team-member">
+                <img src="./images/team-member1.jpg" alt="Team Member 1">
+                <h3>[Member Name]</h3>
+                <p>[Your ID]</p>
+                <div class="social-links">
+                    <a href="#" target="_blank"><i class="fab fa-github"></i></a>
+                    <a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>
+                     <!-- Add more social links as needed -->
+                </div>
+            </div>
+            <!-- Add more team members here -->
+             <!-- Placeholder for Supervisor -->
+             <div class="team-member supervisor">
+                <img src="./images/team-supervisor.jpg" alt="Project Supervisor">
+                <h3>[Supervisor Name]</h3>
+                <p>Project Supervisor</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <h2>Contact Us</h2>
+         <div class="contact-info">
+             <p>If you have any questions about our project, feel free to reach out.</p>
+             <p>Email: [Your Project Email]</p>
+             <p>Project Repository: <a href="[Your GitHub Repo URL]" target="_blank">[Your GitHub Repo URL]</a></p>
+              <!-- Add other contact info as needed -->
+         </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Smart Vehicle Tracking</h3>
+                <p>Enhancing Efficiency and Safety</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <a href="#home">Home</a>
+                <a href="#introduction">About</a>
+                <a href="#features">Features</a>
+                 <a href="#tech-stack">Tech Stack</a>
+            </div>
+            <div class="footer-section">
+                <h3>Project Links</h3>
+                <div class="social-links">
+                    <a href="[Your GitHub Repo URL]" target="_blank"><i
+                            class="fab fa-github"></i>
+                        <p>Github Repository</p>
+                    </a>
+                     <!-- Add other relevant project links -->
+                     <!-- <a href="#"><i class="fas fa-globe"></i><p>Department Webpage</p></a> -->
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Smart Vehicle Tracking and Management System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        /* JavaScript will be inserted here */
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuBtn = document.querySelector('.menu-btn');
+            const navLinks = document.querySelector('.nav-links');
+            const navLinksList = document.querySelectorAll('.nav-links a');
+
+            menuBtn.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+
+            navLinksList.forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.classList.remove('active');
+                });
+            });
+
+            // Optional: Add active class to navbar links on scroll
+            // const sections = document.querySelectorAll('section');
+            // window.addEventListener('scroll', () => {
+            //     let current = '';
+            //     sections.forEach(section => {
+            //         const sectionTop = section.offsetTop;
+            //         const sectionHeight = section.clientHeight;
+            //         if (pageYOffset >= sectionTop - 50) { // Adjust 50 based on navbar height
+            //             current = section.getAttribute('id');
+            //         }
+            //     });
+            //     navLinksList.forEach(link => {
+            //         link.classList.remove('active');
+            //         if (link.href.includes(current)) {
+            //             link.classList.add('active');
+            //         }
+            //     });
+            // });
+        });
+    </script>
+</body>
+
+</html> 
