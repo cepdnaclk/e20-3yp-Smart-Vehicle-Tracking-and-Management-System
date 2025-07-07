@@ -80,12 +80,12 @@ const Sidebar = ({ handleLogout }) => {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: 0 }}
               >
-                <TrendingUp size={32} className="text-primary" />
+                <Truck size={32} className="text-primary" />
               </motion.div>
             </div>
             <div>
-              <h4 className="mb-0 fw-bold">TrackMaster</h4>
-              <div className="text-muted small">Fleet Management</div>
+              <h4 className="mb-0 fw-bold">TrackMaster Pro</h4>
+              <div className="text-muted small">Cargo Management</div>
             </div>
           </motion.div>
         </div>
