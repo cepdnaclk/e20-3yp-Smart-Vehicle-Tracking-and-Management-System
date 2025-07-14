@@ -576,77 +576,10 @@ const Dashboard = () => {
           onClose={() => setShowToast(false)}
         />
         
-        {/* Modern Stats Grid */}
-        <motion.div 
-          className="row g-4 mb-5"
-          variants={containerVariants}
-        >
-          <StatsCardNew 
-            icon={<Truck size={24} />} 
-            title="Total Vehicles" 
-            value={totalVehicles} 
-            color="linear-gradient(135deg, #3b82f6, #1d4ed8)"
-            percentage={totalVehicles > 0 ? Math.round((activeVehicles.length / totalVehicles) * 100) : 0}
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<Zap size={24} />} 
-            title="Active Vehicles" 
-            value={activeVehicles.length} 
-            color="linear-gradient(135deg, #10b981, #059669)"
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<Users size={24} />} 
-            title="Total Drivers" 
-            value={totalDrivers} 
-            color="linear-gradient(135deg, #8b5cf6, #7c3aed)"
-            percentage={totalDrivers > 0 ? Math.round((activeDrivers / totalDrivers) * 100) : 0}
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<User size={24} />} 
-            title="Active Drivers" 
-            value={activeDrivers} 
-            color="linear-gradient(135deg, #f59e0b, #d97706)"
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<ClipboardCheck size={24} />} 
-            title="Total Tasks" 
-            value={totalTasks} 
-            color="linear-gradient(135deg, #06b6d4, #0891b2)"
-            percentage={totalTasks > 0 ? Math.round((CompletedTasks / totalTasks) * 100) : 0}
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<CheckCircle size={24} />} 
-            title="Completed Tasks" 
-            value={CompletedTasks} 
-            color="linear-gradient(135deg, #84cc16, #65a30d)"
-            isUp={true}
-          />
-          <StatsCardNew 
-            icon={<AlertTriangle size={24} />} 
-            title="Active Alerts" 
-            value={alerts.filter(a => a.status === 'active').length}
-            color="linear-gradient(135deg, #ef4444, #dc2626)"
-            percentage={alerts.length > 0 ? Math.round((alerts.filter(a => a.status === 'active').length / alerts.length) * 100) : 0}
-            isUp={false}
-          />
-          <StatsCardNew 
-            icon={<Activity size={24} />} 
-            title="System Health" 
-            value="98.5%"
-            color="linear-gradient(135deg, #22c55e, #16a34a)"
-            isUp={true}
-          />
-        </motion.div>
-
         {/* Content Grid */}
         <div className="row g-4">
-          {/* Live Vehicle Tracking */}
-          <div className="col-lg-8">
+          {/* Live Vehicle Tracking Map - Now at Top */}
+          <div className="col-12">
             <motion.div 
               className="h-100"
               style={{
@@ -688,7 +621,7 @@ const Dashboard = () => {
                 </div>
                 <div 
                   style={{ 
-                    height: '400px',
+                    height: '500px',
                     borderRadius: '16px',
                     overflow: 'hidden'
                   }}
@@ -699,132 +632,150 @@ const Dashboard = () => {
             </motion.div>
           </div>
 
-          {/* Quick Actions & Recent Activity */}
-          <div className="col-lg-4">
-            <div className="row g-4 h-100">
-              {/* Quick Actions */}
-              <div className="col-12">
-                <motion.div 
-                  className="h-100"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(20px)',
-                    borderRadius: '24px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
-                  }}
-                  variants={itemVariants}
-                >
-                  <div className="p-4">
-                    <div className="d-flex align-items-center mb-4">
-                      <div 
-                        className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
-                        style={{
-                          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                          color: 'white'
-                        }}
-                      >
-                        <Zap size={20} />
-                      </div>
-                      <h6 className="mb-0 fw-bold">Quick Actions</h6>
-                    </div>
-                    <div className="d-grid gap-3">
-                      <motion.button 
-                        className="btn text-start border-0 p-3"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(29, 78, 216, 0.05))',
-                          borderRadius: '12px',
-                          color: '#1e40af'
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="d-flex align-items-center">
-                          <Plus size={18} className="me-3" />
-                          <span className="fw-medium">Add New Vehicle</span>
-                        </div>
-                      </motion.button>
-                      
-                      <motion.button 
-                        className="btn text-start border-0 p-3"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05))',
-                          borderRadius: '12px',
-                          color: '#065f46'
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="d-flex align-items-center">
-                          <Users size={18} className="me-3" />
-                          <span className="fw-medium">Manage Drivers</span>
-                        </div>
-                      </motion.button>
+          {/* Performance Analytics Section - Below Map */}
+          <div className="col-12">
+            <motion.div 
+              className="h-100"
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+              }}
+              variants={itemVariants}
+            >
+              <div className="p-4">
+                <div className="d-flex align-items-center mb-4">
+                  <div 
+                    className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                      color: 'white'
+                    }}
+                  >
+                    <BarChart2 size={24} />
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-bold">Performance Analytics</h5>
+                    <p className="text-muted mb-0">Fleet performance overview and insights</p>
+                  </div>
+                </div>
 
-                      <motion.button 
-                        className="btn text-start border-0 p-3"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05))',
-                          borderRadius: '12px',
-                          color: '#92400e'
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="d-flex align-items-center">
-                          <Settings size={18} className="me-3" />
-                          <span className="fw-medium">System Settings</span>
+                {/* Stats Cards Grid - Matching the screenshot */}
+                <div className="row g-4">
+                  {/* First Row */}
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
+                          <Truck size={20} style={{ color: 'white' }} />
                         </div>
-                      </motion.button>
+                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                          100%
+                        </span>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalVehicles}</h3>
+                      <p className="text-muted mb-0 small">Total Vehicles</p>
                     </div>
                   </div>
-                </motion.div>
-              </div>
 
-              {/* System Status */}
-              <div className="col-12">
-                <motion.div 
-                  className="h-100"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(20px)',
-                    borderRadius: '24px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
-                  }}
-                  variants={itemVariants}
-                >
-                  <div className="p-4">
-                    <div className="d-flex align-items-center mb-4">
-                      <div 
-                        className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
-                        style={{
-                          background: 'linear-gradient(135deg, #10b981, #059669)',
-                          color: 'white'
-                        }}
-                      >
-                        <Activity size={20} />
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                          <Zap size={20} style={{ color: 'white' }} />
+                        </div>
                       </div>
-                      <h6 className="mb-0 fw-bold">System Status</h6>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <span className="text-muted">Server Uptime</span>
-                        <span className="fw-medium text-success">99.9%</span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <span className="text-muted">Active Connections</span>
-                        <span className="fw-medium">{activeVehicles.length + activeDrivers}</span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="text-muted">Last Updated</span>
-                        <span className="fw-medium">{formattedTime}</span>
-                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeVehicles.length}</h3>
+                      <p className="text-muted mb-0 small">Active Vehicles</p>
                     </div>
                   </div>
-                </motion.div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
+                          <Users size={20} style={{ color: 'white' }} />
+                        </div>
+                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                          25%
+                        </span>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalDrivers}</h3>
+                      <p className="text-muted mb-0 small">Total Drivers</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                          <User size={20} style={{ color: 'white' }} />
+                        </div>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeDrivers}</h3>
+                      <p className="text-muted mb-0 small">Active Drivers</p>
+                    </div>
+                  </div>
+
+                  {/* Second Row */}
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
+                          <ClipboardCheck size={20} style={{ color: 'white' }} />
+                        </div>
+                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                          50%
+                        </span>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalTasks}</h3>
+                      <p className="text-muted mb-0 small">Total Tasks</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #84cc16, #65a30d)' }}>
+                          <CheckCircle size={20} style={{ color: 'white' }} />
+                        </div>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{CompletedTasks}</h3>
+                      <p className="text-muted mb-0 small">Completed Tasks</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}>
+                          <AlertTriangle size={20} style={{ color: 'white' }} />
+                        </div>
+                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                          17%
+                        </span>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeAlerts}</h3>
+                      <p className="text-muted mb-0 small">Active Alerts</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+                          <Activity size={20} style={{ color: 'white' }} />
+                        </div>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>98.5%</h3>
+                      <p className="text-muted mb-0 small">System Health</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </motion.div>
