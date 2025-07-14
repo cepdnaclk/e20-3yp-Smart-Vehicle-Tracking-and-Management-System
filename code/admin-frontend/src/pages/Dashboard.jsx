@@ -671,9 +671,7 @@ const Dashboard = () => {
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
                           <Truck size={20} style={{ color: 'white' }} />
                         </div>
-                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
-                          100%
-                        </span>
+                        
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalVehicles}</h3>
                       <p className="text-muted mb-0 small">Total Vehicles</p>
@@ -686,6 +684,11 @@ const Dashboard = () => {
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
                           <Zap size={20} style={{ color: 'white' }} />
                         </div>
+                        {totalVehicles > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((activeVehicles.length / totalVehicles) * 100)}%
+                          </span>
+                        )}
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeVehicles.length}</h3>
                       <p className="text-muted mb-0 small">Active Vehicles</p>
@@ -698,9 +701,7 @@ const Dashboard = () => {
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
                           <Users size={20} style={{ color: 'white' }} />
                         </div>
-                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
-                          25%
-                        </span>
+                        
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalDrivers}</h3>
                       <p className="text-muted mb-0 small">Total Drivers</p>
@@ -713,6 +714,11 @@ const Dashboard = () => {
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
                           <User size={20} style={{ color: 'white' }} />
                         </div>
+                        {totalDrivers > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((activeDrivers / totalDrivers) * 100)}%
+                          </span>
+                        )}
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeDrivers}</h3>
                       <p className="text-muted mb-0 small">Active Drivers</p>
@@ -726,9 +732,7 @@ const Dashboard = () => {
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
                           <ClipboardCheck size={20} style={{ color: 'white' }} />
                         </div>
-                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
-                          50%
-                        </span>
+                        
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalTasks}</h3>
                       <p className="text-muted mb-0 small">Total Tasks</p>
@@ -741,6 +745,11 @@ const Dashboard = () => {
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #84cc16, #65a30d)' }}>
                           <CheckCircle size={20} style={{ color: 'white' }} />
                         </div>
+                        {totalTasks > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #84cc16, #65a30d)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((CompletedTasks / totalTasks) * 100)}%
+                          </span>
+                        )}
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{CompletedTasks}</h3>
                       <p className="text-muted mb-0 small">Completed Tasks</p>
@@ -754,7 +763,7 @@ const Dashboard = () => {
                           <AlertTriangle size={20} style={{ color: 'white' }} />
                         </div>
                         <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
-                          17%
+                          {alerts.length > 0 ? Math.round((activeAlerts / alerts.length) * 100) : 0}%
                         </span>
                       </div>
                       <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeAlerts}</h3>
@@ -766,11 +775,16 @@ const Dashboard = () => {
                     <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-                          <Activity size={20} style={{ color: 'white' }} />
+                          <CheckCircle size={20} style={{ color: 'white' }} />
                         </div>
+                        {alerts.length > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((alerts.filter(a => a.status === 'resolved').length / alerts.length) * 100)}%
+                          </span>
+                        )}
                       </div>
-                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>98.5%</h3>
-                      <p className="text-muted mb-0 small">System Health</p>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{alerts.filter(a => a.status === 'resolved').length}</h3>
+                      <p className="text-muted mb-0 small">Resolved Alerts</p>
                     </div>
                   </div>
                 </div>
