@@ -798,7 +798,12 @@ const Alerts = () => {
               >
                 <Activity size={24} />
               </div>
-              <h2 className="mb-0 fw-bold">98.5%</h2>
+              <h2 className="mb-0 fw-bold">
+                {alerts.length > 0 
+                  ? Math.round((alerts.filter(alert => alert.status === 'resolved').length / alerts.length) * 100)
+                  : 0
+                }%
+              </h2>
               <p className="text-muted mb-0">System Health</p>
             </motion.div>
           </div>
