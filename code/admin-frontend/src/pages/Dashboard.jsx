@@ -666,7 +666,7 @@ const Dashboard = () => {
                 <div className="row g-4">
                   {/* First Row */}
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
                           <Truck size={20} style={{ color: 'white' }} />
@@ -679,7 +679,7 @@ const Dashboard = () => {
                   </div>
 
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
                           <Zap size={20} style={{ color: 'white' }} />
@@ -696,7 +696,7 @@ const Dashboard = () => {
                   </div>
 
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
                           <Users size={20} style={{ color: 'white' }} />
@@ -709,7 +709,7 @@ const Dashboard = () => {
                   </div>
 
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
                           <User size={20} style={{ color: 'white' }} />
@@ -727,7 +727,7 @@ const Dashboard = () => {
 
                   {/* Second Row */}
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
                           <ClipboardCheck size={20} style={{ color: 'white' }} />
@@ -740,7 +740,7 @@ const Dashboard = () => {
                   </div>
 
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #84cc16, #65a30d)' }}>
                           <CheckCircle size={20} style={{ color: 'white' }} />
@@ -757,7 +757,7 @@ const Dashboard = () => {
                   </div>
 
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}>
                           <AlertTriangle size={20} style={{ color: 'white' }} />
@@ -772,7 +772,7 @@ const Dashboard = () => {
                   </div>
 
                   <div className="col-md-3">
-                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
                           <CheckCircle size={20} style={{ color: 'white' }} />
