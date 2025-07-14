@@ -23,10 +23,9 @@ import {
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
-const Sidebar = ({ handleLogout }) => {
+const Sidebar = ({ handleLogout, collapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
   
   const sidebarItems = [
@@ -128,7 +127,7 @@ const Sidebar = ({ handleLogout }) => {
     <motion.div 
       className="position-fixed h-100"
       style={{ 
-        width: isCollapsed ? '90px' : '280px',
+        width: collapsed ? '90px' : '280px',
         left: 0, 
         top: 0, 
         zIndex: 1000,
@@ -164,7 +163,7 @@ const Sidebar = ({ handleLogout }) => {
         >
           <div className="d-flex align-items-center justify-content-between">
             <AnimatePresence mode="wait">
-              {!isCollapsed && (
+              {!collapsed && (
                 <motion.div 
                   className="d-flex align-items-center"
                   initial={{ opacity: 0, x: -20 }}
@@ -209,7 +208,7 @@ const Sidebar = ({ handleLogout }) => {
                 color: 'rgba(148, 163, 184, 0.8)',
                 backdropFilter: 'blur(10px)'
               }}
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={() => onToggle && onToggle()}
               whileHover={{ 
                 scale: 1.1,
                 background: 'rgba(148, 163, 184, 0.2)',
@@ -221,7 +220,7 @@ const Sidebar = ({ handleLogout }) => {
                 animate={{ rotate: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </motion.div>
             </motion.button>
           </div>
@@ -230,7 +229,7 @@ const Sidebar = ({ handleLogout }) => {
         {/* Navigation */}
         <div className="flex-grow-1 px-3 position-relative" style={{ zIndex: 1 }}>
           <AnimatePresence mode="wait">
-            {!isCollapsed && (
+            {!collapsed && (
               <motion.div 
                 className="mb-4"
                 initial={{ opacity: 0 }}
@@ -330,7 +329,7 @@ const Sidebar = ({ handleLogout }) => {
                       <motion.div
                         className="me-3 d-flex align-items-center justify-content-center rounded-2"
                         style={{
-                          width: isCollapsed ? 'auto' : '40px',
+                          width: collapsed ? 'auto' : '40px',
                           height: '40px',
                           background: isActive 
                             ? `linear-gradient(135deg, ${item.color}, ${item.color}CC)`
@@ -349,7 +348,7 @@ const Sidebar = ({ handleLogout }) => {
                       
                       {/* Label and description */}
                       <AnimatePresence mode="wait">
-                        {!isCollapsed && (
+                        {!collapsed && (
                           <motion.div 
                             className="flex-grow-1"
                             initial={{ opacity: 0, x: -10 }}
@@ -383,7 +382,7 @@ const Sidebar = ({ handleLogout }) => {
                       
                       {/* Arrow indicator */}
                       <AnimatePresence>
-                        {!isCollapsed && hoveredItem === index && (
+                        {!collapsed && hoveredItem === index && (
                           <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -424,7 +423,7 @@ const Sidebar = ({ handleLogout }) => {
             style={{
               background: 'linear-gradient(135deg, #EF4444, #DC2626)',
               color: 'white',
-              padding: isCollapsed ? '12px' : '12px 16px',
+              padding: collapsed ? '12px' : '12px 16px',
               borderRadius: '12px',
               boxShadow: '0 8px 16px rgba(239, 68, 68, 0.3)',
               backdropFilter: 'blur(10px)'
@@ -452,9 +451,9 @@ const Sidebar = ({ handleLogout }) => {
               }}
             />
             
-            <LogOut size={18} className={isCollapsed ? '' : 'me-2'} />
+            <LogOut size={18} className={collapsed ? '' : 'me-2'} />
             <AnimatePresence mode="wait">
-              {!isCollapsed && (
+              {!collapsed && (
                 <motion.span
                   className="fw-medium"
                   initial={{ opacity: 0, x: -10 }}
@@ -470,7 +469,7 @@ const Sidebar = ({ handleLogout }) => {
           
           {/* User info (when expanded) */}
           <AnimatePresence>
-            {!isCollapsed && (
+            {!collapsed && (
               <motion.div
                 className="mt-3 p-3 rounded-3"
                 style={{

@@ -578,7 +578,11 @@ const Tasks = () => {
           minHeight: '100vh'
         }}
       >
-        <Sidebar handleLogout={handleLogout} />
+        <Sidebar 
+          handleLogout={handleLogout} 
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
       
       {/* Main Content Container */}
       <motion.div 
