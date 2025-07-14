@@ -27,6 +27,7 @@ const Tasks = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -571,7 +572,7 @@ const Tasks = () => {
       <div 
         className="min-vh-100"
         style={{ 
-          paddingLeft: '280px',
+          paddingLeft: sidebarCollapsed ? '90px' : '280px',
           transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           minHeight: '100vh'

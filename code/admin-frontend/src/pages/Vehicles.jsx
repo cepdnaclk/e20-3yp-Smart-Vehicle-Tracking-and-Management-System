@@ -441,7 +441,7 @@ const Vehicles = () => {
       <div 
         className="min-vh-100"
         style={{ 
-          paddingLeft: sidebarCollapsed ? '80px' : '280px',
+          paddingLeft: sidebarCollapsed ? '90px' : '280px',
           transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           minHeight: '100vh'

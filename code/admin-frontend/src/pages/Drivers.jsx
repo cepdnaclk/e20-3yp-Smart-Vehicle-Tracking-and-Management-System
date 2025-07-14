@@ -28,6 +28,7 @@ import { api } from "../services/api";
 const Drivers = () => {
   const navigate = useNavigate();
   const [drivers, setDrivers] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [viewMode, setViewMode] = useState(false);
@@ -571,7 +572,7 @@ const Drivers = () => {
     <div 
       className="min-vh-100"
       style={{ 
-        paddingLeft: '280px',
+        paddingLeft: sidebarCollapsed ? '90px' : '280px',
         transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         minHeight: '100vh'

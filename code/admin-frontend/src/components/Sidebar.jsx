@@ -128,7 +128,7 @@ const Sidebar = ({ handleLogout }) => {
     <motion.div 
       className="position-fixed h-100"
       style={{ 
-        width: isCollapsed ? '80px' : '280px',
+        width: isCollapsed ? '90px' : '280px',
         left: 0, 
         top: 0, 
         zIndex: 1000,
