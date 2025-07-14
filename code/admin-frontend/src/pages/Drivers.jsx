@@ -568,45 +568,123 @@ const Drivers = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
+    <div 
+      className="min-vh-100"
+      style={{ 
+        paddingLeft: '280px',
+        transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        minHeight: '100vh'
+      }}
+    >
       <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        <PageHeader 
-          title="Driver Management" 
-          subtitle="Manage and monitor all your drivers"
-          icon={Users}
-          actions={
-            <>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={fetchDrivers}
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <Users size={28} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
               >
-                <RefreshCw size={16} className="me-2" />
-                Refresh
-              </Button>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={handleExportPDF}
+                Driver Management
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
               >
-                <DownloadCloud size={16} className="me-2" />
-                Export
-              </Button>
-              <Button 
-                variant="primary" 
-                className="d-flex align-items-center"
-                onClick={handleAddDriver}
-              >
-                <Plus size={16} className="me-2" />
-                Add Driver
-              </Button>
-            </>
-          }
-        />
+                Manage and monitor all your drivers
+              </p>
+            </div>
+          </div>
+          
+          <div className="d-flex gap-3">
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={fetchDrivers}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RefreshCw size={16} className="me-2" />
+              Refresh
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={handleExportPDF}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <DownloadCloud size={16} className="me-2" />
+              Export
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                color: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)'
+              }}
+              onClick={handleAddDriver}
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: '0 12px 30px rgba(139, 92, 246, 0.4)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus size={16} className="me-2" />
+              Add Driver
+            </motion.button>
+          </div>
+        </motion.div>
         
         <AnimatedAlert
           show={showAlert}
@@ -615,21 +693,57 @@ const Drivers = () => {
           onClose={() => setShowAlert(false)}
         />
         
+        {/* Modern Data Table Container */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-4"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden'
+          }}
         >
-          <DataTable 
-            columns={tableColumns}
-            data={drivers}
-            title="All Drivers"
-            icon={<Users size={18} />}
-            emptyMessage="No drivers found"
-          />
+          <div className="p-4">
+            <div className="d-flex align-items-center mb-4">
+              <div 
+                className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                style={{
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  color: 'white'
+                }}
+              >
+                <Users size={24} />
+              </div>
+              <div>
+                <h5 className="mb-1 fw-bold">Driver Team</h5>
+                <p className="text-muted mb-0">{drivers.length} drivers in your team</p>
+              </div>
+              <div className="ms-auto">
+                <span 
+                  className="badge px-3 py-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    color: 'white',
+                    borderRadius: '12px'
+                  }}
+                >
+                  Total: {drivers.length}
+                </span>
+              </div>
+            </div>
+            
+            <DataTable 
+              columns={tableColumns}
+              data={drivers}
+              emptyMessage="No drivers found. Add your first driver to get started!"
+            />
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
 
       <Modal key={modalKey} show={showAddModal} onHide={handleCloseModal} centered>
         <Form onSubmit={handleAddDriverSubmit}>

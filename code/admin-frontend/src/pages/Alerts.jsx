@@ -19,7 +19,8 @@ import {
   ShieldAlert,
   Info,
   Settings,
-  Eye
+  Eye,
+  Activity
 } from "lucide-react";
 import { Chart, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, BarController } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -549,61 +550,128 @@ const Alerts = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: sidebarCollapsed ? '80px' : '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
+    <div 
+      className="min-vh-100"
+      style={{ 
+        paddingLeft: sidebarCollapsed ? '80px' : '280px',
+        transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        minHeight: '100vh'
+      }}
+    >
       <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        <PageHeader 
-          title="Alert Management" 
-          subtitle="Monitor and manage system alerts"
-          icon={AlertTriangle}
-          actions={
-            <>
-              <Dropdown>
-                <Dropdown.Toggle variant="outline-primary" id="dropdown-filter" className="d-flex align-items-center">
-                  <Filter size={16} className="me-2" />
-                  {filter === 'all' ? 'All Alerts' : filter === 'active' ? 'Active Alerts' : 'Resolved Alerts'}
-                </Dropdown.Toggle>
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <AlertTriangle size={28} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
+              >
+                Alert Management
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
+              >
+                Monitor and manage system alerts
+              </p>
+            </div>
+          </div>
+          
+          <div className="d-flex gap-3">
+            <Dropdown>
+              <Dropdown.Toggle 
+                className="btn border-0 d-flex align-items-center px-4 py-2"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  color: 'white',
+                  borderRadius: '12px'
+                }}
+                id="dropdown-filter"
+              >
+                <Filter size={16} className="me-2" />
+                {filter === 'all' ? 'All Alerts' : filter === 'active' ? 'Active Alerts' : 'Resolved Alerts'}
+              </Dropdown.Toggle>
 
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => setFilter('all')}>All Alerts</Dropdown.Item>
-                  <Dropdown.Item onClick={() => setFilter('active')}>Active Alerts</Dropdown.Item>
-                  <Dropdown.Item onClick={() => setFilter('resolved')}>Resolved Alerts</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-              
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={fetchAlerts}
-                disabled={isLoading}
-              >
-                <RefreshCw size={16} className={`me-2 ${isLoading ? 'spinning' : ''}`} />
-                {isLoading ? 'Refreshing...' : 'Refresh'}
-              </Button>
-              
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={handleExportPdf}
-                disabled={filteredAlerts.length === 0}
-              >
-                <DownloadCloud size={16} className="me-2" />
-                Export PDF
-              </Button>
-              
-              <Button 
-                variant="primary" 
-                className="d-flex align-items-center"
-              >
-                <Bell size={16} className="me-2" />
-                Configure Alerts
-              </Button>
-            </>
-          }
-        />
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={() => setFilter('all')}>All Alerts</Dropdown.Item>
+                <Dropdown.Item onClick={() => setFilter('active')}>Active Alerts</Dropdown.Item>
+                <Dropdown.Item onClick={() => setFilter('resolved')}>Resolved Alerts</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={fetchAlerts}
+              disabled={isLoading}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RefreshCw size={16} className={`me-2 ${isLoading ? 'spinning' : ''}`} />
+              {isLoading ? 'Refreshing...' : 'Refresh'}
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                color: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(239, 68, 68, 0.3)'
+              }}
+              onClick={handleExportPdf}
+              disabled={filteredAlerts.length === 0}
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: '0 12px 30px rgba(239, 68, 68, 0.4)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <DownloadCloud size={16} className="me-2" />
+              Export PDF
+            </motion.button>
+          </div>
+        </motion.div>
         
         <AnimatedAlert
           show={showToast}
@@ -612,97 +680,186 @@ const Alerts = () => {
           onClose={() => setShowToast(false)}
         />
         
-        {/* Alert Statistics Cards */}
-        <div className="row mb-4">
-          <div className="col-md-3 mb-3 mb-md-0">
-            <motion.div 
-              className="card border-0 shadow-sm h-100"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="card-body d-flex flex-column align-items-center justify-content-center">
-                <div className="rounded-circle bg-danger bg-opacity-10 p-3 mb-2">
-                  <AlertTriangle size={24} className="text-danger" />
-                </div>
-                <h2 className="mb-0 fw-bold">{alerts.filter(a => a.status === 'active').length}</h2>
-                <p className="text-muted mb-0">Active Alerts</p>
-              </div>
-            </motion.div>
-          </div>
-          
-          <div className="col-md-3 mb-3 mb-md-0">
-            <motion.div 
-              className="card border-0 shadow-sm h-100"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              <div className="card-body d-flex flex-column align-items-center justify-content-center">
-                <div className="rounded-circle bg-success bg-opacity-10 p-3 mb-2">
-                  <CheckCircle size={24} className="text-success" />
-                </div>
-                <h2 className="mb-0 fw-bold">{alerts.filter(a => a.status === 'resolved').length}</h2>
-                <p className="text-muted mb-0">Resolved</p>
-              </div>
-            </motion.div>
-          </div>
-          
-          <div className="col-md-3 mb-3 mb-md-0">
-            <motion.div 
-              className="card border-0 shadow-sm h-100"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <div className="card-body d-flex flex-column align-items-center justify-content-center">
-                <div className="rounded-circle bg-danger bg-opacity-10 p-3 mb-2">
-                  <ShieldAlert size={24} className="text-danger" />
-                </div>
-                <h2 className="mb-0 fw-bold">{alerts.filter(a => a.type === 'tampering' && a.status === 'active').length}</h2>
-                <p className="text-muted mb-0">Tampering Alerts</p>
-              </div>
-            </motion.div>
-          </div>
-          
+        {/* Modern Alert Statistics Cards */}
+        <motion.div 
+          className="row g-4 mb-5"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           <div className="col-md-3">
             <motion.div 
-              className="card border-0 shadow-sm h-100"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                padding: '2rem',
+                textAlign: 'center'
+              }}
+              whileHover={{ scale: 1.02 }}
             >
-              <div className="card-body d-flex flex-column align-items-center justify-content-center">
-                <div className="rounded-circle bg-warning bg-opacity-10 p-3 mb-2">
-                  <ThermometerIcon size={24} className="text-warning" />
-                </div>
-                <h2 className="mb-0 fw-bold">{alerts.filter(a => a.type === 'temperature' && a.status === 'active').length}</h2>
-                <p className="text-muted mb-0">Temperature Alerts</p>
+              <div 
+                className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  color: 'white'
+                }}
+              >
+                <AlertTriangle size={24} />
               </div>
+              <h2 className="mb-0 fw-bold">{alerts.filter(a => a.status === 'active').length}</h2>
+              <p className="text-muted mb-0">Active Alerts</p>
             </motion.div>
           </div>
-        </div>
-        
+
+          <div className="col-md-3">
+            <motion.div 
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                padding: '2rem',
+                textAlign: 'center'
+              }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div 
+                className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white'
+                }}
+              >
+                <CheckCircle size={24} />
+              </div>
+              <h2 className="mb-0 fw-bold">{alerts.filter(a => a.status === 'resolved').length}</h2>
+              <p className="text-muted mb-0">Resolved Alerts</p>
+            </motion.div>
+          </div>
+
+          <div className="col-md-3">
+            <motion.div 
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                padding: '2rem',
+                textAlign: 'center'
+              }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div 
+                className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                  color: 'white'
+                }}
+              >
+                <Bell size={24} />
+              </div>
+              <h2 className="mb-0 fw-bold">{alerts.length}</h2>
+              <p className="text-muted mb-0">Total Alerts</p>
+            </motion.div>
+          </div>
+
+          <div className="col-md-3">
+            <motion.div 
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                padding: '2rem',
+                textAlign: 'center'
+              }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div 
+                className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  color: 'white'
+                }}
+              >
+                <Activity size={24} />
+              </div>
+              <h2 className="mb-0 fw-bold">98.5%</h2>
+              <p className="text-muted mb-0">System Health</p>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Modern Data Table Container */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-4"
+          transition={{ duration: 0.5, delay: 0.4 }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden'
+          }}
         >
-          <DataTable 
-            columns={tableColumns}
-            data={filteredAlerts}
-            title={`${filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Resolved'} Alerts`}
-            icon={<AlertTriangle size={18} />}
-            onRowClick={handleAlertClick}
-            emptyMessage="No alerts found"
-          />
+          <div className="p-4">
+            <div className="d-flex align-items-center mb-4">
+              <div 
+                className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  color: 'white'
+                }}
+              >
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h5 className="mb-1 fw-bold">Alert Management</h5>
+                <p className="text-muted mb-0">{filteredAlerts.length} alerts found</p>
+              </div>
+              <div className="ms-auto">
+                <span 
+                  className="badge px-3 py-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                    color: 'white',
+                    borderRadius: '12px'
+                  }}
+                >
+                  {filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Resolved'}: {filteredAlerts.length}
+                </span>
+              </div>
+            </div>
+            
+            <DataTable 
+              columns={tableColumns}
+              data={filteredAlerts}
+              emptyMessage="No alerts found matching the current filter."
+            />
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
+
       {/* Render VehicleDetailsModal */}
-      {showVehicleModal && selectedVehicleForModal && (
+      {showVehicleModal && selectedVehicle && (
         <VehicleDetailsModal
-          vehicle={selectedVehicleForModal}
+          vehicle={selectedVehicle}
           onClose={() => setShowVehicleModal(false)}
         />
       )}

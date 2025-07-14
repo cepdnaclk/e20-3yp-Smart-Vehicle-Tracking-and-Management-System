@@ -567,54 +567,136 @@ const Tasks = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
-      <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        <PageHeader 
-          title="Task Management" 
-          subtitle="View and manage all assigned tasks"
-          icon={Clipboard}
-          actions={
-            <>
-              <Form.Group className="d-flex align-items-center me-2">
-                <Form.Label className="me-2 mb-0">Filter by Driver:</Form.Label>
+    <>
+      <div 
+        className="min-vh-100"
+        style={{ 
+          paddingLeft: '280px',
+          transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          minHeight: '100vh'
+        }}
+      >
+        <Sidebar handleLogout={handleLogout} />
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <Clipboard size={28} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
+              >
+                Task Management
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
+              >
+                View and manage all assigned tasks
+              </p>
+            </div>
+          </div>
+          
+          <div className="d-flex gap-3 align-items-center">
+            <div 
+              className="p-3 rounded-3"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+            >
+              <Form.Group className="d-flex align-items-center mb-0">
+                <Form.Label className="me-2 mb-0 text-white">Filter by Driver:</Form.Label>
                 <Form.Select 
-                  style={{ width: '200px' }}
+                  style={{ 
+                    width: '200px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: 'white'
+                  }}
                   value={selectedDriverId}
                   onChange={handleDriverChange}
                 >
-                  <option value="">All Drivers</option>
+                  <option value="" style={{ color: 'black' }}>All Drivers</option>
                   {drivers.map(driver => (
-                    <option key={driver.driverId} value={driver.driverId}>
+                    <option key={driver.driverId} value={driver.driverId} style={{ color: 'black' }}>
                       {driver.fullName} ({driver.driverId})
                     </option>
                   ))}
                 </Form.Select>
               </Form.Group>
-              
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={selectedDriverId ? () => fetchTasksForDriver(selectedDriverId) : fetchAllTasks}
-              >
-                <RefreshCw size={16} className="me-2" />
-                Refresh
-              </Button>
-              <Button
-                variant="outline-primary"
-                className="d-flex align-items-center"
-                onClick={handleExportPdf}
-                disabled={tasks.length === 0}
-              >
-                <DownloadCloud size={16} className="me-2" />
-                Export PDF
-              </Button>
-            </>
-          }
-        />
+            </div>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={selectedDriverId ? () => fetchTasksForDriver(selectedDriverId) : fetchAllTasks}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RefreshCw size={16} className="me-2" />
+              Refresh
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)'
+              }}
+              onClick={handleExportPdf}
+              disabled={tasks.length === 0}
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: '0 12px 30px rgba(245, 158, 11, 0.4)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <DownloadCloud size={16} className="me-2" />
+              Export PDF
+            </motion.button>
+          </div>
+        </motion.div>
         
         <AnimatedAlert
           show={showAlert}
@@ -623,20 +705,59 @@ const Tasks = () => {
           onClose={() => setShowAlert(false)}
         />
         
+        {/* Modern Data Table Container */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-4"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden'
+          }}
         >
-          <DataTable 
-            columns={tableColumns}
-            data={tasks}
-            title={selectedDriverId ? `Tasks for Driver ${selectedDriverId}` : "All Tasks"}
-            icon={<Clipboard size={18} />}
-            emptyMessage="No tasks found"
-          />
+          <div className="p-4">
+            <div className="d-flex align-items-center mb-4">
+              <div 
+                className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  color: 'white'
+                }}
+              >
+                <Clipboard size={24} />
+              </div>
+              <div>
+                <h5 className="mb-1 fw-bold">
+                  {selectedDriverId ? `Tasks for Driver ${selectedDriverId}` : "All Tasks"}
+                </h5>
+                <p className="text-muted mb-0">{tasks.length} tasks found</p>
+              </div>
+              <div className="ms-auto">
+                <span 
+                  className="badge px-3 py-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white',
+                    borderRadius: '12px'
+                  }}
+                >
+                  Total: {tasks.length}
+                </span>
+              </div>
+            </div>
+            
+            <DataTable 
+              columns={tableColumns}
+              data={tasks}
+              emptyMessage="No tasks found. Tasks will appear here once assigned to drivers."
+            />
+          </div>
         </motion.div>
+      </motion.div>
         
         {/* Task View/Edit Modal */}
         {showTaskModal && (
@@ -794,10 +915,8 @@ const Tasks = () => {
           itemName={deleteModal.task ? `${deleteModal.task.taskNumber}` : ""}
           additionalMessage="All task data and completion history will be permanently removed."
         />
-
-        
       </div>
-    </div>
+    </>
   );
 };
 

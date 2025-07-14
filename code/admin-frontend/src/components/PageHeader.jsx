@@ -15,9 +15,17 @@ const PageHeader = ({ title, subtitle, icon: Icon, actions }) => {
         </div>
       </div>
       
-      {actions && (
+      {actions && actions.length > 0 && (
         <div className="d-flex gap-2">
-          {actions}
+          {actions.map((action, index) => (
+            <button
+              key={index}
+              className={`btn btn-${action.variant || 'primary'}`}
+              onClick={action.onClick}
+            >
+              {action.label}
+            </button>
+          ))}
         </div>
       )}
     </div>
