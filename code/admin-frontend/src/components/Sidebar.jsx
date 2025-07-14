@@ -40,7 +40,7 @@ const Sidebar = ({ handleLogout, collapsed, onToggle }) => {
       path: '/vehicles', 
       icon: Truck, 
       label: 'Vehicles',
-      description: 'Fleet Management',
+      description: 'Cargo Management',
       color: '#10B981'
     },
     { 
@@ -189,12 +189,12 @@ const Sidebar = ({ handleLogout, collapsed, onToggle }) => {
                     <Truck size={28} className="text-white" />
                   </motion.div>
                   <div>
-                    <h4 className="mb-0 fw-bold text-white">TrackMaster</h4>
+                    <h6 className="mb-0 fw-bold text-white">TrackMaster Pro</h6>
                     <div 
                       className="small fw-medium"
                       style={{ color: 'rgba(148, 163, 184, 0.8)' }}
                     >
-                      Fleet Management
+                      Cargo Management
                     </div>
                   </div>
                 </motion.div>

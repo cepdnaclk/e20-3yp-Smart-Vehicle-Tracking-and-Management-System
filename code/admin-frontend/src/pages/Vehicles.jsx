@@ -495,7 +495,7 @@ const Vehicles = () => {
                 className="text-white opacity-75 mb-0"
                 style={{ fontSize: '1.1rem' }}
               >
-                Manage and monitor all your fleet vehicles
+                Manage and monitor all your cargo vehicles
               </p>
             </div>
           </div>
@@ -593,8 +593,8 @@ const Vehicles = () => {
                 <Truck size={24} />
               </div>
               <div>
-                <h5 className="mb-1 fw-bold">Vehicle Fleet</h5>
-                <p className="text-muted mb-0">{vehicles.length} vehicles in your fleet</p>
+                <h5 className="mb-1 fw-bold">Vehicle cargo</h5>
+                <p className="text-muted mb-0">{vehicles.length} vehicles in your cargo</p>
               </div>
               <div className="ms-auto">
                 <span 

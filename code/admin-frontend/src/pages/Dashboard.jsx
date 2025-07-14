@@ -608,7 +608,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h5 className="mb-1 fw-bold">Live Vehicle Tracking</h5>
-                    <p className="text-muted mb-0">Real-time fleet monitoring</p>
+                    <p className="text-muted mb-0">Real-time cargo monitoring</p>
                   </div>
                   <div className="ms-auto">
                     <span 
@@ -662,7 +662,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h5 className="mb-1 fw-bold">Performance Analytics</h5>
-                    <p className="text-muted mb-0">Fleet performance overview and insights</p>
+                    <p className="text-muted mb-0">Cargo performance overview and insights</p>
                   </div>
                 </div>
 

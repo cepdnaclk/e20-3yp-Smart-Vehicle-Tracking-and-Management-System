@@ -188,12 +188,12 @@ function Signup() {
           >
             <h1 className="display-3 fw-bold mb-4">Join TrackMaster Pro</h1>
             <p className="lead fs-4 mb-4">
-              Start managing your fleet with our advanced tracking system
+              Start managing your cargo with our advanced tracking system
             </p>
             <div className="features-list mt-5">
               <div className="d-flex align-items-center mb-3">
                 <FontAwesomeIcon icon={faCheckCircle} className="fa-lg me-3" />
-                <span>Complete fleet management solution</span>
+                <span>Complete cargo management solution</span>
               </div>
               <div className="d-flex align-items-center mb-3">
                 <FontAwesomeIcon icon={faCheckCircle} className="fa-lg me-3" />
@@ -413,7 +413,7 @@ function Signup() {
                       )}
                     </div>
                     <div className="form-text">
-                      This ID will be used to identify your company and connect your fleet
+                      This ID will be used to identify your company and connect your cargo
                     </div>
                   </motion.div>
 
