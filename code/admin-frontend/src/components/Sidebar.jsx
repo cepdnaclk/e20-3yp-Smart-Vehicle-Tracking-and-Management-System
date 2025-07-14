@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Clipboard,
   ChevronRight,
+  ChevronLeft,
   Home,
   BarChart3,
   Shield,
@@ -217,10 +218,10 @@ const Sidebar = ({ handleLogout }) => {
               whileTap={{ scale: 0.95 }}
             >
               <motion.div
-                animate={{ rotate: isCollapsed ? 180 : 0 }}
+                animate={{ rotate: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {isCollapsed ? <ChevronRight size={18} /> : <X size={18} />}
+                {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </motion.div>
             </motion.button>
           </div>
