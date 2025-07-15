@@ -750,106 +750,398 @@ const Drivers = () => {
         </motion.div>
       </motion.div>
 
-      <Modal key={modalKey} show={showAddModal} onHide={handleCloseModal} centered>
-        <Form onSubmit={handleAddDriverSubmit}>
-          <Modal.Header closeButton>
-            <Modal.Title>
-              {viewMode ? 'View Driver' : editMode ? 'Edit Driver' : 'Add Driver'}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form.Group className="mb-3">
-              <Form.Label>Driver ID</Form.Label>
-              <Form.Control
-                type="text"
-                name="driverId"
-                value={newDriver.driverId}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode || editMode}
-                placeholder="e.g., DR001"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Full Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="fullName"
-                value={newDriver.fullName}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={newDriver.email}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Phone No</Form.Label>
-              <Form.Control
-                type="text"
-                name="phone"
-                value={newDriver.phone}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>License Number</Form.Label>
-              <Form.Control
-                type="text"
-                name="licenseNumber"
-                value={newDriver.licenseNumber}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Join Date</Form.Label>
-              <Form.Control
-                type="date"
-                name="joinDate"
-                value={newDriver.joinDate}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Employment Status</Form.Label>
-              <Form.Select
-                name="employmentStatus"
-                value={newDriver.employmentStatus}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
+      <Modal 
+        key={modalKey} 
+        show={showAddModal} 
+        onHide={handleCloseModal} 
+        centered 
+        size="lg"
+        className="modern-modal"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <Form onSubmit={handleAddDriverSubmit}>
+            <Modal.Header 
+              closeButton 
+              className="border-0 pb-0"
+              style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                borderRadius: '12px 12px 0 0'
+              }}
+            >
+              <Modal.Title 
+                className="d-flex align-items-center gap-3"
+                style={{ 
+                  color: '#1e293b', 
+                  fontWeight: '600',
+                  fontSize: '1.25rem'
+                }}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </Form.Select>
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="outline-secondary" onClick={handleCloseModal}>
-              Close
-            </Button>
-            {!viewMode && (
-              <Button variant="primary" type="submit">
-                {editMode ? 'Update Driver' : 'Add Driver'}
-              </Button>
-            )}
-          </Modal.Footer>
-        </Form>
+                <motion.div
+                  className="p-2 rounded-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    color: 'white'
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Users size={20} />
+                </motion.div>
+                {viewMode ? 'Driver Details' : editMode ? 'Edit Driver' : 'Add New Driver'}
+              </Modal.Title>
+            </Modal.Header>
+            
+            <Modal.Body 
+              className="px-4 py-4"
+              style={{
+                background: '#ffffff',
+                maxHeight: '70vh',
+                overflowY: 'auto'
+              }}
+            >
+              <div className="row g-4">
+                {/* Driver ID */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Driver ID *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="driverId"
+                        value={newDriver.driverId}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode || editMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: (viewMode || editMode) ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          fontWeight: '500'
+                        }}
+                        placeholder="e.g., DR001"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Full Name */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Full Name *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="fullName"
+                        value={newDriver.fullName}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Enter full name"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Email */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Email Address *
+                      </Form.Label>
+                      <Form.Control
+                        type="email"
+                        name="email"
+                        value={newDriver.email}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="driver@company.com"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Phone */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Phone Number *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="phone"
+                        value={newDriver.phone}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* License Number */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        License Number *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="licenseNumber"
+                        value={newDriver.licenseNumber}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase'
+                        }}
+                        placeholder="DL123456789"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Join Date */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Join Date *
+                      </Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="joinDate"
+                        value={newDriver.joinDate}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Employment Status */}
+                <div className="col-12">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="p-4 rounded-3"
+                    style={{
+                      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                      border: '1px solid #bae6fd'
+                    }}
+                  >
+                    <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#0c4a6e' }}>
+                      <div 
+                        className="p-1 rounded"
+                        style={{ background: 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
+                      >
+                        <Briefcase size={14} style={{ color: 'white' }} />
+                      </div>
+                      Employment Status
+                    </h6>
+                    
+                    <Form.Group>
+                      <Form.Select
+                        name="employmentStatus"
+                        value={newDriver.employmentStatus}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-select"
+                        style={{
+                          border: '2px solid #bae6fd',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f0f9ff' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <option value="active">✅ Active - Currently Working</option>
+                        <option value="inactive">⏸️ Inactive - Not Available</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </motion.div>
+                </div>
+              </div>
+            </Modal.Body>
+            
+            <Modal.Footer 
+              className="border-0 pt-0 px-4 pb-4"
+              style={{
+                background: '#ffffff',
+                borderRadius: '0 0 12px 12px'
+              }}
+            >
+              <div className="d-flex gap-3 w-100 justify-content-end">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    variant="outline-secondary"
+                    onClick={handleCloseModal}
+                    className="px-4 py-2"
+                    style={{
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </motion.div>
+                {!viewMode && (
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button 
+                      variant="primary" 
+                      type="submit"
+                      className="px-4 py-2"
+                      style={{
+                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '500',
+                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {editMode ? 'Update Driver' : 'Add Driver'}
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            </Modal.Footer>
+          </Form>
+        </motion.div>
       </Modal>
 
       {/* Vehicle Details Modal for Last Location */}
