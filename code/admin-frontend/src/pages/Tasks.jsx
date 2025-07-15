@@ -800,16 +800,16 @@ const Tasks = () => {
                       className="p-2 rounded-2"
                       style={{
                         background: viewMode ? 
-                          'linear-gradient(135deg, #3b82f6, #1d4ed8)' : 
-                          'linear-gradient(135deg, #10b981, #059669)',
+                          'linear-gradient(135deg, #f59e0b, #d97706)' : 
+                          'linear-gradient(135deg, #f59e0b, #d97706)',
                         color: 'white'
                       }}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <i className="fas fa-tasks" style={{ fontSize: '20px' }}></i>
+                      <Clipboard size={24} />
                     </motion.div>
-                    {viewMode ? 'View Task Details' : 'Edit Task'}
+                    {viewMode ? 'View Task Details' : 'Edit Task Details'}
                   </Modal.Title>
                 </Modal.Header>
                 
@@ -1128,16 +1128,16 @@ const Tasks = () => {
                         transition={{ delay: 0.5 }}
                         className="p-3 rounded-2 d-flex flex-column"
                         style={{
-                          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                          border: '1px solid #bbf7d0'
+                          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                          border: '1px solid #f59e0b'
                         }}
                       >
                         <div className="mb-3">
-                          <h6 className="mb-1 fw-semibold d-flex align-items-center gap-2" style={{ color: '#065f46' }}>
+                          <h6 className="mb-1 fw-semibold d-flex align-items-center gap-2" style={{ color: '#92400e' }}>
                             <i className="fas fa-sticky-note" style={{ fontSize: '14px' }}></i>
                             Additional Notes
                           </h6>
-                          <p className="mb-0 small" style={{ color: '#047857' }}>
+                          <p className="mb-0 small" style={{ color: '#b45309' }}>
                             {viewMode ? 'Task instructions and requirements' : 'Update task instructions or requirements'}
                           </p>
                         </div>
@@ -1152,7 +1152,7 @@ const Tasks = () => {
                             placeholder={viewMode ? "No additional notes provided." : "Any special instructions or notes..."}
                             className="modern-input"
                             style={{
-                              border: '1px solid #bbf7d0',
+                              border: '1px solid #f59e0b',
                               borderRadius: '6px',
                               padding: '12px 16px',
                               fontSize: '0.875rem',
@@ -1197,11 +1197,11 @@ const Tasks = () => {
                           type="submit"
                           className="px-4 py-2"
                           style={{
-                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                             border: 'none',
                             borderRadius: '8px',
                             fontWeight: '500',
-                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
                             transition: 'all 0.2s ease'
                           }}
                         >
