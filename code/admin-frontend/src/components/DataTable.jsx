@@ -126,7 +126,16 @@ const DataTable = ({
                 <tr 
                   key={rowIndex} 
                   onClick={() => onRowClick && onRowClick(row)}
-                  style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                  style={{ 
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    backgroundColor: '#f8f9fa'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.closest('tr').style.backgroundColor = '#e9ecef';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.closest('tr').style.backgroundColor = '#f8f9fa';
+                  }}
                 >
                   {columns.map((column, colIndex) => (
                     <td key={colIndex}>
@@ -139,7 +148,7 @@ const DataTable = ({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="text-center p-4">
+                <td colSpan={columns.length} className="text-center p-4" style={{ backgroundColor: '#f8f9fa' }}>
                   {emptyMessage}
                 </td>
               </tr>
