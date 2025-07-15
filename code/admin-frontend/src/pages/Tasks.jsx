@@ -316,15 +316,85 @@ const Tasks = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Pending':
-        return <Badge bg="warning">Pending</Badge>;
+        return (
+          <span 
+            className="badge" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(245, 101, 101, 0.1))',
+              border: '1px solid rgba(251, 146, 60, 0.3)',
+              color: '#f59e0b',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              padding: '0.25rem 0.5rem'
+            }}
+          >
+            Pending
+          </span>
+        );
       case 'In Progress':
-        return <Badge bg="info">In Progress</Badge>;
+        return (
+          <span 
+            className="badge" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1))',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#3b82f6',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              padding: '0.25rem 0.5rem'
+            }}
+          >
+            In Progress
+          </span>
+        );
       case 'Completed':
-        return <Badge bg="success">Completed</Badge>;
+        return (
+          <span 
+            className="badge" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.1))',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              color: '#22c55e',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              padding: '0.25rem 0.5rem'
+            }}
+          >
+            Completed
+          </span>
+        );
       case 'Cancelled':
-        return <Badge bg="danger">Cancelled</Badge>;
+        return (
+          <span 
+            className="badge" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              padding: '0.25rem 0.5rem'
+            }}
+          >
+            Cancelled
+          </span>
+        );
       default:
-        return <Badge bg="secondary">Unknown</Badge>;
+        return (
+          <span 
+            className="badge" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(75, 85, 99, 0.1))',
+              border: '1px solid rgba(107, 114, 128, 0.3)',
+              color: '#6b7280',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              padding: '0.25rem 0.5rem'
+            }}
+          >
+            Unknown
+          </span>
+        );
     }
   };
 
@@ -359,14 +429,41 @@ const Tasks = () => {
       sortable: false, 
       render: (_, row) => (
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-primary" onClick={() => handleViewTask(row)}>
-            <Eye size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#3b82f6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleViewTask(row)}
+          >
+            <Eye size={14} />
           </Button>
-          <Button size="sm" variant="outline-secondary" onClick={() => handleEditTask(row)}>
-            <Edit size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05))',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              color: '#22c55e',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleEditTask(row)}
+          >
+            <Edit size={14} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
-            <Trash2 size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleDeleteClick(row)}
+          >
+            <Trash2 size={14} />
           </Button>
         </div>
       )
