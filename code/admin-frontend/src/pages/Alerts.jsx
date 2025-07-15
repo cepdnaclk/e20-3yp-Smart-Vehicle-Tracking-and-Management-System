@@ -866,9 +866,9 @@ const Alerts = () => {
       </motion.div>
 
       {/* Render VehicleDetailsModal */}
-      {showVehicleModal && selectedVehicle && (
+      {showVehicleModal && selectedVehicleForModal && (
         <VehicleDetailsModal
-          vehicle={selectedVehicle}
+          vehicle={selectedVehicleForModal}
           onClose={() => setShowVehicleModal(false)}
         />
       )}
