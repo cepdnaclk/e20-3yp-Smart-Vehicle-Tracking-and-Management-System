@@ -11,7 +11,8 @@ import {
   MapPin,
   Edit,
   Trash2,
-  Briefcase // Add this new icon for tasks
+  Briefcase,
+  Clipboard // Add this new icon for tasks
 } from "lucide-react";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -28,6 +29,7 @@ import { api } from "../services/api";
 const Drivers = () => {
   const navigate = useNavigate();
   const [drivers, setDrivers] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [viewMode, setViewMode] = useState(false);
@@ -521,7 +523,19 @@ const Drivers = () => {
     { key: 'fullName', header: 'Full Name', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'phone', header: 'Phone No', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'employmentStatus', header: 'Employment Status', sortable: true, render: (v) => (
-      <span className={`badge ${v === 'active' ? 'bg-success' : 'bg-warning'}`}>
+      <span 
+        className="badge px-3 py-2"
+        style={{
+          background: v === 'active' 
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(4, 120, 87, 0.1))' 
+            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+          color: v === 'active' ? '#059669' : '#d97706',
+          border: `1px solid ${v === 'active' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+          borderRadius: '12px',
+          fontSize: '0.75rem',
+          fontWeight: '500'
+        }}
+      >
         {v.charAt(0).toUpperCase() + v.slice(1)}
       </span>
     ) },
@@ -532,27 +546,69 @@ const Drivers = () => {
       render: (v, row) => (
         <Button
           size="sm"
-          variant="outline-info"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            color: '#7c3aed',
+            borderRadius: '6px'
+          }}
           onClick={() => handleViewVehicleDetails(row)}
         >
-           <MapPin size={16} />
+           <MapPin size={14} className="me-1" />
+           Track
         </Button>
       )
     },
     {
       key: 'actions', header: 'Action', sortable: false, render: (_, row) => (
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-primary" onClick={() => handleViewDriver(row)}>
-            <Eye size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#3b82f6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleViewDriver(row)}
+          >
+            <Eye size={14} />
           </Button>
-          <Button size="sm" variant="outline-secondary" onClick={() => handleEditDriver(row)}>
-            <Edit size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05))',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              color: '#22c55e',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleEditDriver(row)}
+          >
+            <Edit size={14} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
-            <Trash2 size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleDeleteClick(row)}
+          >
+            <Trash2 size={14} />
           </Button>
-          <Button size="sm" variant="outline-success" onClick={() => handleAssignTask(row)}>
-            <Briefcase size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              color: '#8b5cf6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleAssignTask(row)}
+          >
+            <Briefcase size={14} />
           </Button>
         </div>
       )
@@ -568,45 +624,127 @@ const Drivers = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
-      <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        <PageHeader 
-          title="Driver Management" 
-          subtitle="Manage and monitor all your drivers"
-          icon={Users}
-          actions={
-            <>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={fetchDrivers}
+    <div 
+      className="min-vh-100"
+      style={{ 
+        paddingLeft: sidebarCollapsed ? '90px' : '280px',
+        transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        background: 'linear-gradient(135deg,rgba(148, 140, 140, 1) 0%,rgb(138, 176, 233) 100%)',
+        minHeight: '100vh'
+      }}
+    >
+      <Sidebar 
+        handleLogout={handleLogout} 
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <Users size={28} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
               >
-                <RefreshCw size={16} className="me-2" />
-                Refresh
-              </Button>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={handleExportPDF}
+                Driver Management
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
               >
-                <DownloadCloud size={16} className="me-2" />
-                Export
-              </Button>
-              <Button 
-                variant="primary" 
-                className="d-flex align-items-center"
-                onClick={handleAddDriver}
-              >
-                <Plus size={16} className="me-2" />
-                Add Driver
-              </Button>
-            </>
-          }
-        />
+                Manage and monitor all your drivers
+              </p>
+            </div>
+          </div>
+          
+          <div className="d-flex gap-3">
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={fetchDrivers}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RefreshCw size={16} className="me-2" />
+              Refresh
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={handleExportPDF}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <DownloadCloud size={16} className="me-2" />
+              Export
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                color: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)'
+              }}
+              onClick={handleAddDriver}
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: '0 12px 30px rgba(139, 92, 246, 0.4)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus size={16} className="me-2" />
+              Add Driver
+            </motion.button>
+          </div>
+        </motion.div>
         
         <AnimatedAlert
           show={showAlert}
@@ -615,122 +753,450 @@ const Drivers = () => {
           onClose={() => setShowAlert(false)}
         />
         
+        {/* Modern Data Table Container */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-4"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden'
+          }}
         >
-          <DataTable 
-            columns={tableColumns}
-            data={drivers}
-            title="All Drivers"
-            icon={<Users size={18} />}
-            emptyMessage="No drivers found"
-          />
-        </motion.div>
-      </div>
-
-      <Modal key={modalKey} show={showAddModal} onHide={handleCloseModal} centered>
-        <Form onSubmit={handleAddDriverSubmit}>
-          <Modal.Header closeButton>
-            <Modal.Title>
-              {viewMode ? 'View Driver' : editMode ? 'Edit Driver' : 'Add Driver'}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form.Group className="mb-3">
-              <Form.Label>Driver ID</Form.Label>
-              <Form.Control
-                type="text"
-                name="driverId"
-                value={newDriver.driverId}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode || editMode}
-                placeholder="e.g., DR001"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Full Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="fullName"
-                value={newDriver.fullName}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={newDriver.email}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Phone No</Form.Label>
-              <Form.Control
-                type="text"
-                name="phone"
-                value={newDriver.phone}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>License Number</Form.Label>
-              <Form.Control
-                type="text"
-                name="licenseNumber"
-                value={newDriver.licenseNumber}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Join Date</Form.Label>
-              <Form.Control
-                type="date"
-                name="joinDate"
-                value={newDriver.joinDate}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Employment Status</Form.Label>
-              <Form.Select
-                name="employmentStatus"
-                value={newDriver.employmentStatus}
-                onChange={handleInputChange}
-                required
-                disabled={viewMode}
+          <div className="p-4">
+            <div className="d-flex align-items-center mb-4">
+              <div 
+                className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                style={{
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  color: 'white'
+                }}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </Form.Select>
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="outline-secondary" onClick={handleCloseModal}>
-              Close
-            </Button>
-            {!viewMode && (
-              <Button variant="primary" type="submit">
-                {editMode ? 'Update Driver' : 'Add Driver'}
-              </Button>
-            )}
-          </Modal.Footer>
-        </Form>
+                <Users size={24} />
+              </div>
+              <div>
+                <h5 className="mb-1 fw-bold">Driver Team</h5>
+                <p className="text-muted mb-0">{drivers.length} drivers in your team</p>
+              </div>
+              <div className="ms-auto">
+                <span 
+                  className="badge px-3 py-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    color: 'white',
+                    borderRadius: '12px'
+                  }}
+                >
+                  Total: {drivers.length}
+                </span>
+              </div>
+            </div>
+            
+            <DataTable 
+              columns={tableColumns}
+              data={drivers}
+              emptyMessage="No drivers found. Add your first driver to get started!"
+            />
+          </div>
+        </motion.div>
+      </motion.div>
+
+      <Modal 
+        key={modalKey} 
+        show={showAddModal} 
+        onHide={handleCloseModal} 
+        centered 
+        size="lg"
+        className="modern-modal"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <Form onSubmit={handleAddDriverSubmit}>
+            <Modal.Header 
+              closeButton 
+              className="border-0 pb-0"
+              style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                borderRadius: '12px 12px 0 0'
+              }}
+            >
+              <Modal.Title 
+                className="d-flex align-items-center gap-3"
+                style={{ 
+                  color: '#1e293b', 
+                  fontWeight: '600',
+                  fontSize: '1.25rem'
+                }}
+              >
+                <motion.div
+                  className="p-2 rounded-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    color: 'white'
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Users size={20} />
+                </motion.div>
+                {viewMode ? 'Driver Details' : editMode ? 'Edit Driver' : 'Add New Driver'}
+              </Modal.Title>
+            </Modal.Header>
+            
+            <Modal.Body 
+              className="px-4 py-4"
+              style={{
+                background: '#ffffff',
+                maxHeight: '70vh',
+                overflowY: 'auto'
+              }}
+            >
+              <div className="row g-4">
+                {/* Driver ID */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Driver ID *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="driverId"
+                        value={newDriver.driverId}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode || editMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: (viewMode || editMode) ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          fontWeight: '500'
+                        }}
+                        placeholder="e.g., DR001"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Full Name */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Full Name *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="fullName"
+                        value={newDriver.fullName}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Enter full name"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Email */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Email Address *
+                      </Form.Label>
+                      <Form.Control
+                        type="email"
+                        name="email"
+                        value={newDriver.email}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="driver@company.com"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Phone */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Phone Number *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="phone"
+                        value={newDriver.phone}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* License Number */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        License Number *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="licenseNumber"
+                        value={newDriver.licenseNumber}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase'
+                        }}
+                        placeholder="DL123456789"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Join Date */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Join Date *
+                      </Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="joinDate"
+                        value={newDriver.joinDate}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Employment Status */}
+                <div className="col-12">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="p-4 rounded-3"
+                    style={{
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                      border: '1px solid #d8b4fe'
+                    }}
+                  >
+                    <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#581c87' }}>
+                      <div 
+                        className="p-1 rounded"
+                        style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
+                      >
+                        <Briefcase size={14} style={{ color: 'white' }} />
+                      </div>
+                      Employment Status
+                    </h6>
+                    
+                    <Form.Group>
+                      <Form.Select
+                        name="employmentStatus"
+                        value={newDriver.employmentStatus}
+                        onChange={handleInputChange}
+                        required
+                        disabled={viewMode}
+                        className="modern-select"
+                        style={{
+                          border: '2px solid #bae6fd',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: viewMode ? '#f0f9ff' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <option value="active">✅ Active - Currently Working</option>
+                        <option value="inactive">⏸️ Inactive - Not Available</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </motion.div>
+                </div>
+              </div>
+            </Modal.Body>
+            
+            <Modal.Footer 
+              className="border-0 pt-0 px-4 pb-4"
+              style={{
+                background: '#ffffff',
+                borderRadius: '0 0 12px 12px'
+              }}
+            >
+              <div className="d-flex gap-3 w-100 justify-content-end">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    variant="outline-secondary"
+                    onClick={handleCloseModal}
+                    className="px-4 py-2"
+                    style={{
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </motion.div>
+                {!viewMode && (
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button 
+                      variant="primary" 
+                      type="submit"
+                      className="px-4 py-2"
+                      style={{
+                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '500',
+                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {editMode ? 'Update Driver' : 'Add Driver'}
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            </Modal.Footer>
+          </Form>
+        </motion.div>
       </Modal>
 
       {/* Vehicle Details Modal for Last Location */}
@@ -742,121 +1208,442 @@ const Drivers = () => {
       )}
 
       {/* Task Assignment Modal */}
-      <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered size="lg">
-        <Form onSubmit={handleTaskSubmit}>
-          <Modal.Header closeButton>
-            <Modal.Title>
-              Assign Task to {selectedDriverForTask?.fullName}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div className="row">
-              <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label>Task Number</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="taskNumber"
-                    value={taskFormData.taskNumber}
-                    disabled
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Cargo Type</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="cargoType"
-                    value={taskFormData.cargoType}
-                    onChange={handleTaskInputChange}
-                    required
-                    placeholder="e.g., Electronics, Furniture"
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Weight (kg)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="weight"
-                    value={taskFormData.weight}
-                    onChange={handleTaskInputChange}
-                    required
-                    placeholder="Weight in kilograms"
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Pickup Location</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="pickup"
-                    value={taskFormData.pickup}
-                    onChange={handleTaskInputChange}
-                    required
-                    placeholder="Full pickup address"
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label>Delivery Location</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="delivery"
-                    value={taskFormData.delivery}
-                    onChange={handleTaskInputChange}
-                    required
-                    placeholder="Full delivery address"
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Delivery Phone Number</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="deliveryPhone"
-                    value={taskFormData.deliveryPhone}
-                    onChange={handleTaskInputChange}
-                    required
-                    placeholder="Contact number at delivery location"
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Expected Delivery Date</Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="expectedDelivery"
-                    value={taskFormData.expectedDelivery}
-                    onChange={handleTaskInputChange}
-                    required
-                  />
-                </Form.Group>
-              </div>
-            </div>
+      <Modal 
+        show={showTaskModal} 
+        onHide={() => setShowTaskModal(false)} 
+        centered 
+        size="lg"
+        className="modern-modal"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <Form onSubmit={handleTaskSubmit}>
+            <Modal.Header 
+              closeButton 
+              className="border-0 pb-0"
+              style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                borderRadius: '12px 12px 0 0'
+              }}
+            >
+              <Modal.Title 
+                className="d-flex align-items-center gap-3"
+                style={{ 
+                  color: '#1e293b', 
+                  fontWeight: '600',
+                  fontSize: '1.25rem'
+                }}
+              >
+                <motion.div
+                  className="p-2 rounded-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    color: 'white'
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Clipboard size={24} />
+                  
+                </motion.div>
+                Assign Task to {selectedDriverForTask?.fullName}
+              </Modal.Title>
+            </Modal.Header>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Additional Notes</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="additionalNotes"
-                value={taskFormData.additionalNotes}
-                onChange={handleTaskInputChange}
-                placeholder="Any special instructions or notes"
-              />
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="outline-secondary" onClick={() => setShowTaskModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit">
-              Assign Task
-            </Button>
-          </Modal.Footer>
-        </Form>
+            <Modal.Body 
+              className="px-4 py-4"
+              style={{
+                background: '#ffffff',
+                maxHeight: '70vh',
+                overflowY: 'auto'
+              }}
+            >
+              <div className="row g-4">
+                {/* Task Number */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Task Number *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="taskNumber"
+                        value={taskFormData.taskNumber}
+                        disabled
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: '#f9fafb',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          fontWeight: '500'
+                        }}
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Cargo Type */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Cargo Type *
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="cargoType"
+                        value={taskFormData.cargoType}
+                        onChange={handleTaskInputChange}
+                        required
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="e.g., Electronics, Furniture"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Weight */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Weight (kg) *
+                      </Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="weight"
+                        value={taskFormData.weight}
+                        onChange={handleTaskInputChange}
+                        required
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Weight in kilograms"
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Expected Delivery Date */}
+                <div className="col-md-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    <Form.Group>
+                      <Form.Label 
+                        className="fw-semibold mb-2"
+                        style={{ 
+                          color: '#374151',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.025em'
+                        }}
+                      >
+                        Expected Delivery Date *
+                      </Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="expectedDelivery"
+                        value={taskFormData.expectedDelivery}
+                        onChange={handleTaskInputChange}
+                        required
+                        className="modern-input"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+
+                {/* Location Information Section */}
+                <div className="col-12">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="p-4 rounded-3 mt-3"
+                    style={{
+                      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                      border: '1px solid #e5e7eb'
+                    }}
+                  >
+                    <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#374151' }}>
+                      <div 
+                        className="p-1 rounded"
+                        style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
+                      >
+                        <i className="fas fa-map-marker-alt" style={{ color: 'white', fontSize: '14px' }}></i>
+                      </div>
+                      Location Information
+                    </h6>
+                    
+                    <div className="row g-3">
+                      {/* Pickup Location */}
+                      <div className="col-md-6">
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.35 }}
+                        >
+                          <Form.Group>
+                            <Form.Label 
+                              className="fw-medium mb-2"
+                              style={{ 
+                                color: '#6b7280',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              Pickup Location *
+                            </Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="pickup"
+                              value={taskFormData.pickup}
+                              onChange={handleTaskInputChange}
+                              required
+                              className="modern-input-small"
+                              style={{
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                padding: '10px 12px',
+                                fontSize: '0.8rem',
+                                backgroundColor: '#ffffff'
+                              }}
+                              placeholder="Full pickup address"
+                            />
+                          </Form.Group>
+                        </motion.div>
+                      </div>
+
+                      {/* Delivery Location */}
+                      <div className="col-md-6">
+                        <motion.div
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.4 }}
+                        >
+                          <Form.Group>
+                            <Form.Label 
+                              className="fw-medium mb-2"
+                              style={{ 
+                                color: '#6b7280',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              Delivery Location *
+                            </Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="delivery"
+                              value={taskFormData.delivery}
+                              onChange={handleTaskInputChange}
+                              required
+                              className="modern-input-small"
+                              style={{
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                padding: '10px 12px',
+                                fontSize: '0.8rem',
+                                backgroundColor: '#ffffff'
+                              }}
+                              placeholder="Full delivery address"
+                            />
+                          </Form.Group>
+                        </motion.div>
+                      </div>
+
+                      {/* Delivery Phone */}
+                      <div className="col-md-6">
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.45 }}
+                        >
+                          <Form.Group>
+                            <Form.Label 
+                              className="fw-medium mb-2"
+                              style={{ 
+                                color: '#6b7280',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              Delivery Phone Number *
+                            </Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="deliveryPhone"
+                              value={taskFormData.deliveryPhone}
+                              onChange={handleTaskInputChange}
+                              required
+                              className="modern-input-small"
+                              style={{
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                padding: '10px 12px',
+                                fontSize: '0.8rem',
+                                backgroundColor: '#ffffff'
+                              }}
+                              placeholder="Contact number at delivery location"
+                            />
+                          </Form.Group>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Additional Notes */}
+                <div className="col-12">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="p-3 rounded-2 d-flex flex-column"
+                    style={{
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                      border: '1px solid #d8b4fe'
+                    }}
+                  >
+                    <div className="mb-3">
+                      <h6 className="mb-1 fw-semibold d-flex align-items-center gap-2" style={{ color: '#581c87' }}>
+                        <i className="fas fa-sticky-note" style={{ fontSize: '14px' }}></i>
+                        Additional Notes
+                      </h6>
+                      <p className="mb-0 small" style={{ color: '#7c3aed' }}>
+                        Add any special instructions or requirements
+                      </p>
+                    </div>
+                    <Form.Group>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="additionalNotes"
+                        value={taskFormData.additionalNotes}
+                        onChange={handleTaskInputChange}
+                        placeholder="Any special instructions or notes..."
+                        className="modern-input"
+                        style={{
+                          border: '1px solid #d8b4fe',
+                          borderRadius: '6px',
+                          padding: '12px 16px',
+                          fontSize: '0.875rem',
+                          backgroundColor: '#ffffff',
+                          resize: 'vertical',
+                          minHeight: '80px'
+                        }}
+                      />
+                    </Form.Group>
+                  </motion.div>
+                </div>
+              </div>
+            </Modal.Body>
+            
+            <Modal.Footer 
+              className="border-0 pt-0 px-4 pb-4"
+              style={{
+                background: '#ffffff',
+                borderRadius: '0 0 12px 12px'
+              }}
+            >
+              <div className="d-flex gap-3 w-100 justify-content-end">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    variant="outline-secondary"
+                    onClick={() => setShowTaskModal(false)}
+                    className="px-4 py-2"
+                    style={{
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    type="submit"
+                    className="px-4 py-2"
+                    style={{
+                      background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Assign Task
+                  </Button>
+                </motion.div>
+              </div>
+            </Modal.Footer>
+          </Form>
+        </motion.div>
       </Modal>
 
       {/* Delete Confirmation Modal */}

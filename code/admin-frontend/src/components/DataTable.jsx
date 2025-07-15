@@ -98,7 +98,15 @@ const DataTable = ({
                 <th 
                   key={index} 
                   onClick={() => column.sortable !== false && handleSort(column.key)}
-                  style={{ cursor: column.sortable !== false ? 'pointer' : 'default' }}
+                  style={{ 
+                    cursor: column.sortable !== false ? 'pointer' : 'default',
+                    fontSize: '0.95rem',
+                    fontWeight: '700',
+                    color: '#1a202c',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '2px solid #e2e8f0',
+                    padding: '0.875rem 0.75rem'
+                  }}
                 >
                   <div className="d-flex align-items-center">
                     {column.header || column.key}
@@ -118,7 +126,16 @@ const DataTable = ({
                 <tr 
                   key={rowIndex} 
                   onClick={() => onRowClick && onRowClick(row)}
-                  style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                  style={{ 
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    backgroundColor: '#f8f9fa'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.closest('tr').style.backgroundColor = '#e9ecef';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.closest('tr').style.backgroundColor = '#f8f9fa';
+                  }}
                 >
                   {columns.map((column, colIndex) => (
                     <td key={colIndex}>
@@ -131,7 +148,7 @@ const DataTable = ({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="text-center p-4">
+                <td colSpan={columns.length} className="text-center p-4" style={{ backgroundColor: '#f8f9fa' }}>
                   {emptyMessage}
                 </td>
               </tr>

@@ -18,6 +18,7 @@ import {
   User,
   Menu,
   X,
+  Plus,
   Thermometer,
   Droplets,
   Gauge,
@@ -295,35 +296,140 @@ const Dashboard = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Stats card component
+  // Modern Stats Card Component
   const StatsCardNew = ({ icon, title, value, color, percentage, isUp }) => (
     <motion.div 
-      className="col-xl-3 col-md-6 mb-4"
+      className="col-xl-3 col-lg-4 col-md-6 mb-4"
       variants={itemVariants}
     >
-      <div className="card border-0 shadow-sm h-100 stats-card">
-        <div className="card-body d-flex align-items-center">
-          {/* Icon */}
-          <div className={`rounded-circle p-3 me-3 d-flex align-items-center justify-content-center ${color}`} style={{ width: '60px', height: '60px' }}>
-            {React.cloneElement(icon, { size: 28, color: 'white' })}
+      <motion.div 
+        className="h-100 position-relative overflow-hidden"
+        style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '20px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+        }}
+        whileHover={{ 
+          scale: 1.02,
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+          transition: { duration: 0.2 }
+        }}
+      >
+        {/* Background gradient overlay */}
+        <div 
+          className="position-absolute top-0 end-0"
+          style={{
+            width: '60px',
+            height: '60px',
+            background: color,
+            borderRadius: '0 20px 0 60px',
+            opacity: 0.1
+          }}
+        />
+        
+        <div className="p-4">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            {/* Icon */}
+            <motion.div 
+              className="d-flex align-items-center justify-content-center text-white"
+              style={{
+                width: '56px',
+                height: '56px',
+                background: color,
+                borderRadius: '16px',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)'
+              }}
+              whileHover={{ 
+                scale: 1.1,
+                rotate: 5,
+                transition: { duration: 0.2 }
+              }}
+            >
+              {React.cloneElement(icon, { size: 24 })}
+            </motion.div>
+            
+            {/* Percentage Badge */}
+            {percentage !== undefined && (
+              <motion.div 
+                className="d-flex align-items-center px-3 py-1 text-white"
+                style={{
+                  background: isUp 
+                    ? 'linear-gradient(135deg, #10b981, #059669)' 
+                    : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: '600'
+                }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, type: 'spring' }}
+              >
+                <motion.div
+                  animate={{ rotate: isUp ? 0 : 180 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <TrendingUp size={12} className="me-1" />
+                </motion.div>
+                {percentage}%
+              </motion.div>
+            )}
           </div>
           
           {/* Value and Title */}
-          <div className="flex-grow-1">
-            <div className="d-flex align-items-center justify-content-between">
-              <h5 className="card-title text-gray-900 mb-1">{value}</h5>
-              {/* Percentage Badge */}
-              {percentage !== undefined && ( // Check if percentage is provided
-                <div className={`badge ${isUp ? 'bg-success' : 'bg-danger'} d-flex align-items-center`}>
-                  {isUp ? <TrendingUp size={14} className="me-1" /> : <TrendingUp size={14} className="me-1" style={{ transform: 'rotate(180deg)' }} />}
-                  {percentage}%
+          <div>
+            <motion.h3 
+              className="fw-bold mb-1"
+              style={{ 
+                color: '#1f2937',
+                fontSize: '2rem'
+              }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              {value}
+            </motion.h3>
+            <p 
+              className="mb-0"
+              style={{ 
+                color: '#6b7280',
+                fontSize: '0.875rem',
+                fontWeight: '500'
+              }}
+            >
+              {title}
+            </p>
+            
+            {/* Progress bar for percentage */}
+            {percentage !== undefined && (
+              <div className="mt-3">
+                <div 
+                  className="position-relative"
+                  style={{
+                    height: '4px',
+                    background: '#e5e7eb',
+                    borderRadius: '2px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <motion.div
+                    style={{
+                      height: '100%',
+                      background: color,
+                      borderRadius: '2px'
+                    }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(percentage, 100)}%` }}
+                    transition={{ delay: 0.5, duration: 1, ease: 'easeOut' }}
+                  />
                 </div>
-              )}
-            </div>
-            <p className="card-text text-muted small mb-0">{title}</p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 
@@ -336,43 +442,71 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: sidebarCollapsed ? '80px' : '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
-      <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        {/* Header Section with Animated Toggle and Date/Time */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
+    <div 
+      className="min-vh-100"
+      style={{ 
+        paddingLeft: sidebarCollapsed ? '90px' : '280px',
+        transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        background: 'linear-gradient(135deg,rgba(148, 140, 140, 1) 0%,rgb(138, 176, 233) 100%)',
+        minHeight: '100vh'
+      }}
+    >
+      <Sidebar 
+        handleLogout={handleLogout} 
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Modern Header Section */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          variants={itemVariants}
+        >
           <div className="d-flex align-items-center">
-            <motion.button 
-              className="btn btn-light border-0 me-3 d-flex align-items-center justify-content-center" 
-              style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-              onClick={toggleSidebar}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
             >
-              {sidebarCollapsed ? <Menu size={20} /> : <X size={20} />}
-            </motion.button>
+              <BarChart2 size={28} style={{ color: 'white' }} />
+            </motion.div>
             <div>
-              <motion.h4 
-                className="mb-0 fw-bold"
+              <motion.h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.5 }}
               >
                 Dashboard Overview
-              </motion.h4>
+              </motion.h2>
               <motion.div 
-                className="text-muted d-flex align-items-center"
+                className="d-flex align-items-center text-white opacity-75"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: 0.75 }}
                 transition={{ delay: 0.2 }}
+                style={{ fontSize: '1.1rem' }}
               >
-                <Calendar size={14} className="me-1" />
+                <Calendar size={16} className="me-2" />
                 {formattedDate} 
-                <span className="mx-2">•</span>
-                <Clock size={14} className="me-1" />
+                <span className="mx-3">•</span>
+                <Clock size={16} className="me-2" />
                 {formattedTime}
               </motion.div>
             </div>
@@ -380,33 +514,60 @@ const Dashboard = () => {
           
           <div className="d-flex align-items-center gap-3">
             <motion.button 
-              className="btn btn-light position-relative rounded-circle"
-              style={{ width: '40px', height: '40px' }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              className="btn position-relative border-0"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '16px',
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white'
+              }}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Bell size={18} />
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                1
-              </span>
+              <Bell size={20} />
+              <motion.span 
+                className="position-absolute top-0 start-100 translate-middle badge rounded-pill"
+                style={{ 
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  fontSize: '0.7rem'
+                }}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {activeAlerts}
+              </motion.span>
             </motion.button>
+            
             <motion.div 
-              className="d-flex align-items-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="d-flex align-items-center p-2 rounded-3"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle me-2" 
-                style={{ width: '40px', height: '40px' }}>
-                <User size={18} />
+              <div 
+                className="d-flex align-items-center justify-content-center text-white rounded-2 me-0" 
+                style={{ 
+                  width: '44px', 
+                  height: '44px',
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
+                }}
+              >
+                <User size={20} />
               </div>
-              <div>
-                <div className="fw-medium">Admin</div>
-                <div className="text-muted small">System Owner</div>
-              </div>
+              
             </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Toast Notification */}
         <AnimatedAlert
@@ -416,113 +577,223 @@ const Dashboard = () => {
           onClose={() => setShowToast(false)}
         />
         
-        {/* Interactive Map Section with Title */}
-        <motion.div 
-          className="card shadow-sm border-0 mb-4 overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="card-header bg-white">
-            <div className="d-flex align-items-center">
-              <Map size={18} className="me-2 text-primary" />
-              <h5 className="mb-0">Live Vehicle Tracking</h5>
-            </div>
-          </div>
-          <div className="card-body p-0" style={{ height: '400px' }}>
-            <LeafletMap vehicles={activeVehicles} />
-          </div>
-        </motion.div>
-
-        {/* Performance Analytics Section */}
-        <motion.div 
-          className="card border-0 shadow-sm mb-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <div className="card-header bg-white">
-            <div className="d-flex align-items-center">
-              <BarChart2 size={18} className="me-2 text-primary" />
-              <h5 className="mb-0">Performance Analytics</h5>
-            </div>
-          </div>
-          <div className="card-body">
-            {/* Stats Cards */}
+        {/* Content Grid */}
+        <div className="row g-4">
+          {/* Live Vehicle Tracking Map - Now at Top */}
+          <div className="col-12">
             <motion.div 
-              className="row mb-4"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
+              className="h-100"
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+              }}
+              variants={itemVariants}
             >
-              <StatsCardNew 
-                icon={<Truck size={24} className="text-primary" />} 
-                title="Total Vehicles" 
-                value={totalVehicles} 
-                color="bg-primary"
-                percentage={totalVehicles > 0 ? Math.round((activeVehicles.length / totalVehicles) * 100) : 0}
-                isUp={true}
-              />
-              <StatsCardNew 
-                icon={<Zap size={24} className="text-success" />} 
-                title="Active Vehicles" 
-                value={activeVehicles.length} 
-                color="bg-success"
-                //percentage={totalVehicles > 0 ? Math.round((activeVehicles.length / totalVehicles) * 100) : 0}
-                isUp={true}
-              />
-              <StatsCardNew 
-                icon={<Users size={24} className="text-info" />} 
-                title="Total Drivers" 
-                value={totalDrivers} 
-                color="bg-info"
-                percentage={totalDrivers > 0 ? Math.round((activeDrivers / totalDrivers) * 100) : 0}
-                isUp={true}
-              />
-              <StatsCardNew 
-                icon={<User size={24} className="text-warning" />} 
-                title="Active Drivers" 
-                value={activeDrivers} 
-                color="bg-warning"
-                //percentage={totalDrivers > 0 ? Math.round((activeDrivers / totalDrivers) * 100) : 0}
-                isUp={true}
-              />
-              <StatsCardNew 
-                icon={<ClipboardCheck size={24} className="text-info" />} 
-                title="Total Tasks" 
-                value={totalTasks} 
-                color="bg-info"
-                percentage={totalTasks > 0 ? Math.round((CompletedTasks / totalTasks) * 100) : 0}
-                isUp={true}
-              />
-              <StatsCardNew 
-                icon={<CheckCircle size={24} className="text-success" />} 
-                title="Completed Tasks" 
-                value={CompletedTasks} 
-                color="bg-success"
-                //percentage={totalTasks > 0 ? Math.round((CompletedTasks / totalTasks) * 100) : 0}
-                isUp={true}
-              />
-              <StatsCardNew 
-                icon={<AlertTriangle size={24} className="text-danger" />} 
-                title="Active Alerts" 
-                value={alerts.filter(a => a.status === 'active').length}
-                color="bg-danger"
-                percentage={alerts.length > 0 ? Math.round((alerts.filter(a => a.status === 'active').length / alerts.length) * 100) : 0}
-                isUp={false}
-              />
-              <StatsCardNew 
-                icon={<CheckCircle size={24} className="text-success" />} 
-                title="Resolved Alerts" 
-                value={alerts.filter(a => a.status === 'resolved').length}
-                color="bg-success"
-                percentage={alerts.length > 0 ? Math.round((alerts.filter(a => a.status === 'resolved').length / alerts.length) * 100) : 0}
-                isUp={true}
-              />
+              <div className="p-4">
+                <div className="d-flex align-items-center mb-4">
+                  <div 
+                    className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                      color: 'white'
+                    }}
+                  >
+                    <Map size={24} />
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-bold">Live Vehicle Tracking</h5>
+                    <p className="text-muted mb-0">Real-time cargo monitoring</p>
+                  </div>
+                  <div className="ms-auto">
+                    <span 
+                      className="badge px-3 py-2"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: 'white',
+                        borderRadius: '12px'
+                      }}
+                    >
+                      {activeVehicles.length} Active
+                    </span>
+                  </div>
+                </div>
+                <div 
+                  style={{ 
+                    height: '500px',
+                    borderRadius: '16px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <LeafletMap vehicles={activeVehicles} />
+                </div>
+              </div>
             </motion.div>
           </div>
-        </motion.div>
-      </div>
+
+          {/* Performance Analytics Section - Below Map */}
+          <div className="col-12">
+            <motion.div 
+              className="h-100"
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+              }}
+              variants={itemVariants}
+            >
+              <div className="p-4">
+                <div className="d-flex align-items-center mb-4">
+                  <div 
+                    className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                      color: 'white'
+                    }}
+                  >
+                    <BarChart2 size={24} />
+                  </div>
+                  <div>
+                    <h5 className="mb-1 fw-bold">Performance Analytics</h5>
+                    <p className="text-muted mb-0">Cargo performance overview and insights</p>
+                  </div>
+                </div>
+
+                {/* Stats Cards Grid - Matching the screenshot */}
+                <div className="row g-4">
+                  {/* First Row */}
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
+                          <Truck size={20} style={{ color: 'white' }} />
+                        </div>
+                        
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalVehicles}</h3>
+                      <p className="text-muted mb-0 small">Total Vehicles</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                          <Zap size={20} style={{ color: 'white' }} />
+                        </div>
+                        {totalVehicles > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((activeVehicles.length / totalVehicles) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeVehicles.length}</h3>
+                      <p className="text-muted mb-0 small">Active Vehicles</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
+                          <Users size={20} style={{ color: 'white' }} />
+                        </div>
+                        
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalDrivers}</h3>
+                      <p className="text-muted mb-0 small">Total Drivers</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                          <User size={20} style={{ color: 'white' }} />
+                        </div>
+                        {totalDrivers > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((activeDrivers / totalDrivers) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeDrivers}</h3>
+                      <p className="text-muted mb-0 small">Active Drivers</p>
+                    </div>
+                  </div>
+
+                  {/* Second Row */}
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
+                          <ClipboardCheck size={20} style={{ color: 'white' }} />
+                        </div>
+                        
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{totalTasks}</h3>
+                      <p className="text-muted mb-0 small">Total Tasks</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #84cc16, #65a30d)' }}>
+                          <CheckCircle size={20} style={{ color: 'white' }} />
+                        </div>
+                        {totalTasks > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #84cc16, #65a30d)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((CompletedTasks / totalTasks) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{CompletedTasks}</h3>
+                      <p className="text-muted mb-0 small">Completed Tasks</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}>
+                          <AlertTriangle size={20} style={{ color: 'white' }} />
+                        </div>
+                        <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                          {alerts.length > 0 ? Math.round((activeAlerts / alerts.length) * 100) : 0}%
+                        </span>
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{activeAlerts}</h3>
+                      <p className="text-muted mb-0 small">Active Alerts</p>
+                    </div>
+                  </div>
+
+                  <div className="col-md-3">
+                    <div className="p-4 rounded-4" style={{ background: 'rgba(255, 255, 255, 0.9)', border: '2px solid rgba(0, 0, 0, 0.15)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="p-3 rounded-3" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+                          <CheckCircle size={20} style={{ color: 'white' }} />
+                        </div>
+                        {alerts.length > 0 && (
+                          <span className="badge px-3 py-1" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: 'white', borderRadius: '20px', fontSize: '0.75rem' }}>
+                            {Math.round((alerts.filter(a => a.status === 'resolved').length / alerts.length) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>{alerts.filter(a => a.status === 'resolved').length}</h3>
+                      <p className="text-muted mb-0 small">Resolved Alerts</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Vehicle Details Modal */}
       {showVehicleDetails && selectedVehicle && (

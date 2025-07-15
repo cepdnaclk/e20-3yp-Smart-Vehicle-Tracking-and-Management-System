@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Card, Row, Col } from 'react-bootstrap';
-import { Truck, AlertTriangle, Thermometer, Droplets, MapPin, Package, Clock, CheckCircle, Users } from 'lucide-react';
+import { Truck, AlertTriangle, Thermometer, Droplets, MapPin, Package, Clock, CheckCircle, Users, Activity } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -174,98 +174,232 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
   }, [vehicle]);
 
   return (
-    <Modal show={true} onHide={onClose} size="lg">
-      <Modal.Header closeButton>
-        <Modal.Title className="d-flex align-items-center">
-          <Truck className="me-2" /> Vehicle Details: {vehicle?.number || vehicle?.licensePlate || "N/A"}
+    <Modal show={true} onHide={onClose} size="xl" backdrop="static">
+      <Modal.Header 
+        closeButton 
+        style={{
+          background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.1))',
+          border: '1px solid rgba(102, 126, 234, 0.3)',
+          color: '#4338ca'
+        }}
+      >
+        <Modal.Title className="d-flex align-items-center" style={{ fontSize: '1.4rem', fontWeight: '600' }}>
+          <div 
+            style={{
+              background: 'rgba(67, 56, 202, 0.15)',
+              borderRadius: '8px',
+              padding: '8px',
+              marginRight: '12px'
+            }}
+          >
+            <Truck size={24} color="#4338ca" />
+          </div>
+          Vehicle Details: {vehicle?.number || vehicle?.licensePlate || "N/A"}
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body style={{ padding: '2rem', backgroundColor: '#f8fafc' }}>
         {/* Remove loading spinner for admin modal */}
         {/* If no sensor data is present, show an info alert */}
         {(!sensorData.temperature && !sensorData.humidity && !sensorData.speed) && (
-          <Alert variant="info">
-            No sensor data available. Please check your Firebase database path and data.
+          <Alert 
+            variant="info" 
+            style={{
+              border: 'none',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))',
+              borderLeft: '4px solid #3b82f6',
+              color: '#1e40af'
+            }}
+          >
+            <div className="d-flex align-items-center">
+              <div 
+                style={{
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  marginRight: '12px'
+                }}
+              >
+                <AlertTriangle size={20} color="#3b82f6" />
+              </div>
+              <span style={{ fontWeight: '500' }}>
+                No sensor data available. Please check your Firebase database path and data.
+              </span>
+            </div>
           </Alert>
         )}
 
         {/* Tampering Alert */}
         {sensorData.tampering && (
-          <Alert variant="danger" className="mb-4">
-            <AlertTriangle className="me-2" />
-            <strong>ALERT:</strong> Tampering detected!
+          <Alert 
+            variant="danger" 
+            className="mb-4"
+            style={{
+              border: 'none',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              borderLeft: '4px solid #ef4444',
+              color: '#dc2626'
+            }}
+          >
+            <div className="d-flex align-items-center">
+              <div 
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  marginRight: '12px'
+                }}
+              >
+                <AlertTriangle size={20} color="#ef4444" />
+              </div>
+              <span style={{ fontWeight: '600' }}>
+                ALERT: Tampering detected!
+              </span>
+            </div>
           </Alert>
         )}
 
         {/* Current Delivery Task Information */}
         {currentTask && (
-          <Card className="mb-4">
-            <Card.Header className="d-flex align-items-center">
-              <Package className="me-2" />
-              {currentTask.status === 'In Progress' ? 'Current Delivery' : 'Last Completed Delivery'}
+          <Card 
+            className="mb-4" 
+            style={{
+              border: 'none',
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              overflow: 'hidden'
+            }}
+          >
+            <Card.Header 
+              className="d-flex align-items-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1))',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                color: '#047857',
+                padding: '1.25rem'
+              }}
+            >
+              <div 
+                style={{
+                  background: 'rgba(5, 150, 105, 0.15)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  marginRight: '12px'
+                }}
+              >
+                <Package size={20} color="#047857" />
+              </div>
+              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+                {currentTask.status === 'In Progress' ? 'Current Delivery' : 'Last Completed Delivery'}
+              </span>
             </Card.Header>
-            <Card.Body>
+            <Card.Body style={{ padding: '1.5rem', background: 'white' }}>
               <Row>
                 <Col md={6}>
                    {/* Display Driver Info associated with the task if available */}
                    {currentTask && driverDetails && driverDetails.driverId === currentTask.driverId && (
-                     <Row className="mb-3">
-                       <Col xs={4} className="text-muted"><strong>Driver:</strong></Col>
-                       <Col xs={8}>{driverDetails.fullName} ({driverDetails.driverId})</Col>
-                       <Col xs={4} className="text-muted"><strong>Contact:</strong></Col>
-                       <Col xs={8}>{driverDetails.phone}</Col>
-                     </Row>
+                     <div className="mb-4" style={{
+                       background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(124, 58, 237, 0.03))',
+                       borderRadius: '12px',
+                       padding: '1rem',
+                       border: '1px solid rgba(139, 92, 246, 0.1)'
+                     }}>
+                       <div className="d-flex align-items-center mb-3">
+                         <div style={{
+                           background: 'rgba(139, 92, 246, 0.1)',
+                           borderRadius: '8px',
+                           padding: '6px',
+                           marginRight: '8px'
+                         }}>
+                           <Users size={16} color="#8b5cf6" />
+                         </div>
+                         <span style={{ fontWeight: '600', color: '#6b46c1' }}>Driver Information</span>
+                       </div>
+                       <div className="row mb-2">
+                         <div className="col-4" style={{ color: '#6b7280', fontWeight: '500' }}>Name:</div>
+                         <div className="col-8" style={{ fontWeight: '500' }}>{driverDetails.fullName} ({driverDetails.driverId})</div>
+                       </div>
+                       <div className="row">
+                         <div className="col-4" style={{ color: '#6b7280', fontWeight: '500' }}>Contact:</div>
+                         <div className="col-8" style={{ fontWeight: '500' }}>{driverDetails.phone}</div>
+                       </div>
+                     </div>
                    )}
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Task Number:</strong></Col>
-                     <Col xs={8}>{currentTask.taskNumber}</Col>
-                   </Row>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Cargo Type:</strong></Col>
-                     <Col xs={8}>{currentTask.cargoType}</Col>
-                   </Row>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Weight:</strong></Col>
-                     <Col xs={8}>{currentTask.weight} kg</Col>
-                   </Row>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Pickup Location:</strong></Col>
-                     <Col xs={8}>{currentTask.pickup}</Col>
-                   </Row>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Task Number</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{currentTask.taskNumber}</div>
+                   </div>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Cargo Type</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{currentTask.cargoType}</div>
+                   </div>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Weight</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{currentTask.weight} kg</div>
+                   </div>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Pickup Location</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{currentTask.pickup}</div>
+                   </div>
                 </Col>
                 <Col md={6}>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Delivery Location:</strong></Col>
-                     <Col xs={8}>{currentTask.delivery}</Col>
-                   </Row>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Delivery Contact:</strong></Col>
-                     <Col xs={8}>{currentTask.deliveryPhone}</Col>
-                   </Row>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Expected Delivery:</strong></Col>
-                     <Col xs={8}>{new Date(currentTask.expectedDelivery).toLocaleString()}</Col>
-                   </Row>
-                   <Row className="mb-3">
-                     <Col xs={4} className="text-muted"><strong>Status:</strong></Col>
-                     <Col xs={8}>
-                       <span className={`badge ${
-                         currentTask.status === 'In Progress' 
-                           ? 'bg-primary' 
-                           : currentTask.status === 'Completed'
-                           ? 'bg-success'
-                           : 'bg-secondary'
-                       }`}>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Delivery Location</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{currentTask.delivery}</div>
+                   </div>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Delivery Contact</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{currentTask.deliveryPhone}</div>
+                   </div>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Expected Delivery</div>
+                     <div style={{ fontWeight: '600', color: '#1f2937' }}>{new Date(currentTask.expectedDelivery).toLocaleString()}</div>
+                   </div>
+                   <div className="info-row mb-3">
+                     <div style={{ color: '#6b7280', fontWeight: '500', marginBottom: '4px' }}>Status</div>
+                     <div>
+                       <span 
+                         style={{
+                           background: currentTask.status === 'In Progress' 
+                             ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.15))'
+                             : currentTask.status === 'Completed'
+                             ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.15))'
+                             : 'linear-gradient(135deg, rgba(107, 114, 128, 0.2), rgba(75, 85, 99, 0.15))',
+                           color: currentTask.status === 'In Progress' 
+                             ? '#2563eb'
+                             : currentTask.status === 'Completed'
+                             ? '#047857'
+                             : '#4b5563',
+                           padding: '6px 12px',
+                           borderRadius: '8px',
+                           fontSize: '0.875rem',
+                           fontWeight: '500',
+                           border: currentTask.status === 'In Progress' 
+                             ? '1px solid rgba(59, 130, 246, 0.4)'
+                             : currentTask.status === 'Completed'
+                             ? '1px solid rgba(16, 185, 129, 0.4)'
+                             : '1px solid rgba(107, 114, 128, 0.4)'
+                         }}
+                       >
                          {currentTask.status}
                        </span>
-                     </Col>
-                   </Row>
+                     </div>
+                   </div>
                 </Col>
               </Row>
               {currentTask.additionalNotes && (
-                <div className="mt-3">
-                  <strong>Additional Notes:</strong>
-                  <p className="mb-0">{currentTask.additionalNotes}</p>
+                <div 
+                  className="mt-4" 
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.03))',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    border: '1px solid rgba(59, 130, 246, 0.1)'
+                  }}
+                >
+                  <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>Additional Notes:</div>
+                  <p className="mb-0" style={{ color: '#4b5563', lineHeight: '1.5' }}>{currentTask.additionalNotes}</p>
                 </div>
               )}
             </Card.Body>
@@ -273,9 +407,40 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
         )}
 
         {/* Combined Sensor History Chart */}
-        <Card className="mb-4">
-          <Card.Header>Sensor Data History</Card.Header>
-          <Card.Body>
+        <Card 
+          className="mb-4" 
+          style={{
+            border: 'none',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            overflow: 'hidden'
+          }}
+        >
+          <Card.Header 
+            style={{
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              color: '#b45309',
+              padding: '1.25rem'
+            }}
+          >
+            <div className="d-flex align-items-center">
+              <div 
+                style={{
+                  background: 'rgba(180, 83, 9, 0.15)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  marginRight: '12px'
+                }}
+              >
+                <Activity size={20} color="#b45309" />
+              </div>
+              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+                Sensor Data History
+              </span>
+            </div>
+          </Card.Header>
+          <Card.Body style={{ padding: '1.5rem', background: 'white' }}>
             <CombinedSensorChart 
               speedHistory={sensorData.speedHistory}
               temperatureHistory={sensorData.temperatureHistory}
@@ -286,12 +451,65 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
 
         {/* Map */}
         {vehicle?.deviceId && (
-           <LeafletMap deviceId={vehicle.deviceId} />
+          <Card 
+            style={{
+              border: 'none',
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              overflow: 'hidden'
+            }}
+          >
+            <Card.Header 
+              style={{
+                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(8, 145, 178, 0.1))',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                color: '#0e7490',
+                padding: '1.25rem'
+              }}
+            >
+              <div className="d-flex align-items-center">
+                <div 
+                  style={{
+                    background: 'rgba(14, 116, 144, 0.15)',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    marginRight: '12px'
+                  }}
+                >
+                  <MapPin size={20} color="#0e7490" />
+                </div>
+                <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+                  Live Location Tracking
+                </span>
+              </div>
+            </Card.Header>
+            <Card.Body style={{ padding: '0', background: 'white' }}>
+              <LeafletMap deviceId={vehicle.deviceId} />
+            </Card.Body>
+          </Card>
         )}
       </Modal.Body>
       
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>Close</Button>
+      <Modal.Footer 
+        style={{
+          background: 'linear-gradient(135deg, rgba(248, 250, 252, 0.9), rgba(226, 232, 240, 0.7))',
+          border: '1px solid rgba(226, 232, 240, 0.4)',
+          padding: '1.25rem 2rem'
+        }}
+      >
+        <Button 
+          style={{
+            background: 'linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(75, 85, 99, 0.1))',
+            border: '1px solid rgba(107, 114, 128, 0.4)',
+            borderRadius: '8px',
+            padding: '0.75rem 1.5rem',
+            fontWeight: '500',
+            color: '#374151'
+          }}
+          onClick={onClose}
+        >
+          Close
+        </Button>
       </Modal.Footer>
     </Modal>
   );

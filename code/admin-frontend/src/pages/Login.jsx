@@ -230,7 +230,7 @@ function Login() {
                 <p className="text-muted">
                   {isLogin 
                     ? 'Sign in to access your vehicle tracking dashboard' 
-                    : 'Register to start tracking your fleet of vehicles'}
+                    : 'Register to start tracking your cargo of vehicles'}
                 </p>
               </motion.div>
 

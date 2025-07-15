@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaShieldAlt, FaCog, FaSave, FaDesktop, FaClock, FaGlobe, FaMoon, FaSun, FaBuilding } from 'react-icons/fa';
+import { FaUser, FaShieldAlt, FaSave, FaDesktop, FaClock, FaGlobe, FaMoon, FaSun, FaBuilding } from 'react-icons/fa';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
-import PageHeader from '../components/PageHeader';
 import AnimatedAlert from '../components/AnimatedAlert';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/darkMode.css';
@@ -48,147 +48,12 @@ function Settings() {
   const fetchUserProfile = async () => {
     try {
       const response = await axios.get('/api/admin/profile', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-
-      if (response.data.success) {
-        const { firstName, lastName, email, phone, companyId } = response.data.data.user;
-        setUserProfile({
-          firstName,
-          lastName,
-          email,
-          phone,
-          companyId,
-        });
-      }
+      setUserProfile(response.data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      setAlertMessage('Failed to fetch profile data');
-      setAlertType('error');
-      setShowAlert(true);
+      console.error('Error fetching user profile:', error);
     }
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.put(
-        '/api/admin/profile',
-        {
-          firstName: userProfile.firstName,
-          lastName: userProfile.lastName,
-          phone: userProfile.phone,
-          companyId: userProfile.companyId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setAlertMessage('Profile updated successfully!');
-        setAlertType('success');
-        setShowAlert(true);
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setAlertMessage(error.response?.data?.message || 'Failed to update profile');
-      setAlertType('error');
-      setShowAlert(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const validatePassword = (password) => {
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[@$!%*?&]/.test(password);
-    const isLongEnough = password.length >= 8;
-
-    const errors = [];
-    if (!isLongEnough) errors.push('Password must be at least 8 characters long');
-    if (!hasUpperCase) errors.push('Password must contain at least one uppercase letter');
-    if (!hasLowerCase) errors.push('Password must contain at least one lowercase letter');
-    if (!hasNumbers) errors.push('Password must contain at least one number');
-    if (!hasSpecialChar) errors.push('Password must contain at least one special character (@$!%*?&)');
-
-    return errors;
-  };
-
-  const handleSaveSecurity = async () => {
-    // Validate current password
-    if (!securitySettings.oldPassword) {
-      setAlertMessage('Current password is required');
-      setAlertType('error');
-      setShowAlert(true);
-      return;
-    }
-
-    // Validate new password
-    const passwordErrors = validatePassword(securitySettings.changePassword);
-    if (passwordErrors.length > 0) {
-      setAlertMessage(`Password requirements not met:\n${passwordErrors.join('\n')}`);
-      setAlertType('error');
-      setShowAlert(true);
-      return;
-    }
-
-    // Check if passwords match
-    if (securitySettings.changePassword !== securitySettings.confirmPassword) {
-      setAlertMessage('New passwords do not match');
-      setAlertType('error');
-      setShowAlert(true);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await axios.post(
-        '/api/admin/change-password',
-        {
-          currentPassword: securitySettings.oldPassword,
-          newPassword: securitySettings.changePassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setAlertMessage('Password changed successfully!');
-        setAlertType('success');
-        setShowAlert(true);
-        // Clear password fields
-        setSecuritySettings({
-          oldPassword: '',
-          changePassword: '',
-          confirmPassword: '',
-        });
-      }
-    } catch (error) {
-      console.error('Error changing password:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to change password';
-      setAlertMessage(errorMessage);
-      setAlertType('error');
-      setShowAlert(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveDisplayPreferences = () => {
-    setAlertMessage('Display preferences updated successfully!');
-    setAlertType('success');
-    setShowAlert(true);
-    // Add API call to save display preferences
   };
 
   const handleLogout = () => {
@@ -196,249 +61,464 @@ function Settings() {
     navigate('/login');
   };
 
+  const handleSaveProfile = async () => {
+    setLoading(true);
+    try {
+      await axios.put('/api/admin/profile', userProfile, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setAlertType('success');
+      setAlertMessage('Profile updated successfully!');
+      setShowAlert(true);
+    } catch (error) {
+      setAlertType('error');
+      setAlertMessage('Failed to update profile. Please try again.');
+      setShowAlert(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (securitySettings.changePassword !== securitySettings.confirmPassword) {
+      setAlertType('error');
+      setAlertMessage('New passwords do not match!');
+      setShowAlert(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.put('/api/admin/change-password', {
+        oldPassword: securitySettings.oldPassword,
+        newPassword: securitySettings.changePassword
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setAlertType('success');
+      setAlertMessage('Password changed successfully!');
+      setShowAlert(true);
+      setSecuritySettings({ oldPassword: '', changePassword: '', confirmPassword: '' });
+    } catch (error) {
+      setAlertType('error');
+      setAlertMessage('Failed to change password. Please check your current password.');
+      setShowAlert(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveDisplayPreferences = () => {
+    setLoading(true);
+    setTimeout(() => {
+      localStorage.setItem('displayPreferences', JSON.stringify(displayPreferences));
+      setAlertType('success');
+      setAlertMessage('Display preferences saved successfully!');
+      setShowAlert(true);
+      setLoading(false);
+    }, 1000);
+  };
+
+  // Reset settings to defaults
+  const handleResetToDefaults = () => {
+    if (window.confirm('Are you sure you want to reset all settings to defaults? This action cannot be undone.')) {
+      setDisplayPreferences({
+        dashboardLayout: 'default',
+        dataRefreshRate: 5,
+        dateTimeFormat: '12h',
+        language: 'en',
+      });
+      setSecuritySettings({
+        oldPassword: '',
+        changePassword: '',
+        confirmPassword: '',
+      });
+      setAlertType('success');
+      setAlertMessage('Settings reset to defaults successfully!');
+      setShowAlert(true);
+    }
+  };
+
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: sidebarCollapsed ? '80px' : '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
-      <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        <PageHeader 
-          title="Settings" 
-          subtitle="Manage your account and system preferences"
-          icon={FaCog}
-        />
-        
-        <AnimatedAlert
-          show={showAlert}
-          type={alertType}
-          message={alertMessage}
-          onClose={() => setShowAlert(false)}
-        />
+    <div 
+      className="min-vh-100"
+      style={{ 
+        paddingLeft: sidebarCollapsed ? '90px' : '280px',
+        transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+         background: 'linear-gradient(135deg,rgba(148, 140, 140, 1) 0%,rgb(138, 176, 233) 100%)',
+        minHeight: '100vh'
+      }}
+    >
+      <Sidebar 
+        handleLogout={handleLogout} 
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <SettingsIcon size={28} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
+              >
+                Settings
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
+              >
+                Manage your account and application preferences
+              </p>
+            </div>
+          </div>
+          
+          <motion.div
+            className="d-flex gap-3"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <motion.button
+              className="btn px-4 py-2 fw-semibold"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              whileHover={{
+                scale: 1.05,
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2))'
+              }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleResetToDefaults}
+            >
+              Reset to Defaults
+            </motion.button>
+          </motion.div>
+        </motion.div>
+
+        {showAlert && (
+          <AnimatedAlert 
+            type={alertType}
+            message={alertMessage}
+            onClose={() => setShowAlert(false)}
+          />
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {/* User Profile Section */}
-          <div className="card shadow-sm mb-4">
-            <div className="card-header bg-light">
-              <h5 className="mb-0">
-                <FaUser className="me-2" />
-                User Profile
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-6">
+          {/* Settings Grid */}
+          <div className="row g-4">
+            {/* User Profile Section */}
+            <div className="col-lg-6">
+              <motion.div 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                  overflow: 'hidden'
+                }}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="p-4">
+                  <div className="d-flex align-items-center mb-4">
+                    <div 
+                      className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                        color: 'white'
+                      }}
+                    >
+                      <FaUser size={24} />
+                    </div>
+                    <div>
+                      <h5 className="mb-1 fw-bold">User Profile</h5>
+                      <p className="text-muted mb-0">Manage your personal information</p>
+                    </div>
+                  </div>
+
                   <div className="mb-3">
-                    <label className="form-label">First Name</label>
+                    <label className="form-label fw-medium">First Name</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control modern-input"
+                      placeholder="Enter your first name"
                       value={userProfile.firstName}
                       onChange={(e) => setUserProfile({ ...userProfile, firstName: e.target.value })}
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Last Name</label>
+                    <label className="form-label fw-medium">Last Name</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control modern-input"
+                      placeholder="Enter your last name"
                       value={userProfile.lastName}
                       onChange={(e) => setUserProfile({ ...userProfile, lastName: e.target.value })}
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">
-                      <FaBuilding className="me-2" />
-                      Company ID
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={userProfile.companyId}
-                      disabled
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Email Address</label>
+                    <label className="form-label fw-medium">Email</label>
                     <input
                       type="email"
-                      className="form-control"
+                      className="form-control modern-input"
+                      placeholder="Enter your email"
                       value={userProfile.email}
-                      disabled
+                      onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
                     />
                   </div>
-                  <div className="mb-3">
-                    <label className="form-label">Phone Number</label>
+                  <div className="mb-4">
+                    <label className="form-label fw-medium">Phone</label>
                     <input
                       type="tel"
-                      className="form-control"
+                      className="form-control modern-input"
+                      placeholder="Enter your phone number"
                       value={userProfile.phone}
                       onChange={(e) => setUserProfile({ ...userProfile, phone: e.target.value })}
                     />
                   </div>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleSaveProfile}
+                    disabled={loading}
+                  >
+                    <FaSave className="me-2" />
+                    {loading ? 'Saving...' : 'Save Profile'}
+                  </button>
                 </div>
-              </div>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleSaveProfile}
-                disabled={loading}
-              >
-                <FaSave className="me-2" />
-                {loading ? 'Saving...' : 'Save Profile'}
-              </button>
+              </motion.div>
             </div>
-          </div>
 
-          {/* Security Settings Section */}
-          <div className="card shadow-sm mb-4">
-            <div className="card-header bg-light">
-              <h5 className="mb-0">
-                <FaShieldAlt className="me-2" />
-                Security Settings
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="mb-3">
-                <label className="form-label">Current Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Enter your current password"
-                  value={securitySettings.oldPassword}
-                  onChange={(e) => setSecuritySettings({ ...securitySettings, oldPassword: e.target.value })}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">New Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Enter new password"
-                  value={securitySettings.changePassword}
-                  onChange={(e) => setSecuritySettings({ ...securitySettings, changePassword: e.target.value })}
-                />
-                <small className="text-muted">
-                  Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character (@$!%*?&)
-                </small>
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Confirm New Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Confirm new password"
-                  value={securitySettings.confirmPassword}
-                  onChange={(e) => setSecuritySettings({ ...securitySettings, confirmPassword: e.target.value })}
-                />
-              </div>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleSaveSecurity}
-                disabled={loading}
+            {/* Security Settings Section */}
+            <div className="col-lg-6">
+              <motion.div 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                  overflow: 'hidden'
+                }}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
               >
-                <FaSave className="me-2" />
-                {loading ? 'Saving...' : 'Save Security Settings'}
-              </button>
-            </div>
-          </div>
-
-          {/* Display Preferences Section */}
-          <div className="card shadow-sm mb-4">
-            <div className="card-header bg-light">
-              <h5 className="mb-0">
-                <FaDesktop className="me-2" />
-                Display Preferences
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <FaDesktop className="me-2" />
-                      Dashboard Layout
-                    </label>
-                    <select
-                      className="form-select"
-                      value={displayPreferences.dashboardLayout}
-                      onChange={(e) => setDisplayPreferences({ ...displayPreferences, dashboardLayout: e.target.value })}
+                <div className="p-4">
+                  <div className="d-flex align-items-center mb-4">
+                    <div 
+                      className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                        color: 'white'
+                      }}
                     >
-                      <option value="default">Default</option>
-                      <option value="compact">Compact</option>
-                      <option value="detailed">Detailed</option>
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <FaClock className="me-2" />
-                      Data Refresh Rate (seconds)
-                    </label>
-                    <select
-                      className="form-select"
-                      value={displayPreferences.dataRefreshRate}
-                      onChange={(e) => setDisplayPreferences({ ...displayPreferences, dataRefreshRate: parseInt(e.target.value) })}
-                    >
-                      <option value="3">3 seconds</option>
-                      <option value="5">5 seconds</option>
-                      <option value="10">10 seconds</option>
-                      <option value="15">15 seconds</option>
-                      <option value="30">30 seconds</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <FaGlobe className="me-2" />
-                      Date/Time Format
-                    </label>
-                    <select
-                      className="form-select"
-                      value={displayPreferences.dateTimeFormat}
-                      onChange={(e) => setDisplayPreferences({ ...displayPreferences, dateTimeFormat: e.target.value })}
-                    >
-                      <option value="12h">12-hour (AM/PM)</option>
-                      <option value="24h">24-hour</option>
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      {isDarkMode ? <FaMoon className="me-2" /> : <FaSun className="me-2" />}
-                      Theme
-                    </label>
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="darkModeToggle"
-                        checked={isDarkMode}
-                        onChange={toggleDarkMode}
-                      />
-                      <label className="form-check-label" htmlFor="darkModeToggle">
-                        {isDarkMode ? 'Dark Mode' : 'Light Mode'}
-                      </label>
+                      <FaShieldAlt size={24} />
+                    </div>
+                    <div>
+                      <h5 className="mb-1 fw-bold">Security Settings</h5>
+                      <p className="text-muted mb-0">Update your password</p>
                     </div>
                   </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-medium">Current Password</label>
+                    <input
+                      type="password"
+                      className="form-control modern-input"
+                      placeholder="Enter your current password"
+                      value={securitySettings.oldPassword}
+                      onChange={(e) => setSecuritySettings({ ...securitySettings, oldPassword: e.target.value })}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-medium">New Password</label>
+                    <input
+                      type="password"
+                      className="form-control modern-input"
+                      placeholder="Enter new password"
+                      value={securitySettings.changePassword}
+                      onChange={(e) => setSecuritySettings({ ...securitySettings, changePassword: e.target.value })}
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="form-label fw-medium">Confirm New Password</label>
+                    <input
+                      type="password"
+                      className="form-control modern-input"
+                      placeholder="Confirm your new password"
+                      value={securitySettings.confirmPassword}
+                      onChange={(e) => setSecuritySettings({ ...securitySettings, confirmPassword: e.target.value })}
+                    />
+                  </div>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleChangePassword}
+                    disabled={loading}
+                  >
+                    <FaShieldAlt className="me-2" />
+                    {loading ? 'Changing...' : 'Change Password'}
+                  </button>
                 </div>
-              </div>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleSaveDisplayPreferences}
-                disabled={loading}
+              </motion.div>
+            </div>
+
+            {/* Display Preferences Section */}
+            <div className="col-12">
+              <motion.div 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                  overflow: 'hidden'
+                }}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
               >
-                <FaSave className="me-2" />
-                {loading ? 'Saving...' : 'Save Display Preferences'}
-              </button>
+                <div className="p-4">
+                  <div className="d-flex align-items-center mb-4">
+                    <div 
+                      className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: 'white'
+                      }}
+                    >
+                      <FaDesktop size={24} />
+                    </div>
+                    <div>
+                      <h5 className="mb-1 fw-bold">Display Preferences</h5>
+                      <p className="text-muted mb-0">Customize your interface</p>
+                    </div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label fw-medium">Dashboard Layout</label>
+                        <select
+                          className="form-select modern-input"
+                          value={displayPreferences.dashboardLayout}
+                          onChange={(e) => setDisplayPreferences({ ...displayPreferences, dashboardLayout: e.target.value })}
+                        >
+                          <option value="default">Default</option>
+                          <option value="compact">Compact</option>
+                          <option value="expanded">Expanded</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label fw-medium">Data Refresh Rate (seconds)</label>
+                        <select
+                          className="form-select modern-input"
+                          value={displayPreferences.dataRefreshRate}
+                          onChange={(e) => setDisplayPreferences({ ...displayPreferences, dataRefreshRate: parseInt(e.target.value) })}
+                        >
+                          <option value={5}>5 seconds</option>
+                          <option value={10}>10 seconds</option>
+                          <option value={30}>30 seconds</option>
+                          <option value={60}>1 minute</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label fw-medium">Date & Time Format</label>
+                        <select
+                          className="form-select modern-input"
+                          value={displayPreferences.dateTimeFormat}
+                          onChange={(e) => setDisplayPreferences({ ...displayPreferences, dateTimeFormat: e.target.value })}
+                        >
+                          <option value="12h">12-hour format</option>
+                          <option value="24h">24-hour format</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label fw-medium">Language</label>
+                        <select
+                          className="form-select modern-input"
+                          value={displayPreferences.language}
+                          onChange={(e) => setDisplayPreferences({ ...displayPreferences, language: e.target.value })}
+                        >
+                          <option value="en">English</option>
+                          <option value="es">Spanish</option>
+                          <option value="fr">French</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-12">
+                      <div className="mb-3">
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="darkModeToggle"
+                            checked={isDarkMode}
+                            onChange={toggleDarkMode}
+                          />
+                          <label className="form-check-label" htmlFor="darkModeToggle">
+                            {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleSaveDisplayPreferences}
+                    disabled={loading}
+                  >
+                    <FaSave className="me-2" />
+                    {loading ? 'Saving...' : 'Save Display Preferences'}
+                  </button>
+                </div>
+              </motion.div>
             </div>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

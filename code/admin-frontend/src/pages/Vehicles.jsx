@@ -396,8 +396,18 @@ const Vehicles = () => {
       header: 'Last Location', 
       sortable: false, 
       render: (_, row) => (
-        <Button size="sm" variant="outline-info" onClick={() => handleVehicleClick(row)}>
-          <MapPin size={16} />
+        <Button 
+          size="sm" 
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            color: '#7c3aed',
+            borderRadius: '6px'
+          }}
+          onClick={() => handleVehicleClick(row)}
+        >
+          <MapPin size={14} className="me-1" />
+          Track
         </Button>
       ) 
     },
@@ -406,7 +416,19 @@ const Vehicles = () => {
       header: 'Status', 
       sortable: true, 
       render: (v, row) => (
-        <span className={`badge ${row.trackingEnabled ? 'bg-success' : 'bg-warning'}`}>
+        <span 
+          className="badge px-3 py-2"
+          style={{
+            background: row.trackingEnabled 
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(4, 120, 87, 0.1))' 
+              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+            color: row.trackingEnabled ? '#059669' : '#d97706',
+            border: `1px solid ${row.trackingEnabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            fontWeight: '500'
+          }}
+        >
           {row.trackingEnabled ? 'Active' : 'Inactive'}
         </span>
       ) 
@@ -414,14 +436,41 @@ const Vehicles = () => {
     {
       key: 'actions', header: 'Action', sortable: false, render: (_, row) => (
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-primary" onClick={() => handleViewVehicle(row)}>
-            <Eye size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 64, 175, 0.05))',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#3b82f6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleViewVehicle(row)}
+          >
+            <Eye size={14} />
           </Button>
-          <Button size="sm" variant="outline-secondary" onClick={() => handleEditVehicle(row)}>
-            <Edit size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(4, 120, 87, 0.05))',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              color: '#10b981',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleEditVehicle(row)}
+          >
+            <Edit size={14} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
-            <Trash2 size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleDeleteClick(row)}
+          >
+            <Trash2 size={14} />
           </Button>
         </div>
       )
@@ -437,45 +486,128 @@ const Vehicles = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light" style={{ 
-      paddingLeft: sidebarCollapsed ? '80px' : '250px',
-      transition: 'padding-left 0.3s ease-in-out'
-    }}>
-      <Sidebar handleLogout={handleLogout} />
-      <div className="p-4">
-        <PageHeader 
-          title="Vehicle Management" 
-          subtitle="Manage and monitor all your fleet vehicles"
-          icon={Truck}
-          actions={
-            <>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={fetchVehicles}
-              >
-                <RefreshCw size={16} className="me-2" />
-                Refresh
-              </Button>
-              <Button 
-                variant="outline-primary" 
-                className="d-flex align-items-center"
-                onClick={handleExportPDF}
-              >
-                <DownloadCloud size={16} className="me-2" />
-                Export
-              </Button>
-              <Button 
-                variant="primary" 
-                className="d-flex align-items-center"
-                onClick={handleAddVehicle}
-              >
-                <Plus size={16} className="me-2" />
-                Add Vehicle
-              </Button>
-            </>
-          }
+    <>
+      <div 
+        className="min-vh-100"
+        style={{ 
+          paddingLeft: sidebarCollapsed ? '90px' : '280px',
+          transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          background: 'linear-gradient(135deg,rgba(148, 140, 140, 1) 0%,rgb(138, 176, 233) 100%)',
+          minHeight: '100vh'
+        }}
+      >
+        <Sidebar 
+          handleLogout={handleLogout} 
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
+      
+      {/* Main Content Container */}
+      <motion.div 
+        className="p-4"
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '100vh'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <Truck size={30} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
+              >
+                Vehicle Management
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
+              >
+                Manage and monitor all your cargo vehicles
+              </p>
+            </div>
+          </div>
+          
+          <div className="d-flex gap-3">
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={fetchVehicles}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RefreshCw size={16} className="me-2" />
+              Refresh
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              onClick={handleExportPDF}
+              whileHover={{ 
+                scale: 1.05,
+                background: 'rgba(255, 255, 255, 0.25)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <DownloadCloud size={16} className="me-2" />
+              Export
+            </motion.button>
+            
+            <motion.button 
+              className="btn border-0 d-flex align-items-center px-4 py-2"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)'
+              }}
+              onClick={handleAddVehicle}
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: '0 12px 30px rgba(16, 185, 129, 0.4)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus size={16} className="me-2" />
+              Add Vehicle
+            </motion.button>
+          </div>
+        </motion.div>
         
         <AnimatedAlert
           show={showAlert}
@@ -484,166 +616,575 @@ const Vehicles = () => {
           onClose={() => setShowAlert(false)}
         />
         
+        {/* Modern Data Table Container */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-4"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden'
+          }}
         >
-          <DataTable 
-            columns={tableColumns}
-            data={vehicles}
-            title="All Vehicles"
-            icon={<Truck size={18} />}
-            emptyMessage="No vehicles found"
-          />
+          <div className="p-4">
+            <div className="d-flex align-items-center mb-4">
+              <div 
+                className="me-3 p-3 rounded-3 d-flex align-items-center justify-content-center"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white'
+                }}
+              >
+                <Truck size={24} />
+              </div>
+              <div>
+                <h5 className="mb-1 fw-bold">Vehicle cargo</h5>
+                <p className="text-muted mb-0">{vehicles.length} vehicles in your cargo</p>
+              </div>
+              <div className="ms-auto">
+                <span 
+                  className="badge px-3 py-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    borderRadius: '12px'
+                  }}
+                >
+                  Total: {vehicles.length}
+                </span>
+              </div>
+            </div>
+            
+            <DataTable 
+              columns={tableColumns}
+              data={vehicles}
+              emptyMessage="No vehicles found. Add your first vehicle to get started!"
+            />
+          </div>
         </motion.div>
+      </motion.div>
 
-        {/* Add/Edit/View Vehicle Modal */}
-        {modalState.type === 'addEdit' && modalState.vehicle && (
-          <Modal key={modalKey} show={true} onHide={closeModal} centered>
-            <Form onSubmit={handleAddVehicleSubmit}>
-              <Modal.Header closeButton>
-                <Modal.Title>
-                  {modalState.viewMode ? 'View Vehicle' : modalState.editMode ? 'Edit Vehicle' : 'Add New Vehicle'}
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Vehicle Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="vehicleName"
-                    value={modalState.vehicle.vehicleName || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>License Plate</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="licensePlate"
-                    value={modalState.vehicle.licensePlate || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Vehicle Type</Form.Label>
-                  <Form.Select
-                    name="vehicleType"
-                    value={modalState.vehicle.vehicleType || "car"}
-                    onChange={handleInputChange}
-                    required
-                    disabled={modalState.viewMode}
+      {/* Add/Edit/View Vehicle Modal */}
+      {modalState.type === 'addEdit' && modalState.vehicle && (
+          <Modal 
+            key={modalKey} 
+            show={true} 
+            onHide={closeModal} 
+            centered 
+            size="lg"
+            className="modern-modal"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <Form onSubmit={handleAddVehicleSubmit}>
+                <Modal.Header 
+                  closeButton 
+                  className="border-0 pb-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '12px 12px 0 0'
+                  }}
+                >
+                  <Modal.Title 
+                    className="d-flex align-items-center gap-3"
+                    style={{ 
+                      color: '#1e293b', 
+                      fontWeight: '600',
+                      fontSize: '1.25rem'
+                    }}
                   >
-                    <option value="car">Car</option>
-                    <option value="truck">Truck</option>
-                    <option value="van">Van</option>
-                    <option value="bus">Bus</option>
-                    <option value="motorcycle">Motorcycle</option>
-                    <option value="other">Other</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Year Made</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="year"
-                    value={modalState.vehicle.year || ""}
-                    onChange={handleInputChange}
-                    min={1900}
-                    max={2100}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Color</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="color"
-                    value={modalState.vehicle.color || ""}
-                    onChange={handleInputChange}
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Tracking Device ID</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="deviceId"
-                    value={modalState.vehicle.deviceId || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Temperature Limit (°C)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="temperatureLimit"
-                    value={modalState.vehicle.temperatureLimit || ""}
-                    onChange={handleInputChange}
-                    min={0}
-                    max={100}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Humidity Limit (%)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="humidityLimit"
-                    value={modalState.vehicle.humidityLimit || ""}
-                    onChange={handleInputChange}
-                    min={0}
-                    max={100}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Speed Limit (km/h)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="speedLimit"
-                    value={modalState.vehicle.speedLimit || ""}
-                    onChange={handleInputChange}
-                    min={0}
-                    max={100}
-                    required
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="trackingEnabled"
-                    label="Enable Real-Time Tracking"
-                    name="trackingEnabled"
-                    checked={modalState.vehicle.trackingEnabled ?? true}
-                    onChange={handleInputChange}
-                    disabled={modalState.viewMode}
-                  />
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="outline-secondary" onClick={closeModal}>
-                  Close
-                </Button>
-                {!modalState.viewMode && (
-                  <Button variant="primary" type="submit">
-                    {modalState.editMode ? "Update Vehicle" : "Add Vehicle"}
-                  </Button>
-                )}
-              </Modal.Footer>
-            </Form>
+                    <motion.div
+                      className="p-2 rounded-2"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: 'white'
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Truck size={20} />
+                    </motion.div>
+                    {modalState.viewMode ? 'Vehicle Details' : modalState.editMode ? 'Edit Vehicle' : 'Add New Vehicle'}
+                  </Modal.Title>
+                </Modal.Header>
+                
+                <Modal.Body 
+                  className="px-4 py-4"
+                  style={{
+                    background: '#ffffff',
+                    maxHeight: '70vh',
+                    overflowY: 'auto'
+                  }}
+                >
+                  <div className="row g-4">
+                    {/* Vehicle Name */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Vehicle Name *
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="vehicleName"
+                            value={modalState.vehicle.vehicleName || ""}
+                            onChange={handleInputChange}
+                            required
+                            disabled={modalState.viewMode}
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease',
+                              ':focus': {
+                                borderColor: '#3b82f6',
+                                boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                              }
+                            }}
+                            placeholder="Enter vehicle name"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* License Plate */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            License Plate *
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="licensePlate"
+                            value={modalState.vehicle.licensePlate || ""}
+                            onChange={handleInputChange}
+                            required
+                            disabled={modalState.viewMode}
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease',
+                              textTransform: 'uppercase'
+                            }}
+                            placeholder="Enter license plate"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Vehicle Type */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Vehicle Type *
+                          </Form.Label>
+                          <Form.Select
+                            name="vehicleType"
+                            value={modalState.vehicle.vehicleType || "car"}
+                            onChange={handleInputChange}
+                            required
+                            disabled={modalState.viewMode}
+                            className="modern-select"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <option value="car">🚗 Car</option>
+                            <option value="truck">🚛 Truck</option>
+                            <option value="van">🚐 Van</option>
+                            <option value="bus">🚌 Bus</option>
+                            <option value="motorcycle">🏍️ Motorcycle</option>
+                            <option value="other">📦 Other</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Year */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Year Made *
+                          </Form.Label>
+                          <Form.Control
+                            type="number"
+                            name="year"
+                            value={modalState.vehicle.year || ""}
+                            onChange={handleInputChange}
+                            min={1900}
+                            max={2100}
+                            required
+                            disabled={modalState.viewMode}
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease'
+                            }}
+                            placeholder="2020"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Color */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Color
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="color"
+                            value={modalState.vehicle.color || ""}
+                            onChange={handleInputChange}
+                            disabled={modalState.viewMode}
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease'
+                            }}
+                            placeholder="Enter vehicle color"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Device ID */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.35 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Tracking Device ID *
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="deviceId"
+                            value={modalState.vehicle.deviceId || ""}
+                            onChange={handleInputChange}
+                            required
+                            disabled={modalState.viewMode}
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'monospace'
+                            }}
+                            placeholder="DEVICE_001"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Monitoring Limits Section */}
+                    <div className="col-12">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="p-4 rounded-3 mt-3"
+                        style={{
+                          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                          border: '1px solid #e5e7eb'
+                        }}
+                      >
+                        <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#374151' }}>
+                          <div 
+                            className="p-1 rounded"
+                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                          >
+                            <Filter size={14} style={{ color: 'white' }} />
+                          </div>
+                          Monitoring Limits
+                        </h6>
+                        
+                        <div className="row g-3">
+                          <div className="col-md-4">
+                            <Form.Group>
+                              <Form.Label 
+                                className="fw-medium mb-2"
+                                style={{ 
+                                  color: '#6b7280',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                Temperature Limit (°C) *
+                              </Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="temperatureLimit"
+                                value={modalState.vehicle.temperatureLimit || ""}
+                                onChange={handleInputChange}
+                                min={0}
+                                max={100}
+                                required
+                                disabled={modalState.viewMode}
+                                className="modern-input-small"
+                                style={{
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  padding: '10px 12px',
+                                  fontSize: '0.8rem',
+                                  backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff'
+                                }}
+                                placeholder="25"
+                              />
+                            </Form.Group>
+                          </div>
+
+                          <div className="col-md-4">
+                            <Form.Group>
+                              <Form.Label 
+                                className="fw-medium mb-2"
+                                style={{ 
+                                  color: '#6b7280',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                Humidity Limit (%) *
+                              </Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="humidityLimit"
+                                value={modalState.vehicle.humidityLimit || ""}
+                                onChange={handleInputChange}
+                                min={0}
+                                max={100}
+                                required
+                                disabled={modalState.viewMode}
+                                className="modern-input-small"
+                                style={{
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  padding: '10px 12px',
+                                  fontSize: '0.8rem',
+                                  backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff'
+                                }}
+                                placeholder="60"
+                              />
+                            </Form.Group>
+                          </div>
+
+                          <div className="col-md-4">
+                            <Form.Group>
+                              <Form.Label 
+                                className="fw-medium mb-2"
+                                style={{ 
+                                  color: '#6b7280',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                Speed Limit (km/h) *
+                              </Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="speedLimit"
+                                value={modalState.vehicle.speedLimit || ""}
+                                onChange={handleInputChange}
+                                min={0}
+                                max={100}
+                                required
+                                disabled={modalState.viewMode}
+                                className="modern-input-small"
+                                style={{
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  padding: '10px 12px',
+                                  fontSize: '0.8rem',
+                                  backgroundColor: modalState.viewMode ? '#f9fafb' : '#ffffff'
+                                }}
+                                placeholder="80"
+                              />
+                            </Form.Group>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+
+                    {/* Tracking Toggle */}
+                    <div className="col-12">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.45 }}
+                        className="p-3 rounded-2 d-flex align-items-center justify-content-between"
+                        style={{
+                          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                          border: '1px solid #bbf7d0'
+                        }}
+                      >
+                        <div>
+                          <h6 className="mb-1 fw-semibold" style={{ color: '#065f46' }}>
+                            Real-Time Tracking
+                          </h6>
+                          <p className="mb-0 small" style={{ color: '#047857' }}>
+                            Enable continuous location monitoring for this vehicle
+                          </p>
+                        </div>
+                        <Form.Check
+                          type="switch"
+                          id="trackingEnabled"
+                          name="trackingEnabled"
+                          checked={modalState.vehicle.trackingEnabled ?? true}
+                          onChange={handleInputChange}
+                          disabled={modalState.viewMode}
+                          className="modern-switch"
+                          style={{
+                            transform: 'scale(1.2)'
+                          }}
+                        />
+                      </motion.div>
+                    </div>
+                  </div>
+                </Modal.Body>
+                
+                <Modal.Footer 
+                  className="border-0 pt-0 px-4 pb-4"
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '0 0 12px 12px'
+                  }}
+                >
+                  <div className="d-flex gap-3 w-100 justify-content-end">
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button 
+                        variant="outline-secondary"
+                        onClick={closeModal}
+                        className="px-4 py-2"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </motion.div>
+                    {!modalState.viewMode && (
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button 
+                          variant="primary" 
+                          type="submit"
+                          className="px-4 py-2"
+                          style={{
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: '500',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {modalState.editMode ? "Update Vehicle" : "Add Vehicle"}
+                        </Button>
+                      </motion.div>
+                    )}
+                  </div>
+                </Modal.Footer>
+              </Form>
+            </motion.div>
           </Modal>
         )}
 
@@ -665,7 +1206,7 @@ const Vehicles = () => {
           additionalMessage="All data related to this vehicle will be permanently removed."
         />
       </div>
-    </div>
+    </>
   );
 };
 
