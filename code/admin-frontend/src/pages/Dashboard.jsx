@@ -447,7 +447,7 @@ const Dashboard = () => {
       style={{ 
         paddingLeft: sidebarCollapsed ? '90px' : '280px',
         transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        background: 'linear-gradient(135deg,rgb(49, 115, 190) 0%,rgb(138, 176, 233) 100%)',
+        background: 'linear-gradient(135deg,rgba(148, 140, 140, 1) 0%,rgb(138, 176, 233) 100%)',
         minHeight: '100vh'
       }}
     >
