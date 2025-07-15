@@ -654,3 +654,76 @@ a:hover {
   transform: translateZ(0);
   will-change: transform;
 }
+
+/* Modern Form Styles */
+.modern-modal .modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.modern-input,
+.modern-select,
+.modern-input-small {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.modern-input:focus,
+.modern-select:focus,
+.modern-input-small:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.modern-input:hover,
+.modern-select:hover,
+.modern-input-small:hover {
+  border-color: #9ca3af !important;
+}
+
+.modern-switch .form-check-input {
+  width: 3rem;
+  height: 1.5rem;
+  background-color: #d1d5db;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.modern-switch .form-check-input:checked {
+  background-color: #10b981;
+  border-color: #10b981;
+}
+
+.modern-switch .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Enhanced Modal Animations */
+.modal.fade .modal-dialog {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+/* Custom Scrollbar for Modal */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
