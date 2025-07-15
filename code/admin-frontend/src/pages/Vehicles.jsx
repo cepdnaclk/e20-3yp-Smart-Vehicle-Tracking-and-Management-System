@@ -396,8 +396,18 @@ const Vehicles = () => {
       header: 'Last Location', 
       sortable: false, 
       render: (_, row) => (
-        <Button size="sm" variant="outline-info" onClick={() => handleVehicleClick(row)}>
-          <MapPin size={16} />
+        <Button 
+          size="sm" 
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            color: '#7c3aed',
+            borderRadius: '6px'
+          }}
+          onClick={() => handleVehicleClick(row)}
+        >
+          <MapPin size={14} className="me-1" />
+          Track
         </Button>
       ) 
     },
@@ -406,7 +416,19 @@ const Vehicles = () => {
       header: 'Status', 
       sortable: true, 
       render: (v, row) => (
-        <span className={`badge ${row.trackingEnabled ? 'bg-success' : 'bg-warning'}`}>
+        <span 
+          className="badge px-3 py-2"
+          style={{
+            background: row.trackingEnabled 
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(4, 120, 87, 0.1))' 
+              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+            color: row.trackingEnabled ? '#059669' : '#d97706',
+            border: `1px solid ${row.trackingEnabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            fontWeight: '500'
+          }}
+        >
           {row.trackingEnabled ? 'Active' : 'Inactive'}
         </span>
       ) 
@@ -414,14 +436,41 @@ const Vehicles = () => {
     {
       key: 'actions', header: 'Action', sortable: false, render: (_, row) => (
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-primary" onClick={() => handleViewVehicle(row)}>
-            <Eye size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 64, 175, 0.05))',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#3b82f6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleViewVehicle(row)}
+          >
+            <Eye size={14} />
           </Button>
-          <Button size="sm" variant="outline-secondary" onClick={() => handleEditVehicle(row)}>
-            <Edit size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(4, 120, 87, 0.05))',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              color: '#10b981',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleEditVehicle(row)}
+          >
+            <Edit size={14} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
-            <Trash2 size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleDeleteClick(row)}
+          >
+            <Trash2 size={14} />
           </Button>
         </div>
       )
