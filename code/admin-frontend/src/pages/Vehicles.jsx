@@ -525,13 +525,13 @@ const Vehicles = () => {
             <motion.div 
               className="me-4 p-3 rounded-3"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
                 backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}
               whileHover={{ scale: 1.05 }}
             >
-              <Truck size={28} style={{ color: 'white' }} />
+              <Truck size={30} style={{ color: 'white' }} />
             </motion.div>
             <div>
               <h2 

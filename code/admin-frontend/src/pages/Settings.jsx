@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaShieldAlt, FaCog, FaSave, FaDesktop, FaClock, FaGlobe, FaMoon, FaSun, FaBuilding } from 'react-icons/fa';
+import { FaUser, FaShieldAlt, FaSave, FaDesktop, FaClock, FaGlobe, FaMoon, FaSun, FaBuilding } from 'react-icons/fa';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
-import PageHeader from '../components/PageHeader';
 import AnimatedAlert from '../components/AnimatedAlert';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/darkMode.css';
@@ -167,18 +167,67 @@ function Settings() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <PageHeader 
-          title="Settings" 
-          subtitle="Manage your account and application preferences"
-          icon={FaCog}
-          actions={[
-            {
-              label: 'Reset to Defaults',
-              onClick: handleResetToDefaults,
-              variant: 'outline-secondary'
-            }
-          ]}
-        />
+        {/* Modern Header */}
+        <motion.div 
+          className="d-flex justify-content-between align-items-center mb-5"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex align-items-center">
+            <motion.div 
+              className="me-4 p-3 rounded-3"
+              style={{
+                background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <SettingsIcon size={28} style={{ color: 'white' }} />
+            </motion.div>
+            <div>
+              <h2 
+                className="mb-2 fw-bold text-white"
+                style={{ fontSize: '2.5rem' }}
+              >
+                Settings
+              </h2>
+              <p 
+                className="text-white opacity-75 mb-0"
+                style={{ fontSize: '1.1rem' }}
+              >
+                Manage your account and application preferences
+              </p>
+            </div>
+          </div>
+          
+          <motion.div
+            className="d-flex gap-3"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <motion.button
+              className="btn px-4 py-2 fw-semibold"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                borderRadius: '12px'
+              }}
+              whileHover={{
+                scale: 1.05,
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2))'
+              }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleResetToDefaults}
+            >
+              Reset to Defaults
+            </motion.button>
+          </motion.div>
+        </motion.div>
 
         {showAlert && (
           <AnimatedAlert 

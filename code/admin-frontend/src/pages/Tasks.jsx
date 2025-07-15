@@ -704,7 +704,7 @@ const Tasks = () => {
             <motion.div 
               className="me-4 p-3 rounded-3"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                 backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}

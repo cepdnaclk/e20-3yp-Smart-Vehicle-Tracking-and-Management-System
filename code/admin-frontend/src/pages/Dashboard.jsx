@@ -478,7 +478,7 @@ const Dashboard = () => {
             <motion.div 
               className="me-4 p-3 rounded-3"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                 backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}
