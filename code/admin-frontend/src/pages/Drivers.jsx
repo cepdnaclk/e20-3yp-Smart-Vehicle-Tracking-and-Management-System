@@ -523,7 +523,19 @@ const Drivers = () => {
     { key: 'fullName', header: 'Full Name', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'phone', header: 'Phone No', sortable: true, render: (v) => <span>{v}</span> },
     { key: 'employmentStatus', header: 'Employment Status', sortable: true, render: (v) => (
-      <span className={`badge ${v === 'active' ? 'bg-success' : 'bg-warning'}`}>
+      <span 
+        className="badge px-3 py-2"
+        style={{
+          background: v === 'active' 
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(4, 120, 87, 0.1))' 
+            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+          color: v === 'active' ? '#059669' : '#d97706',
+          border: `1px solid ${v === 'active' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+          borderRadius: '12px',
+          fontSize: '0.75rem',
+          fontWeight: '500'
+        }}
+      >
         {v.charAt(0).toUpperCase() + v.slice(1)}
       </span>
     ) },
@@ -534,27 +546,69 @@ const Drivers = () => {
       render: (v, row) => (
         <Button
           size="sm"
-          variant="outline-info"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            color: '#7c3aed',
+            borderRadius: '6px'
+          }}
           onClick={() => handleViewVehicleDetails(row)}
         >
-           <MapPin size={16} />
+           <MapPin size={14} className="me-1" />
+           Track
         </Button>
       )
     },
     {
       key: 'actions', header: 'Action', sortable: false, render: (_, row) => (
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-primary" onClick={() => handleViewDriver(row)}>
-            <Eye size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#3b82f6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleViewDriver(row)}
+          >
+            <Eye size={14} />
           </Button>
-          <Button size="sm" variant="outline-secondary" onClick={() => handleEditDriver(row)}>
-            <Edit size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05))',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              color: '#22c55e',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleEditDriver(row)}
+          >
+            <Edit size={14} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => handleDeleteClick(row)}>
-            <Trash2 size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleDeleteClick(row)}
+          >
+            <Trash2 size={14} />
           </Button>
-          <Button size="sm" variant="outline-success" onClick={() => handleAssignTask(row)}>
-            <Briefcase size={16} />
+          <Button 
+            size="sm" 
+            style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              color: '#8b5cf6',
+              borderRadius: '6px'
+            }}
+            onClick={() => handleAssignTask(row)}
+          >
+            <Briefcase size={14} />
           </Button>
         </div>
       )
