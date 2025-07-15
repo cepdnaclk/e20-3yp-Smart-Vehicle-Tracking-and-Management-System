@@ -1056,14 +1056,14 @@ const Drivers = () => {
                     transition={{ delay: 0.4 }}
                     className="p-4 rounded-3"
                     style={{
-                      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                      border: '1px solid #bae6fd'
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                      border: '1px solid #d8b4fe'
                     }}
                   >
-                    <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#0c4a6e' }}>
+                    <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#581c87' }}>
                       <div 
                         className="p-1 rounded"
-                        style={{ background: 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
+                        style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
                       >
                         <Briefcase size={14} style={{ color: 'white' }} />
                       </div>
