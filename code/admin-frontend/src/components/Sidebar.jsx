@@ -28,6 +28,41 @@ const Sidebar = ({ handleLogout, collapsed, onToggle }) => {
   const navigate = useNavigate();
   const [hoveredItem, setHoveredItem] = useState(null);
   
+  // Get current user info from localStorage
+  const getCurrentUser = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  };
+  
+  const currentUser = getCurrentUser();
+  
+  // Generate initials from user name or email
+  const getUserInitials = (user) => {
+    if (!user) return 'AD';
+    
+    if (user.fullName || user.name) {
+      const name = user.fullName || user.name;
+      const nameParts = name.split(' ');
+      return nameParts.length >= 2 
+        ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+        : `${name[0]}${name[1] || name[0]}`.toUpperCase();
+    }
+    
+    if (user.email) {
+      const emailPart = user.email.split('@')[0];
+      return emailPart.length >= 2 
+        ? `${emailPart[0]}${emailPart[1]}`.toUpperCase()
+        : `${emailPart[0]}${emailPart[0]}`.toUpperCase();
+    }
+    
+    return 'AD';
+  };
+  
   const sidebarItems = [
     { 
       path: '/dashboard', 
@@ -494,7 +529,7 @@ const Sidebar = ({ handleLogout, collapsed, onToggle }) => {
                       fontWeight: '600'
                     }}
                   >
-                    AD
+                    {getUserInitials(currentUser)}
                   </div>
                   <div>
                     <div 
@@ -504,7 +539,7 @@ const Sidebar = ({ handleLogout, collapsed, onToggle }) => {
                         fontSize: '0.875rem'
                       }}
                     >
-                      Admin User
+                      {currentUser?.email || currentUser?.username || 'Admin'}
                     </div>
                     <div 
                       className="small"

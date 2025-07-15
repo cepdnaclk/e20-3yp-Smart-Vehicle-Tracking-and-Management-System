@@ -555,7 +555,7 @@ const Dashboard = () => {
               transition={{ delay: 0.3 }}
             >
               <div 
-                className="d-flex align-items-center justify-content-center text-white rounded-2 me-3" 
+                className="d-flex align-items-center justify-content-center text-white rounded-2 me-0" 
                 style={{ 
                   width: '44px', 
                   height: '44px',
@@ -564,10 +564,7 @@ const Dashboard = () => {
               >
                 <User size={20} />
               </div>
-              <div>
-                <div className="fw-semibold text-white">Admin User</div>
-                <div className="small text-white opacity-75">System Administrator</div>
-              </div>
+              
             </motion.div>
           </div>
         </motion.div>
