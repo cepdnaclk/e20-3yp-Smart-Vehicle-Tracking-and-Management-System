@@ -98,7 +98,15 @@ const DataTable = ({
                 <th 
                   key={index} 
                   onClick={() => column.sortable !== false && handleSort(column.key)}
-                  style={{ cursor: column.sortable !== false ? 'pointer' : 'default' }}
+                  style={{ 
+                    cursor: column.sortable !== false ? 'pointer' : 'default',
+                    fontSize: '0.95rem',
+                    fontWeight: '700',
+                    color: '#1a202c',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '2px solid #e2e8f0',
+                    padding: '0.875rem 0.75rem'
+                  }}
                 >
                   <div className="d-flex align-items-center">
                     {column.header || column.key}
