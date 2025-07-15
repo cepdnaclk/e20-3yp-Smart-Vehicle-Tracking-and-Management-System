@@ -11,7 +11,8 @@ import {
   MapPin,
   Edit,
   Trash2,
-  Briefcase // Add this new icon for tasks
+  Briefcase,
+  Clipboard // Add this new icon for tasks
 } from "lucide-react";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -1186,13 +1187,14 @@ const Drivers = () => {
                 <motion.div
                   className="p-2 rounded-2"
                   style={{
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                     color: 'white'
                   }}
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <i className="fas fa-tasks" style={{ fontSize: '20px' }}></i>
+                  <Clipboard size={24} />
+                  
                 </motion.div>
                 Assign Task to {selectedDriverForTask?.fullName}
               </Modal.Title>
@@ -1377,7 +1379,7 @@ const Drivers = () => {
                     <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#374151' }}>
                       <div 
                         className="p-1 rounded"
-                        style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                        style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
                       >
                         <i className="fas fa-map-marker-alt" style={{ color: 'white', fontSize: '14px' }}></i>
                       </div>
@@ -1507,16 +1509,16 @@ const Drivers = () => {
                     transition={{ delay: 0.5 }}
                     className="p-3 rounded-2 d-flex flex-column"
                     style={{
-                      background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                      border: '1px solid #bbf7d0'
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                      border: '1px solid #d8b4fe'
                     }}
                   >
                     <div className="mb-3">
-                      <h6 className="mb-1 fw-semibold d-flex align-items-center gap-2" style={{ color: '#065f46' }}>
+                      <h6 className="mb-1 fw-semibold d-flex align-items-center gap-2" style={{ color: '#581c87' }}>
                         <i className="fas fa-sticky-note" style={{ fontSize: '14px' }}></i>
                         Additional Notes
                       </h6>
-                      <p className="mb-0 small" style={{ color: '#047857' }}>
+                      <p className="mb-0 small" style={{ color: '#7c3aed' }}>
                         Add any special instructions or requirements
                       </p>
                     </div>
@@ -1530,7 +1532,7 @@ const Drivers = () => {
                         placeholder="Any special instructions or notes..."
                         className="modern-input"
                         style={{
-                          border: '1px solid #bbf7d0',
+                          border: '1px solid #d8b4fe',
                           borderRadius: '6px',
                           padding: '12px 16px',
                           fontSize: '0.875rem',
@@ -1573,11 +1575,11 @@ const Drivers = () => {
                     type="submit"
                     className="px-4 py-2"
                     style={{
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                       border: 'none',
                       borderRadius: '8px',
                       fontWeight: '500',
-                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
                       transition: 'all 0.2s ease'
                     }}
                   >
