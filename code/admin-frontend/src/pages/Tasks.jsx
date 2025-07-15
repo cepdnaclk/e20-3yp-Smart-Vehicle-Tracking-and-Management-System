@@ -766,148 +766,454 @@ const Tasks = () => {
         
         {/* Task View/Edit Modal */}
         {showTaskModal && (
-          <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered size="lg">
-            <Form onSubmit={handleTaskFormSubmit}>
-              <Modal.Header closeButton>
-                <Modal.Title>
-                  {viewMode ? 'View Task' : 'Edit Task'}
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <div className="row">
-                  <div className="col-md-6">
-                    <Form.Group className="mb-3">
-                      <Form.Label>Task Number</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="taskNumber"
-                        value={taskFormData.taskNumber}
-                        disabled
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Driver ID</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={taskFormData.driverId}
-                        disabled
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Cargo Type</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="cargoType"
-                        value={taskFormData.cargoType}
-                        onChange={handleTaskInputChange}
-                        disabled={viewMode}
-                        required
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Weight (kg)</Form.Label>
-                      <Form.Control
-                        type="number"
-                        name="weight"
-                        value={taskFormData.weight}
-                        onChange={handleTaskInputChange}
-                        disabled={viewMode}
-                        required
-                      />
-                    </Form.Group>
-                  </div>
-                  <div className="col-md-6">
-                    <Form.Group className="mb-3">
-                      <Form.Label>Pickup Location</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="pickup"
-                        value={taskFormData.pickup}
-                        onChange={handleTaskInputChange}
-                        disabled={viewMode}
-                        required
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Delivery Location</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="delivery"
-                        value={taskFormData.delivery}
-                        onChange={handleTaskInputChange}
-                        disabled={viewMode}
-                        required
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Delivery Phone Number</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="deliveryPhone"
-                        value={taskFormData.deliveryPhone}
-                        onChange={handleTaskInputChange}
-                        disabled={viewMode}
-                        required
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Expected Delivery Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="expectedDelivery"
-                        value={taskFormData.expectedDelivery}
-                        onChange={handleTaskInputChange}
-                        disabled={viewMode}
-                        required
-                      />
-                    </Form.Group>
-                  </div>
-                </div>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select
-                    name="status"
-                    value={taskFormData.status}
-                    onChange={handleTaskInputChange}
-                    disabled={viewMode}
+          <Modal 
+            show={showTaskModal} 
+            onHide={() => setShowTaskModal(false)} 
+            centered 
+            size="lg"
+            className="modern-modal"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <Form onSubmit={handleTaskFormSubmit}>
+                <Modal.Header 
+                  closeButton 
+                  className="border-0 pb-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '12px 12px 0 0'
+                  }}
+                >
+                  <Modal.Title 
+                    className="d-flex align-items-center gap-3"
+                    style={{ 
+                      color: '#1e293b', 
+                      fontWeight: '600',
+                      fontSize: '1.25rem'
+                    }}
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </Form.Select>
-                </Form.Group>
+                    <motion.div
+                      className="p-2 rounded-2"
+                      style={{
+                        background: viewMode ? 
+                          'linear-gradient(135deg, #3b82f6, #1d4ed8)' : 
+                          'linear-gradient(135deg, #10b981, #059669)',
+                        color: 'white'
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <i className="fas fa-tasks" style={{ fontSize: '20px' }}></i>
+                    </motion.div>
+                    {viewMode ? 'View Task Details' : 'Edit Task'}
+                  </Modal.Title>
+                </Modal.Header>
                 
-                <Form.Group className="mb-3">
-                  <Form.Label>Additional Notes</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    name="additionalNotes"
-                    value={taskFormData.additionalNotes}
-                    onChange={handleTaskInputChange}
-                    disabled={viewMode}
-                  />
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="outline-secondary" onClick={() => setShowTaskModal(false)}>
-                  {viewMode ? 'Close' : 'Cancel'}
-                </Button>
-                {!viewMode && (
-                  <Button variant="primary" type="submit">
-                    Update Task
-                  </Button>
-                )}
-              </Modal.Footer>
-            </Form>
+                <Modal.Body 
+                  className="px-4 py-4"
+                  style={{
+                    background: '#ffffff',
+                    maxHeight: '70vh',
+                    overflowY: 'auto'
+                  }}
+                >
+                  <div className="row g-4">
+                    {/* Task Number */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Task Number *
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="taskNumber"
+                            value={taskFormData.taskNumber}
+                            disabled
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: '#f9fafb',
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'monospace',
+                              fontWeight: '500'
+                            }}
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Cargo Type */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Cargo Type *
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="cargoType"
+                            value={taskFormData.cargoType}
+                            onChange={handleTaskInputChange}
+                            disabled={viewMode}
+                            required
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease'
+                            }}
+                            placeholder="e.g., Electronics, Furniture"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Weight */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Weight (kg) *
+                          </Form.Label>
+                          <Form.Control
+                            type="number"
+                            name="weight"
+                            value={taskFormData.weight}
+                            onChange={handleTaskInputChange}
+                            disabled={viewMode}
+                            required
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease'
+                            }}
+                            placeholder="Weight in kilograms"
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Expected Delivery Date */}
+                    <div className="col-md-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 }}
+                      >
+                        <Form.Group>
+                          <Form.Label 
+                            className="fw-semibold mb-2"
+                            style={{ 
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              letterSpacing: '0.025em'
+                            }}
+                          >
+                            Expected Delivery Date *
+                          </Form.Label>
+                          <Form.Control
+                            type="date"
+                            name="expectedDelivery"
+                            value={taskFormData.expectedDelivery}
+                            onChange={handleTaskInputChange}
+                            disabled={viewMode}
+                            required
+                            className="modern-input"
+                            style={{
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                              transition: 'all 0.2s ease'
+                            }}
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+
+                    {/* Location Information Section */}
+                    <div className="col-12">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="p-4 rounded-3 mt-3"
+                        style={{
+                          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                          border: '1px solid #e5e7eb'
+                        }}
+                      >
+                        <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#374151' }}>
+                          <div 
+                            className="p-1 rounded"
+                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                          >
+                            <i className="fas fa-map-marker-alt" style={{ color: 'white', fontSize: '14px' }}></i>
+                          </div>
+                          Location Information
+                        </h6>
+                        
+                        <div className="row g-3">
+                          {/* Pickup Location */}
+                          <div className="col-md-6">
+                            <motion.div
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.35 }}
+                            >
+                              <Form.Group>
+                                <Form.Label 
+                                  className="fw-medium mb-2"
+                                  style={{ 
+                                    color: '#6b7280',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Pickup Location *
+                                </Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  name="pickup"
+                                  value={taskFormData.pickup}
+                                  onChange={handleTaskInputChange}
+                                  disabled={viewMode}
+                                  required
+                                  className="modern-input-small"
+                                  style={{
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '6px',
+                                    padding: '10px 12px',
+                                    fontSize: '0.8rem',
+                                    backgroundColor: viewMode ? '#f9fafb' : '#ffffff'
+                                  }}
+                                  placeholder="Full pickup address"
+                                />
+                              </Form.Group>
+                            </motion.div>
+                          </div>
+
+                          {/* Delivery Location */}
+                          <div className="col-md-6">
+                            <motion.div
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.4 }}
+                            >
+                              <Form.Group>
+                                <Form.Label 
+                                  className="fw-medium mb-2"
+                                  style={{ 
+                                    color: '#6b7280',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Delivery Location *
+                                </Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  name="delivery"
+                                  value={taskFormData.delivery}
+                                  onChange={handleTaskInputChange}
+                                  disabled={viewMode}
+                                  required
+                                  className="modern-input-small"
+                                  style={{
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '6px',
+                                    padding: '10px 12px',
+                                    fontSize: '0.8rem',
+                                    backgroundColor: viewMode ? '#f9fafb' : '#ffffff'
+                                  }}
+                                  placeholder="Full delivery address"
+                                />
+                              </Form.Group>
+                            </motion.div>
+                          </div>
+
+                          {/* Delivery Phone */}
+                          <div className="col-md-6">
+                            <motion.div
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.45 }}
+                            >
+                              <Form.Group>
+                                <Form.Label 
+                                  className="fw-medium mb-2"
+                                  style={{ 
+                                    color: '#6b7280',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Delivery Phone Number *
+                                </Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  name="deliveryPhone"
+                                  value={taskFormData.deliveryPhone}
+                                  onChange={handleTaskInputChange}
+                                  disabled={viewMode}
+                                  required
+                                  className="modern-input-small"
+                                  style={{
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '6px',
+                                    padding: '10px 12px',
+                                    fontSize: '0.8rem',
+                                    backgroundColor: viewMode ? '#f9fafb' : '#ffffff'
+                                  }}
+                                  placeholder="Contact number at delivery location"
+                                />
+                              </Form.Group>
+                            </motion.div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+
+                    {/* Additional Notes */}
+                    <div className="col-12">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="p-3 rounded-2 d-flex flex-column"
+                        style={{
+                          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                          border: '1px solid #bbf7d0'
+                        }}
+                      >
+                        <div className="mb-3">
+                          <h6 className="mb-1 fw-semibold d-flex align-items-center gap-2" style={{ color: '#065f46' }}>
+                            <i className="fas fa-sticky-note" style={{ fontSize: '14px' }}></i>
+                            Additional Notes
+                          </h6>
+                          <p className="mb-0 small" style={{ color: '#047857' }}>
+                            {viewMode ? 'Task instructions and requirements' : 'Update task instructions or requirements'}
+                          </p>
+                        </div>
+                        <Form.Group>
+                          <Form.Control
+                            as="textarea"
+                            rows={3}
+                            name="additionalNotes"
+                            value={taskFormData.additionalNotes}
+                            onChange={handleTaskInputChange}
+                            disabled={viewMode}
+                            placeholder={viewMode ? "No additional notes provided." : "Any special instructions or notes..."}
+                            className="modern-input"
+                            style={{
+                              border: '1px solid #bbf7d0',
+                              borderRadius: '6px',
+                              padding: '12px 16px',
+                              fontSize: '0.875rem',
+                              backgroundColor: viewMode ? '#f9fafb' : '#ffffff',
+                              resize: 'vertical',
+                              minHeight: '80px'
+                            }}
+                          />
+                        </Form.Group>
+                      </motion.div>
+                    </div>
+                  </div>
+                </Modal.Body>
+                
+                <Modal.Footer 
+                  className="border-0 pt-0 px-4 pb-4"
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '0 0 12px 12px'
+                  }}
+                >
+                  <div className="d-flex gap-3 w-100 justify-content-end">
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button 
+                        variant="outline-secondary"
+                        onClick={() => setShowTaskModal(false)}
+                        className="px-4 py-2"
+                        style={{
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <i className="fas fa-times me-2"></i>
+                        {viewMode ? 'Close' : 'Cancel'}
+                      </Button>
+                    </motion.div>
+                    {!viewMode && (
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button 
+                          type="submit"
+                          className="px-4 py-2"
+                          style={{
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: '500',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <i className="fas fa-check me-2"></i>
+                          Update Task
+                        </Button>
+                      </motion.div>
+                    )}
+                  </div>
+                </Modal.Footer>
+              </Form>
+            </motion.div>
           </Modal>
         )}
         
