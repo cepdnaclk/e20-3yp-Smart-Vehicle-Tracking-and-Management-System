@@ -1,31 +1,12 @@
 {
-    "navigationFallback": {
-      "rewrite": "/index.html",
-      "exclude": ["/api/*", "/uploads/*", "/images/*", "/css/*", "/js/*", "/static/*", "*.{html,htm,css,js,png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot,ico,json}"],
-      "statusCode": 200
-    },
-    "routes": [
-      {
-        "route": "/api/*",
-        "allowedMethods": ["GET", "POST", "PUT", "DELETE"],
-        "matchCondition": {
-          "methods": ["GET", "POST", "PUT", "DELETE"]
-        },
-        "headers": {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0"
-        }
-      }
-    ],
-    "responseOverrides": {
-      "404": {
-        "rewrite": "/404.html",
-        "statusCode": 404
-      }
-    },
-    "platform": {
-      "apiRuntime": "node:18"
-    },
-    "mimeTypes": {
-      ".json": "application/json"
-    }
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/images/*", "/css/*", "/js/*", "*.{css,js,map,png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot}"]
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  },
+  "globalHeaders": {
+    "Cache-Control": "no-cache, no-store, must-revalidate"
   }
+}
