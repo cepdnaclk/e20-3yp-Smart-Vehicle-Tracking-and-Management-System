@@ -434,7 +434,7 @@ function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <small>© 2025 TrackMaster Pro. All rights reserved.</small>
+            <small>© 2025 TrackMaster Pro. All rights reserved</small>
           </motion.div>
         </motion.div>
       </div>
