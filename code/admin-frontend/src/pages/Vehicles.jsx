@@ -542,15 +542,15 @@ const Vehicles = () => {
             <motion.button 
               className="btn border-0 d-flex align-items-center px-4 py-2"
               style={{
-                background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
                 color: 'white',
                 borderRadius: '12px',
-                boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
+                boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)'
               }}
               onClick={handleAddVehicle}
               whileHover={{ 
                 scale: 1.05,
-                boxShadow: '0 12px 30px rgba(59, 130, 246, 0.4)'
+                boxShadow: '0 12px 30px rgba(16, 185, 129, 0.4)'
               }}
               whileTap={{ scale: 0.95 }}
             >
@@ -600,7 +600,7 @@ const Vehicles = () => {
                 <span 
                   className="badge px-3 py-2"
                   style={{
-                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
                     color: 'white',
                     borderRadius: '12px'
                   }}
@@ -655,7 +655,7 @@ const Vehicles = () => {
                     <motion.div
                       className="p-2 rounded-2"
                       style={{
-                        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
                         color: 'white'
                       }}
                       whileHover={{ scale: 1.05 }}
@@ -943,7 +943,7 @@ const Vehicles = () => {
                         <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ color: '#374151' }}>
                           <div 
                             className="p-1 rounded"
-                            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
                           >
                             <Filter size={14} style={{ color: 'white' }} />
                           </div>
@@ -1120,11 +1120,11 @@ const Vehicles = () => {
                           type="submit"
                           className="px-4 py-2"
                           style={{
-                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
                             border: 'none',
                             borderRadius: '8px',
                             fontWeight: '500',
-                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
                             transition: 'all 0.2s ease'
                           }}
                         >
