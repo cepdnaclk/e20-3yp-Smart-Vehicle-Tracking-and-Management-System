@@ -6,11 +6,6 @@
             "eNumber": "E/20/272"
         },
         {
-            "name": "M.L. Wijesooriya",
-            "email": "e20447@eng.pdn.ac.lk",
-            "eNumber": "E/20/447"
-        },
-        {
             "name": "U.P.S.D. Dulaj",
             "email": "e20456@eng.pdn.ac.lk",
             "eNumber": "E/20/456"
@@ -24,6 +19,8 @@
     ],
     "tags": [
         "Web",
-        "Embedded Systems"
+        "Embedded Systems",
+        "Computer and Network Security",
+        "Software Engineering"
     ]
 }
