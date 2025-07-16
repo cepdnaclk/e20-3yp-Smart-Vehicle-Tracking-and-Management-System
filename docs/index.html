@@ -495,6 +495,30 @@
         object-fit: cover;
       }
 
+      .team-member .contact-info {
+        margin: 1rem 0;
+      }
+
+      .team-member .contact-info p {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .team-member .contact-info a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .team-member .contact-info a:hover {
+        color: var(--secondary-color);
+        text-decoration: underline;
+      }
+
       .team-member .social-links {
         display: flex;
         justify-content: center;
@@ -1086,38 +1110,61 @@
     <section id="team" class="team">
       <h2>Our Team</h2>
       <div class="team-grid">
-        <!-- Placeholder Team Member 1 -->
+        <!-- Team Member 1 -->
         <div class="team-member">
           <img src="./images/team-member1.PNG" alt="Team Member 1" />
           <h3>Niroshan B.G.L</h3>
           <p>E/20/272</p>
+          <div class="contact-info">
+            <p>
+              <i class="fas fa-envelope"></i>
+              <a href="mailto:e20272@eng.pdn.ac.lk">e20272@eng.pdn.ac.lk</a>
+            </p>
+          </div>
           <div class="social-links">
             <a href="https://github.com/Lahirue202272" target="_blank"
               ><i class="fab fa-github"></i
             ></a>
-            <a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>
-            <!-- Add more social links as needed -->
+            <a href="https://www.thecn.com/EN429" target="_blank"
+              ><i class="fas fa-user"></i
+            ></a>
+            <!-- ePortfolio link -->
           </div>
         </div>
-        <!-- Placeholder Team Member 2 -->
+        <!-- Team Member 2 -->
         <div class="team-member">
-          <img src="./images/team-member2.PNG" alt="Team Member 1" />
+          <img src="./images/team-member2.PNG" alt="Team Member 2" />
           <h3>DULAJ U.P.S.D</h3>
-          <p>E/20/272</p>
+          <p>E/20/456</p>
+          <div class="contact-info">
+            <p>
+              <i class="fas fa-envelope"></i>
+              <a href="mailto:e20456@eng.pdn.ac.lk">e20456@eng.pdn.ac.lk</a>
+            </p>
+          </div>
           <div class="social-links">
             <a href="https://github.com/upsddulaj" target="_blank"
               ><i class="fab fa-github"></i
             ></a>
-            <a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>
-            <!-- Add more social links as needed -->
+            <a href="https://www.thecn.com/ED676" target="_blank"
+              ><i class="fas fa-user"></i
+            ></a>
+            <!-- ePortfolio link -->
           </div>
         </div>
-        <!-- Add more team members here -->
-        <!-- Placeholder for Supervisor -->
+        <!-- Project Supervisor -->
         <div class="team-member supervisor">
           <img src="./images/team-supervisor.PNG" alt="Project Supervisor" />
           <h3>Dr. Isuru Nawinne</h3>
           <p>Project Supervisor</p>
+          <div class="contact-info">
+            <p>
+              <i class="fas fa-envelope"></i>
+              <a href="mailto:isurunawinne@eng.pdn.ac.lk"
+                >isurunawinne@eng.pdn.ac.lk</a
+              >
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -1153,6 +1200,7 @@
           <a href="#introduction">About</a>
           <a href="#features">Features</a>
           <a href="#tech-stack">Tech Stack</a>
+          <a href="#team">Team</a>
         </div>
         <div class="footer-section">
           <h3>Project Links</h3>
