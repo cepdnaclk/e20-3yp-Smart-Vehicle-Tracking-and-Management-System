@@ -153,6 +153,94 @@
         margin-bottom: 1rem;
       }
 
+      /* Problem section with image layout */
+      .problem-content-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: center;
+      }
+
+      .problem-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .problem-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .problem-image img {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        transition: transform 0.3s ease;
+      }
+
+      .problem-image img:hover {
+        transform: scale(1.05);
+      }
+
+      /* Responsive for problem section */
+      @media (max-width: 768px) {
+        .problem-content-container {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        .problem-image {
+          order: -1; /* Move image above text on mobile */
+        }
+      }
+
+      /* Solution section with image layout */
+      .solution-content-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: center;
+      }
+
+      .solution-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .solution-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .solution-image img {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        transition: transform 0.3s ease;
+      }
+
+      .solution-image img:hover {
+        transform: scale(1.05);
+      }
+
+      /* Responsive for solution section */
+      @media (max-width: 768px) {
+        .solution-content-container {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        .solution-image {
+          order: -1; /* Move image above text on mobile */
+        }
+      }
+
       .content ul {
         list-style-type: none;
         padding-left: 1rem;
@@ -379,14 +467,81 @@
       .circuit-container {
         max-width: 1200px;
         margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: stretch;
+      }
+
+      .circuit-diagram {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+      }
+
+      .circuit-diagram h3 {
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
         text-align: center;
       }
 
       .circuit-diagram img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 10px;
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+        border-radius: 15px;
         box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+      }
+
+      .circuit-diagram img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        border-color: var(--primary-color);
+      }
+
+      .pcb-video {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+      }
+
+      .pcb-video h3 {
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .pcb-video video {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+        border-radius: 15px;
+        box-shadow: var(--shadow);
+        background-color: #000;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+      }
+
+      .pcb-video video:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        border-color: var(--primary-color);
+      }
+
+      /* Responsive for circuit section */
+      @media (max-width: 768px) {
+        .circuit-container {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
       }
 
       /* Budget Section Styles */
@@ -765,36 +920,55 @@
       <div class="container">
         <div class="problem-section">
           <h2>The Problem</h2>
-          <div class="content">
-            <p>
-              Current vehicle tracking and management often face challenges:
-            </p>
-            <ul>
-              <li>Inefficient manual tracking methods</li>
-              <li>Lack of real-time data for decision making</li>
-              <li>Difficulties in managing alerts and incidents</li>
-              <li>Limited historical data analysis</li>
-              <li>Suboptimal resource allocation</li>
-            </ul>
+          <div class="problem-content-container">
+            <div class="problem-text">
+              <div class="content">
+                <p>
+                  Current vehicle tracking and management often face challenges:
+                </p>
+                <ul>
+                  <li>Inefficient manual tracking methods</li>
+                  <li>Lack of real-time data for decision making</li>
+                  <li>Difficulties in managing alerts and incidents</li>
+                  <li>Limited historical data analysis</li>
+                  <li>Suboptimal resource allocation</li>
+                </ul>
+              </div>
+            </div>
+            <div class="problem-image">
+              <img src="./images/problem.png" alt="Vehicle Tracking Problems" />
+            </div>
           </div>
         </div>
         <div class="solution-section">
           <h2>Our Solution</h2>
-          <div class="content">
-            <p>
-              Our system provides a comprehensive solution for smart vehicle
-              tracking and management:
-            </p>
-            <ul>
-              <li>Real-time GPS tracking and monitoring</li>
-              <li>
-                Automated alert generation for critical events (speeding,
-                geofence breaches, etc.)
-              </li>
-              <li>Centralized dashboard for cargo overview and management</li>
-              <li>Historical data logging and reporting</li>
-              <li>Mobile application for drivers and stakeholders</li>
-            </ul>
+          <div class="solution-content-container">
+            <div class="solution-text">
+              <div class="content">
+                <p>
+                  Our system provides a comprehensive solution for smart vehicle
+                  tracking and management:
+                </p>
+                <ul>
+                  <li>Real-time GPS tracking and monitoring</li>
+                  <li>
+                    Automated alert generation for critical events (speeding,
+                    geofence breaches, etc.)
+                  </li>
+                  <li>
+                    Centralized dashboard for cargo overview and management
+                  </li>
+                  <li>Historical data logging and reporting</li>
+                  <li>Mobile application for drivers and stakeholders</li>
+                </ul>
+              </div>
+            </div>
+            <div class="solution-image">
+              <img
+                src="./images/solution.jpg"
+                alt="Smart Vehicle Tracking Solution"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1043,11 +1217,20 @@
     </section>
 
     <section id="circuit" class="circuit">
-      <h2>Circuit Diagram</h2>
+      <h2>Circuit Diagram and PCB 3D View (Video)</h2>
       <div class="circuit-container">
         <div class="circuit-diagram">
-          <!-- Placeholder for Circuit Diagram Image -->
+          <h3>Circuit Diagram</h3>
+          <!-- Circuit Diagram Image -->
           <img src="./images/circuit.PNG" alt="Circuit Diagram" />
+        </div>
+        <div class="pcb-video">
+          <h3>PCB 3D View</h3>
+          <!-- PCB 3D View Video -->
+          <video controls>
+            <source src="./videos/pcb-3d-view.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
         </div>
       </div>
     </section>
