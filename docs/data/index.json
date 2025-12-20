@@ -22,5 +22,8 @@
         "Embedded Systems",
         "Computer and Network Security",
         "Software Engineering"
-    ]
+    ],
+    "image": "cover_page.jpg",
+    "thumbnail": "thumbnail.jpg"
+
 }
